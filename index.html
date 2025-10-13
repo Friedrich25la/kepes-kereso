@@ -3,56 +3,36 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Képes kereső — mobilbarát frissítés</title>
+  <title>Képes kereső — 2 kép, első kép: 21 hotspot, második: 5</title>
   <style>
     :root{
-      --accent:#33CCBE;           /* hotspot szín */
+      --accent:#33CCBE;
       --hotspot-size:18px;
       --menu-font-size:15px;
-      --menu-bg: rgba(51,204,190,0.8); /* ~8% átlátszóság: 0.7 opacity */
-      --menu-hover-bg:#111;      /* menü hover */
-      --menu-hover-color:#fff;   /* hover szöveg */
-      --breakpoint:880px;        /* mobil breakpoint */
+      --menu-bg: rgba(51,204,190,0.8);
+      --menu-hover-bg:#111;
+      --menu-hover-color:#fff;
+      --breakpoint:880px;
     }
     html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, Roboto, "Segoe UI", "Helvetica Neue", Arial}
-    body{background:#fff;color:#111;display:flex;align-items:flex-start;justify-content:center;padding:24px}
+    body{background:#fff;color:#111;display:flex;align-items:flex-start;justify-content:center;padding:20px}
     .page{max-width:1200px;width:100%}
-    h1{
-      font-size:18px;
-      margin:10px 0 6px;
-      text-align:center;              /* középre igazítás */
-      font-weight:600;
-    }
+    h1{font-size:18px;margin:10px 0 6px;text-align:center;font-weight:600}
+    .below-note{margin:6px 0 14px;font-size:14px;color:#333;text-align:center;font-family:inherit;line-height:1.4}
+    .below-note a{color:var(--menu-hover-color);background:var(--menu-hover-bg);padding:2px 6px;border-radius:4px;text-decoration:none}
 
-    /* sentence under the H1 (most moved under header) */
-    .below-note{
-      margin:6px 0 18px;
-      font-size:14px;
-      color:#333;
-      text-align:center;              /* középre igazítás */
-      font-family:inherit;            /* ugyanaz a betűtípus mint a felső */
-      line-height:1.4;
-    }
-    .below-note a{
-      color:var(--menu-hover-color);
-      background:var(--menu-hover-bg);
-      padding:2px 6px;
-      border-radius:4px;
-      text-decoration:none;
-    }
-
-    /* image area */
+    /* image area: kisebb távolság a képek között */
     .image-wrap{
       position:relative;
       background:#fff;
       border-radius:8px;
       overflow:hidden;
-      box-shadow:none; /* árnyék eltávolítva per kérés */
-      min-height:260px; /* fallback ha a kép még nem töltődne be */
+      box-shadow:none;
+      margin-bottom:12px;
+      min-height:200px;
     }
     .image-wrap img{display:block;width:100%;height:auto;user-select:none}
 
-    /* hotspot */
     .hotspot{
       position:absolute;
       transform:translate(-50%,-50%);
@@ -75,7 +55,6 @@
       box-shadow:0 10px 30px rgba(0,0,0,0.18);
     }
 
-    /* Overlay menu (desktop) */
     .overlay-menu{ position:absolute; inset:0; pointer-events:none; z-index:55 }
     .overlay-menu-item{
       position:absolute;
@@ -102,24 +81,23 @@
       box-shadow:0 10px 30px rgba(0,0,0,0.12);
     }
 
-    /* Mobile bottom menu bar (shown on small screens) */
     .mobile-menu-bar{
       display:none;
-      margin-top:10px;
+      margin-top:8px;
       width:100%;
       box-sizing:border-box;
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
       display:flex;
       gap:8px;
-      padding:8px 6px;
+      padding:6px 6px;
       align-items:center;
       background:transparent;
       border-radius:8px;
     }
     .mobile-menu-btn{
       flex:0 0 auto;
-      min-width:88px;
+      min-width:84px;
       max-width:220px;
       text-overflow:ellipsis;
       overflow:hidden;
@@ -139,53 +117,118 @@
       transform:translateY(-4px);
     }
 
-    /* --- ELREJTETT: edit controls (élesített oldalon ne látszódjon) --- */
-    #editControls {
-      display: none !important;
-      pointer-events: none !important;
-      opacity: 0 !important;
+    /* FIXED scroll hint (single element, controlled by JS) */
+    .scroll-hint{
+      position:fixed;              /* FIXED to viewport */
+      right:16px;                  /* jobbra kicsit kihelyezve */
+      bottom:6vh;                  /* kicsit feljebb a képernyő aljától */
+      background: rgba(0,0,0,0.6);
+      color:#fff;
+      padding:8px 12px;
+      border-radius:20px;
+      font-size:13px;
+      z-index:9998;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      pointer-events:none;
+      opacity:0;
+      transform: translateY(6px);
+      transition: opacity .22s ease, transform .22s ease;
+      box-shadow:0 6px 18px rgba(0,0,0,0.12);
+      user-select:none;
+    }
+    .scroll-hint.show{ opacity:0.95; transform: translateY(0); }
+
+    .scroll-hint .arrow{
+      display:inline-block;
+      font-size:16px;
+      transform:translateY(0);
+      animation: bounce 1.1s infinite;
+      line-height:1;
+    }
+    @keyframes bounce{
+      0%{ transform:translateY(0); }
+      50%{ transform:translateY(5px); }
+      100%{ transform:translateY(0); }
     }
 
     /* responsive tweaks */
     @media (max-width:700px){
-      body{padding:12px}
+      body{padding:10px}
       h1{font-size:15px}
-      .hotspot{width:14px;height:14px}
+      :root{ --hotspot-size:14px; --menu-font-size:13px }
+      .image-wrap{ margin-bottom:8px }
+      .mobile-menu-btn{ min-width:76px; padding:7px 10px; font-size:13px }
+      .scroll-hint{ right:12px; bottom:6vh; padding:6px 10px; font-size:12px }
+      .scroll-hint .arrow{ font-size:14px }
+    }
+    @media (max-width:420px){
+      .scroll-hint{ padding:5px 8px; font-size:11px; background:rgba(0,0,0,0.55) }
+      .scroll-hint .arrow{ font-size:13px }
     }
     @media (max-width:880px){
-      /* hide overlay menu on small screens and show bottom bar */
       .overlay-menu{ display:none !important }
       .mobile-menu-bar{ display:flex !important }
-      .overlay-menu-item{ pointer-events:none !important } /* ensure not tappable */
+      .overlay-menu-item{ pointer-events:none !important }
     }
 
-    /* control buttons style */
-    #editControls button{font-family:inherit}
+    /* --- Edit controls kept hidden --- */
+    #editControls{ position:fixed; right:12px; bottom:12px; z-index:9999; display:none; flex-direction:column; gap:8px }
+    #editControls button{ font-family:inherit; padding:8px 10px; border-radius:6px; background:#111; color:#fff; border:none; cursor:pointer; opacity:.95 }
+    /* Hide the fixed "Görgess tovább" hint on small screens */
+    @media (max-width: 880px) {
+      .scroll-hint {
+        display: none !important;
+        pointer-events: none;
+      }
+    }
+
+
   </style>
+  <!-- === Google Analytics (GA4) snippet (PLACEHOLDER) ===
+       Replace G-XXXXXXX with your GA4 Measurement ID if you want pageview/GA available.
+       If you use Google Tag Manager, omit this and configure events via GTM. -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXX'); // <-- your GA4 measurement id
+  </script> -->
 </head>
 <body>
   <div class="page">
     <h1>Kattintson a képen látható termékkategóriák valamelyikére a találatok megjelenítéséhez!</h1>
 
-    <!-- moved this sentence directly under the H1; same font, centered -->
     <div class="below-note" id="belowNote">
       Amennyiben nem találta meg, amit keresett, illetve kíváncsi a többi termékünkre is, keressen az összes kategória között
       <a href="https://www.trinexus.hu/" aria-label="Összes kategória"> &nbsp;&nbsp;&gt;&gt;&gt; </a>
     </div>
 
-    <div id="menuPlaceholder"></div>
-
-    <div class="image-wrap" id="imageWrap">
-      <img id="targetImage" src="25_TA_200S_OH004.jpg" alt="Hajó - kategória kereső"/>
+    <!-- ELSŐ KÉP (teljes: 21 hotspot) -->
+    <div class="image-wrap" id="imageWrap1">
+      <img id="targetImage1" src="25_TA_200S_OH004.jpg" alt="Hajó - kategória kereső"/>
+      <!-- no per-image hint here any more -->
     </div>
+    <div id="mobileMenuBar1" class="mobile-menu-bar" aria-hidden="true"></div>
 
-    <!-- mobile menu bar (appears under image on small screens) -->
-    <div id="mobileMenuBar" class="mobile-menu-bar" aria-hidden="true"></div>
+    <!-- MÁSODIK KÉP (5 hotspotra bővítve) -->
+    <div class="image-wrap" id="imageWrap2">
+      <img id="targetImage2" src="25-T21_FA02%20másolat.jpg" alt="Hajó 2 - kategória kereső"/>
+      <!-- NO hint on second image as requested -->
+    </div>
+    <div id="mobileMenuBar2" class="mobile-menu-bar" aria-hidden="true"></div>
 
   </div>
 
+  <!-- Single fixed scroll hint element (JS will show/hide it) -->
+  <div id="fixedScrollHint" class="scroll-hint" aria-hidden="true">
+    <span>Görgess tovább</span><span class="arrow">↓</span>
+  </div>
+
   <script>
-    /* Frissített categories tömb a feltöltött JSON alapján (pozíciók és menük) */
+    /* Categories arrays (same as before) */
     let categories = [
       {"name":"Halradarok","left":35.7,"top":40.9,"link":"https://www.trinexus.hu/halradar","anchor":"left","menuLeft":30.7,"menuTop":44.5},
       {"name":"Bikák","left":68.6,"top":73.6,"link":"https://www.trinexus.hu/hajofelszereles-bika","anchor":"left","menuLeft":68.6,"menuTop":78.2},
@@ -210,38 +253,72 @@
       {"name":"Víz ki- és bevezetés","left":74,"top":73.2,"link":"https://www.trinexus.hu/hajofelszereles-vizi-ki-bevezetes","anchor":"left","menuLeft":81,"menuTop":77.6}
     ];
 
-    const LS_KEY = 'kepes_kereso_positions_v1';
-    const wrap = document.getElementById('imageWrap');
-    const mobileBar = document.getElementById('mobileMenuBar');
+    let categories2 = [
+      {"name":"Motortakaró ponyva","left":91.7,"top":39,"link":"https://www.trinexus.hu/fedelzeti-felszereles-motor-egyeb-takaro","menuLeft":90.7,"menuTop":34.8},
+      {"name":"Hajóponyva","left":53.4,"top":31.9,"link":"https://www.trinexus.hu/fedelzeti-felszereles-hajoponyva","menuLeft":53.4,"menuTop":27.2},
+      {"name":"Tréler és tartozékai","left":31.2,"top":63.5,"link":"https://www.trinexus.hu/treler-tartozekai","menuLeft":28.9,"menuTop":68.7},
+      {"name":"Csörlő, heveder, rögzítő","left":12.9,"top":52.5,"link":"https://www.trinexus.hu/csorlo-heveder-rogzito","menuLeft":9.7,"menuTop":57.7},
+      {"name":"Görgő, Y ütköző","left":19.5,"top":49.3,"link":"https://www.trinexus.hu/gorgo-y-utkozo","menuLeft":23.7,"menuTop":44.6}
+    ];
 
-    function clearHotspotsAndMenu(){
-      Array.from(wrap.querySelectorAll('.hotspot, .overlay-menu')).forEach(el => el.remove());
-      if(mobileBar) mobileBar.innerHTML = '';
+    const LS_KEY = 'kepes_kereso_positions_v2';
+    const wrap1 = document.getElementById('imageWrap1');
+    const wrap2 = document.getElementById('imageWrap2');
+    const mobileBar1 = document.getElementById('mobileMenuBar1');
+    const mobileBar2 = document.getElementById('mobileMenuBar2');
+    const fixedHint = document.getElementById('fixedScrollHint');
+
+    /* --- Analytics helper (GA4) ---
+       Replace or remove gtag snippet in <head> and set your Measurement ID.
+       This helper will try to call gtag('event',...) if available, otherwise pushes to dataLayer,
+       otherwise falls back to console.log for debugging.
+    */
+    function sendAnalytics(eventName, params){
+      try{
+        if(window.gtag){
+          gtag('event', eventName, params || {});
+        } else if(window.dataLayer && Array.isArray(window.dataLayer)){
+          window.dataLayer.push(Object.assign({event: eventName}, params || {}));
+        } else {
+          console.log('GA event (fallback):', eventName, params);
+        }
+      }catch(e){
+        console.warn('sendAnalytics error', e);
+      }
     }
 
-    function createHotspots(){
-      Array.from(wrap.querySelectorAll('.hotspot')).forEach(el => el.remove());
-      categories.forEach((c, idx)=>{
+    function createHotspotsFor(wrap, cats, imageIndex){
+      Array.from(wrap.querySelectorAll('.hotspot')).forEach(el=>el.remove());
+      cats.forEach((c, idx)=>{
         const btn = document.createElement('button');
         btn.className = 'hotspot';
         btn.style.left = c.left + '%';
-        btn.style.top = c.top + '%';
+        btn.style.top  = c.top  + '%';
         btn.setAttribute('aria-label', c.name);
         btn.dataset.index = idx;
+        btn.dataset.image = imageIndex;
 
         const dot = document.createElement('span'); dot.className='dot';
         btn.appendChild(dot);
 
-        btn.addEventListener('click', (ev)=>{ ev.stopPropagation(); if(c.link) window.location.href = c.link; });
-        btn.addEventListener('dblclick', ()=>{ if(c.link) window.location.href = c.link; });
+        btn.addEventListener('click', (ev)=>{
+          ev.stopPropagation();
+          sendAnalytics('hotspot_click', {category: c.name, image_index: imageIndex, category_index: idx, link: c.link || ''});
+          if(c.link) window.open(c.link,'_blank','noopener');
+        });
+        btn.addEventListener('dblclick', ()=>{
+          sendAnalytics('hotspot_dblclick', {category: c.name, image_index: imageIndex, category_index: idx, link: c.link || ''});
+          if(c.link) window.open(c.link,'_blank','noopener');
+        });
 
         btn.addEventListener('mouseenter', ()=>{
-          const mi = document.querySelector(`.overlay-menu-item[data-index="${idx}"]`);
+          const mi = document.querySelector(`.overlay-menu-item[data-image="${imageIndex}"][data-index="${idx}"]`);
           mi && mi.classList.add('active');
           btn.classList.add('highlight');
+          sendAnalytics('hotspot_hover', {category: c.name, image_index: imageIndex, category_index: idx});
         });
         btn.addEventListener('mouseleave', ()=>{
-          const mi = document.querySelector(`.overlay-menu-item[data-index="${idx}"]`);
+          const mi = document.querySelector(`.overlay-menu-item[data-image="${imageIndex}"][data-index="${idx}"]`);
           mi && mi.classList.remove('active');
           btn.classList.remove('highlight');
         });
@@ -250,82 +327,99 @@
       });
     }
 
-    function createMenu(){
-      const oldOverlay = document.getElementById('overlayMenu'); if(oldOverlay) oldOverlay.remove();
+    function createMenuFor(wrap, cats, imageIndex, mobileBar){
+      const overlayId = 'overlayMenu' + imageIndex;
+      const oldOverlay = document.getElementById(overlayId); if(oldOverlay) oldOverlay.remove();
       if(mobileBar) mobileBar.innerHTML = '';
 
       const isMobile = window.innerWidth <= 880;
       if(isMobile){
-        mobileBar.setAttribute('aria-hidden','false');
-        categories.forEach((c, idx)=>{
-          const btn = document.createElement('button');
-          btn.className = 'mobile-menu-btn';
-          btn.dataset.index = idx;
-          btn.textContent = c.name;
-          btn.addEventListener('click', ()=>{ if(c.link) window.location.href = c.link; });
-          btn.addEventListener('pointerdown', (e)=>{
-            const hs = document.querySelector(`.hotspot[data-index="${idx}"]`);
-            if(hs){
-              hs.classList.add('highlight');
-              if(!editMode) setTimeout(()=>{ hs.classList.remove('highlight'); }, 800);
-            }
+        if(mobileBar){
+          mobileBar.setAttribute('aria-hidden','false');
+          cats.forEach((c, idx)=>{
+            const btn = document.createElement('button');
+            btn.className = 'mobile-menu-btn';
+            btn.dataset.index = idx;
+            btn.dataset.image = imageIndex;
+            btn.textContent = c.name;
+            btn.addEventListener('click', ()=>{
+              sendAnalytics('menu_click', {category: c.name, image_index: imageIndex, category_index: idx, link: c.link || ''});
+              if(c.link) window.open(c.link,'_blank','noopener');
+            });
+            btn.addEventListener('pointerdown', ()=>{
+              const hs = document.querySelector(`.hotspot[data-image="${imageIndex}"][data-index="${idx}"]`);
+              if(hs){ hs.classList.add('highlight'); if(!editMode) setTimeout(()=>hs.classList.remove('highlight'),700); }
+            });
+            mobileBar.appendChild(btn);
           });
-          mobileBar.appendChild(btn);
-        });
+        }
         return;
       }
 
-      const overlay = document.createElement('div'); overlay.id = 'overlayMenu'; overlay.className = 'overlay-menu';
+      const overlay = document.createElement('div'); overlay.id = overlayId; overlay.className = 'overlay-menu';
       wrap.style.position = wrap.style.position || 'relative';
       wrap.appendChild(overlay);
 
-      categories.forEach((c, idx)=>{
+      cats.forEach((c, idx)=>{
         const left = (typeof c.menuLeft !== 'undefined') ? c.menuLeft : c.left;
-        const top  = (typeof c.menuTop  !== 'undefined') ? c.menuTop  : (c.top + 8);
+        const top  = (typeof c.menuTop  !== 'undefined') ? c.menuTop : (c.top + 8);
 
         const mi = document.createElement('div');
         mi.className = 'overlay-menu-item';
         mi.dataset.index = idx;
+        mi.dataset.image = imageIndex;
         mi.textContent = c.name;
         mi.style.left = left + '%';
         mi.style.top  = top  + '%';
 
         mi.addEventListener('mouseenter', ()=>{
           mi.classList.add('active');
-          const hs = document.querySelector(`.hotspot[data-index="${idx}"]`);
+          const hs = document.querySelector(`.hotspot[data-image="${imageIndex}"][data-index="${idx}"]`);
           hs && hs.classList.add('highlight');
         });
         mi.addEventListener('mouseleave', ()=>{
           mi.classList.remove('active');
-          const hs = document.querySelector(`.hotspot[data-index="${idx}"]`);
+          const hs = document.querySelector(`.hotspot[data-image="${imageIndex}"][data-index="${idx}"]`);
           hs && hs.classList.remove('highlight');
         });
 
-        mi.addEventListener('click', ()=>{ if(c.link) window.location.href = c.link; });
+        mi.addEventListener('click', ()=>{
+          sendAnalytics('menu_click', {category: c.name, image_index: imageIndex, category_index: idx, link: c.link || ''});
+          if(c.link) window.open(c.link,'_blank','noopener');
+        });
 
         overlay.appendChild(mi);
       });
     }
 
-    /* Save / Load / Export / Import / Reset (same as before) */
+    /* Save/load/export/import/reset functions remain identical to your previous working code */
     function savePositionsToLocalStorage(){
       document.querySelectorAll('.hotspot').forEach(h=>{
         const i = parseInt(h.dataset.index,10);
-        if(!isNaN(i) && categories[i]){
-          const left = parseFloat(h.style.left || categories[i].left) || categories[i].left;
-          const top = parseFloat(h.style.top || categories[i].top) || categories[i].top;
-          categories[i].left = Number(left);
-          categories[i].top  = Number(top);
+        const img = parseInt(h.dataset.image,10);
+        if(img===1 && !isNaN(i) && categories[i]){
+          categories[i].left = Number(parseFloat(h.style.left) || categories[i].left);
+          categories[i].top  = Number(parseFloat(h.style.top)  || categories[i].top);
+        } else if(img===2 && !isNaN(i) && categories2[i]){
+          categories2[i].left = Number(parseFloat(h.style.left) || categories2[i].left);
+          categories2[i].top  = Number(parseFloat(h.style.top)  || categories2[i].top);
         }
       });
+
       document.querySelectorAll('.overlay-menu-item').forEach(mi=>{
         const i = parseInt(mi.dataset.index,10);
-        if(!isNaN(i) && categories[i]){
+        const img = parseInt(mi.dataset.image,10);
+        if(img===1 && !isNaN(i) && categories[i]){
           categories[i].menuLeft = Number(parseFloat(mi.style.left || categories[i].menuLeft || categories[i].left));
-          categories[i].menuTop  = Number(parseFloat(mi.style.top  || categories[i].menuTop  || (categories[i].top + 8)));
+          categories[i].menuTop  = Number(parseFloat(mi.style.top  || categories[i].menuTop  || (categories[i].top+8)));
+        } else if(img===2 && !isNaN(i) && categories2[i]){
+          categories2[i].menuLeft = Number(parseFloat(mi.style.left || categories2[i].menuLeft || categories2[i].left));
+          categories2[i].menuTop  = Number(parseFloat(mi.style.top  || categories2[i].menuTop  || (categories2[i].top+8)));
         }
       });
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(categories)); console.log('Pozíciók mentve.'); }catch(e){console.warn('Mentés sikertelen', e);}
+
+      const payload = { categories: categories, categories2: categories2 };
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(payload)); console.log('Pozíciók mentve.'); alert('Pozíciók mentve.'); }catch(e){ console.warn('Mentés sikertelen', e); alert('Mentés sikertelen: ' + e.message); }
     }
 
     function loadPositionsFromLocalStorage(){
@@ -333,78 +427,113 @@
         const raw = localStorage.getItem(LS_KEY);
         if(!raw) return false;
         const parsed = JSON.parse(raw);
-        if(!Array.isArray(parsed)) return false;
-        categories = parsed;
-        console.log('Pozíciók betöltve localStorage-ból.');
-        return true;
+        if(Array.isArray(parsed)){
+          categories = parsed;
+          console.log('Betöltve (régi formátum) categories.');
+          return true;
+        }
+        if(parsed && typeof parsed === 'object'){
+          if(Array.isArray(parsed.categories)) categories = parsed.categories;
+          if(Array.isArray(parsed.categories2)) categories2 = parsed.categories2;
+          console.log('Pozíciók betöltve localStorage-ból.');
+          return true;
+        }
+        return false;
       }catch(e){ console.warn('Betöltés sikertelen', e); return false; }
     }
 
-    function exportPositionsAsFile(){ const blob = new Blob([JSON.stringify(categories, null, 2)], {type: 'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'kepes_kereso_positions.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-    function importPositionsFromFile(file){ const reader = new FileReader(); reader.onload = function(e){ try{ const parsed = JSON.parse(e.target.result); if(!Array.isArray(parsed)) throw new Error('Nem valid JSON (várható tömb).'); categories = parsed; savePositionsToLocalStorage(); buildAll(); alert('Pozíciók importálva és mentve.'); }catch(err){ alert('Import hiba: ' + err.message); } }; reader.readAsText(file); }
-    function resetToDefaults(){ if(!confirm('Biztosan vissza szeretnéd állítani az alapértelmezett pozíciókat?')) return; localStorage.removeItem(LS_KEY); location.reload(); }
-
+    /* controls (hidden by default) */
     (function addControls(){
       if(document.getElementById('editControls')) return;
       const container = document.createElement('div');
       container.id = 'editControls';
-      Object.assign(container.style,{position:'fixed',right:'12px',bottom:'12px',zIndex:9999,display:'flex',flexDirection:'column',gap:'8px'});
       function makeBtn(text, onclick){
         const b = document.createElement('button');
         b.textContent = text;
-        Object.assign(b.style,{padding:'8px 10px',borderRadius:'6px',background:'#111',color:'#fff',border:'none',cursor:'pointer',opacity:.95});
         b.addEventListener('click', onclick);
         return b;
       }
-      const editBtn = makeBtn('Edit mode: OFF', ()=>{ editMode = !editMode; editBtn.textContent = 'Edit mode: ' + (editMode? 'ON':'OFF'); });
-      const saveBtn = makeBtn('Mentés (localStorage)', ()=>{ savePositionsToLocalStorage(); alert('Mentve (localStorage).'); });
-      const exportBtn = makeBtn('Exportálás (JSON)', exportPositionsAsFile);
-      const importBtn = makeBtn('Importálás (JSON)', ()=>{ fileInput.click(); });
-      const resetBtn = makeBtn('Alaphelyzet', resetToDefaults);
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file'; fileInput.accept = '.json,application/json'; fileInput.style.display = 'none';
-      fileInput.addEventListener('change', (e)=>{ if(e.target.files && e.target.files[0]) importPositionsFromFile(e.target.files[0]); });
+      const editBtn = makeBtn('Edit mode: ON', ()=>{ editMode = !editMode; editBtn.textContent = 'Edit mode: ' + (editMode? 'ON':'OFF'); });
+      const saveBtn = makeBtn('Mentés (localStorage)', savePositionsToLocalStorage);
+      const exportBtn = makeBtn('Exportálás (JSON)', ()=>{ const payload = { categories, categories2 }; const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='kepes_kereso_positions.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);});
+      const importBtn = makeBtn('Importálás (JSON)', ()=>fileInput.click());
+      const resetBtn = makeBtn('Alaphelyzet', ()=>{ if(confirm('Visszaállítod?')) { localStorage.removeItem(LS_KEY); location.reload(); }});
+      const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='.json,application/json'; fileInput.style.display='none';
+      fileInput.addEventListener('change',(e)=>{ if(e.target.files && e.target.files[0]){ const reader=new FileReader(); reader.onload=(ev)=>{ try{ const parsed=JSON.parse(ev.target.result); if(parsed.categories) categories=parsed.categories; if(parsed.categories2) categories2=parsed.categories2; savePositionsToLocalStorage(); safeBuildAll(); alert('Importálva'); }catch(err){ alert('Import hiba: '+err.message) } }; reader.readAsText(e.target.files[0]); }});
       container.appendChild(editBtn); container.appendChild(saveBtn); container.appendChild(exportBtn); container.appendChild(importBtn); container.appendChild(resetBtn);
       document.body.appendChild(container); document.body.appendChild(fileInput);
     })();
 
-    let editMode = false;
+    // show edit controls only if ?showEdit=1
+    (function maybeShowEditControls(){
+      const params = new URLSearchParams(location.search);
+      if(params.get('showEdit') === '1'){
+        const tryUnhide = () => {
+          const el = document.getElementById('editControls');
+          if(el){ el.style.display = 'flex'; return; }
+          setTimeout(tryUnhide, 120);
+        };
+        tryUnhide();
+      }
+    })();
+
+    let editMode = true;
     (function enableDragging(){
       let dragging = null; let draggingType = null;
       const down = (e)=>{ if(!editMode) return; const tHot = e.target.closest('.hotspot'); const tMenu = e.target.closest('.overlay-menu-item'); if(tHot){ dragging = tHot; draggingType = 'hotspot'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); } else if(tMenu){ dragging = tMenu; draggingType = 'menu'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); } };
-      const move = (e)=>{ if(!dragging) return; const r = wrap.getBoundingClientRect(); const lx = Math.max(0, Math.min(r.width, e.clientX - r.left)); const ty = Math.max(0, Math.min(r.height, e.clientY - r.top)); const leftPct = (lx / r.width * 100).toFixed(1); const topPct  = (ty / r.height * 100).toFixed(1); dragging.style.left = leftPct + '%'; dragging.style.top  = topPct + '%'; dragging.title = `left:${leftPct}%, top:${topPct}%`; };
-      const up = (e)=>{ if(!dragging) return; const idx = parseInt(dragging.dataset.index,10); if(!isNaN(idx) && categories[idx]){ if(draggingType === 'hotspot'){ categories[idx].left = parseFloat(dragging.style.left); categories[idx].top  = parseFloat(dragging.style.top); } else if(draggingType === 'menu'){ categories[idx].menuLeft = parseFloat(dragging.style.left); categories[idx].menuTop  = parseFloat(dragging.style.top); } try{ localStorage.setItem(LS_KEY, JSON.stringify(categories)); console.log('Pozíciók mentve.'); }catch(e){console.warn(e)} } dragging = null; draggingType = null; };
-      document.addEventListener('pointerdown', down); document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+      const move = (e)=>{ if(!dragging) return; const parentWrap = dragging.closest('.image-wrap'); const r = parentWrap.getBoundingClientRect(); const lx = Math.max(0, Math.min(r.width, e.clientX - r.left)); const ty = Math.max(0, Math.min(r.height, e.clientY - r.top)); const leftPct = (lx / r.width * 100).toFixed(1); const topPct  = (ty / r.height * 100).toFixed(1); dragging.style.left = leftPct + '%'; dragging.style.top  = topPct + '%'; dragging.title = `left:${leftPct}%, top:${topPct}%`; };
+      const up = (e)=>{ if(!dragging) return; const idx = parseInt(dragging.dataset.index,10); const img = parseInt(dragging.dataset.image,10) || (dragging.closest('#imageWrap2')?2:1); if(!isNaN(idx)){ if(draggingType === 'hotspot'){ if(img===1 && categories[idx]){ categories[idx].left = parseFloat(dragging.style.left); categories[idx].top  = parseFloat(dragging.style.top); } else if(img===2 && categories2[idx]){ categories2[idx].left = parseFloat(dragging.style.left); categories2[idx].top  = parseFloat(dragging.style.top); } } else if(draggingType === 'menu'){ if(img===1 && categories[idx]){ categories[idx].menuLeft = parseFloat(dragging.style.left); categories[idx].menuTop  = parseFloat(dragging.style.top); } else if(img===2 && categories2[idx]){ categories2[idx].menuLeft = parseFloat(dragging.style.left); categories2[idx].menuTop  = parseFloat(dragging.style.top); } } try{ localStorage.setItem(LS_KEY, JSON.stringify({categories, categories2})); console.log('Pozíciók mentve.'); }catch(e){console.warn(e)} } dragging = null; draggingType = null; };
+      document.addEventListener('pointerdown', down);
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
     })();
 
-    function buildAll(){ loadPositionsFromLocalStorage(); createHotspots(); createMenu(); }
+    const tImg1 = document.getElementById('targetImage1');
+    const tImg2 = document.getElementById('targetImage2');
 
-    /* Wait for image to load before building to ensure percentages map properly;
-       if image errors, still build UI but show a notice. */
-    const targetImage = document.getElementById('targetImage');
-    function safeBuild(){
-      buildAll();
-    }
-    if(targetImage.complete && targetImage.naturalWidth !== 0){
-      safeBuild();
-    } else {
-      targetImage.addEventListener('load', safeBuild);
-      targetImage.addEventListener('error', ()=>{
-        console.error('Kép betöltési hiba:', targetImage.src);
-        const note = document.createElement('div');
-        note.style.cssText = 'text-align:center;color:#a00;margin-top:8px;font-weight:600';
-        note.textContent = 'A képet nem sikerült betölteni. Ellenőrizd a fájlnevet/útvonalat.';
-        document.querySelector('.page').insertBefore(note, document.getElementById('menuPlaceholder'));
-        // fallback UI so page remains usable:
-        createHotspots();
-        createMenu();
-      });
+    function safeBuildAll(){
+      createHotspotsFor(wrap1, categories, 1);
+      createMenuFor(wrap1, categories, 1, mobileBar1);
+      createHotspotsFor(wrap2, categories2, 2);
+      createMenuFor(wrap2, categories2, 2, mobileBar2);
     }
 
-    buildAll(); // safe fallback in case image is already loaded and events missed
+    loadPositionsFromLocalStorage();
+    let loadedCount = 0;
+    function onImgLoaded(){ loadedCount++; if(loadedCount>=2) safeBuildAll(); }
+    function onImgError(img){
+      console.error('Kép betöltési hiba:', img.src);
+      safeBuildAll();
+    }
+
+    if(tImg1.complete && tImg1.naturalWidth!==0) onImgLoaded(); else { tImg1.addEventListener('load', onImgLoaded); tImg1.addEventListener('error', ()=>onImgError(tImg1)); }
+    if(tImg2.complete && tImg2.naturalWidth!==0) onImgLoaded(); else { tImg2.addEventListener('load', onImgLoaded); tImg2.addEventListener('error', ()=>onImgError(tImg2)); }
+
+    setTimeout(()=>{ if(loadedCount===0) safeBuildAll(); }, 800);
 
     let resizeTimer = null;
-    window.addEventListener('resize', ()=> { clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>{ createMenu(); }, 160); });
+    window.addEventListener('resize', ()=> { clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>{ createMenuFor(wrap1, categories, 1, mobileBar1); createMenuFor(wrap2, categories2, 2, mobileBar2); }, 160); });
+
+    // IntersectionObserver: show fixed hint only when the FIRST image is (partially) visible:
+    (function setupHintVisibility(){
+      if(!fixedHint) return;
+      if('IntersectionObserver' in window){
+        const obs = new IntersectionObserver((entries)=>{
+          entries.forEach(en=>{
+            if(en.isIntersecting && en.intersectionRatio > 0.05){
+              fixedHint.classList.add('show');
+            } else {
+              fixedHint.classList.remove('show');
+            }
+          });
+        }, { root: null, threshold: [0.05, 0.2] });
+        const target = document.getElementById('imageWrap1');
+        if(target) obs.observe(target);
+      } else {
+        // fallback: always show on older browsers
+        fixedHint.classList.add('show');
+      }
+    })();
 
     // Debug helper: press D to show titles with coords
     let debug=false;
@@ -412,47 +541,17 @@
       if(e.key==='d'){
         debug=!debug;
         document.querySelectorAll('.hotspot').forEach((h,i)=>{
-          h.title = debug? `#${i} ${categories[i].name} (${categories[i].left}%,${categories[i].top}%)` : '';
+          const img = h.dataset.image*1;
+          const arr = img===1?categories:categories2;
+          const idx = parseInt(h.dataset.index,10);
+          h.title = debug? `#${idx} ${arr[idx].name} (${arr[idx].left}%,${arr[idx].top}%)` : '';
         });
       }
     });
 
-    // Quick tip: if you changed names in the HTML but still see old ones, clear LS:
-    // localStorage.removeItem('kepes_kereso_positions_v1'); location.reload();
+    // Expose quick save for console:
+    window.kepesKeresoSave = savePositionsToLocalStorage;
 
-    /* --- SHOW / HIDE edit controls logic
-       - alapból a #editControls rejtett via CSS (display:none !important)
-       - ha ?showEdit=1 vagy localStorage 'showEditControls' === '1' -> visszakapcsoljuk
-       - ha ?persist=1 hozzá is van adva, beállítjuk localStorage-ben is */
-    (function(){
-      const params = new URLSearchParams(location.search);
-      const allow = params.get('showEdit') === '1' || localStorage.getItem('showEditControls') === '1';
-
-      if(!allow) {
-        return; // marad elrejtve
-      }
-
-      // polling: várjuk meg, hogy az addControls() létrehozza az elemet, majd láthatóvá tesszük
-      let tries = 0;
-      const timer = setInterval(()=>{
-        const el = document.getElementById('editControls');
-        tries++;
-        if(el){
-          // visszaállítjuk a stílusokat (css display fontos miatt korábban !important volt)
-          el.style.display = '';
-          el.style.pointerEvents = '';
-          el.style.opacity = '';
-          clearInterval(timer);
-        } else if(tries > 40){
-          // timeout ~8s (40*200ms) - leállítjuk a próbálkozást
-          clearInterval(timer);
-        }
-      }, 200);
-
-      if(params.get('persist') === '1') {
-        localStorage.setItem('showEditControls', '1');
-      }
-    })();
   </script>
 </body>
 </html>
