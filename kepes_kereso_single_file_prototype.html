@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Képes kereső — mobilbarát frissítés</title>
+  <style>
+    :root{
+      --accent:#33CCBE;           /* hotspot szín */
+      --hotspot-size:18px;
+      --menu-font-size:15px;
+      --menu-bg: rgba(51,204,190,0.8); /* ~8% átlátszóság: 0.7 opacity */
+      --menu-hover-bg:#111;      /* menü hover */
+      --menu-hover-color:#fff;   /* hover szöveg */
+      --breakpoint:880px;        /* mobil breakpoint */
+    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, Roboto, "Segoe UI", "Helvetica Neue", Arial}
+    body{background:#fff;color:#111;display:flex;align-items:flex-start;justify-content:center;padding:24px}
+    .page{max-width:1200px;width:100%}
+    h1{
+      font-size:18px;
+      margin:10px 0 6px;
+      text-align:center;              /* középre igazítás */
+      font-weight:600;
+    }
+
+    /* sentence under the H1 (most moved under header) */
+    .below-note{
+      margin:6px 0 18px;
+      font-size:14px;
+      color:#333;
+      text-align:center;              /* középre igazítás */
+      font-family:inherit;            /* ugyanaz a betűtípus mint a felső */
+      line-height:1.4;
+    }
+    .below-note a{
+      color:var(--menu-hover-color);
+      background:var(--menu-hover-bg);
+      padding:2px 6px;
+      border-radius:4px;
+      text-decoration:none;
+    }
+
+    /* image area */
+    .image-wrap{
+      position:relative;
+      background:#fff;
+      border-radius:8px;
+      overflow:hidden;
+      box-shadow:none; /* árnyék eltávolítva per kérés */
+      min-height:260px; /* fallback ha a kép még nem töltődne be */
+    }
+    .image-wrap img{display:block;width:100%;height:auto;user-select:none}
+
+    /* hotspot */
+    .hotspot{
+      position:absolute;
+      transform:translate(-50%,-50%);
+      width:var(--hotspot-size);
+      height:var(--hotspot-size);
+      border-radius:50%;
+      border:3px solid white;
+      background:var(--accent);
+      box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:60;
+      transition: transform .14s ease, box-shadow .14s ease, background .18s ease;
+    }
+    .hotspot .dot{width:6px;height:6px;background:white;border-radius:50%}
+    .hotspot:hover, .hotspot.highlight{
+      transform: translate(-50%,-50%) scale(1.35);
+      box-shadow:0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    /* Overlay menu (desktop) */
+    .overlay-menu{ position:absolute; inset:0; pointer-events:none; z-index:55 }
+    .overlay-menu-item{
+      position:absolute;
+      transform:translate(-50%,-50%);
+      pointer-events:auto;
+      padding:8px 12px;
+      border-radius:8px;
+      background:var(--menu-bg);
+      border:1px solid rgba(0,0,0,0.06);
+      cursor:pointer;
+      transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+      font-size:var(--menu-font-size);
+      color:#111;
+      box-shadow:0 4px 14px rgba(0,0,0,0.06);
+      z-index:56;
+      white-space:nowrap;
+    }
+
+    .overlay-menu-item:hover,
+    .overlay-menu-item.active{
+      background:var(--menu-hover-bg);
+      color:var(--menu-hover-color);
+      transform:translate(-50%,-60%) scale(1.02);
+      box-shadow:0 10px 30px rgba(0,0,0,0.12);
+    }
+
+    /* Mobile bottom menu bar (shown on small screens) */
+    .mobile-menu-bar{
+      display:none;
+      margin-top:10px;
+      width:100%;
+      box-sizing:border-box;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      display:flex;
+      gap:8px;
+      padding:8px 6px;
+      align-items:center;
+      background:transparent;
+      border-radius:8px;
+    }
+    .mobile-menu-btn{
+      flex:0 0 auto;
+      min-width:88px;
+      max-width:220px;
+      text-overflow:ellipsis;
+      overflow:hidden;
+      white-space:nowrap;
+      padding:8px 12px;
+      border-radius:8px;
+      border:1px solid rgba(0,0,0,0.06);
+      background:var(--menu-bg);
+      color:#111;
+      cursor:pointer;
+      font-size:14px;
+      box-shadow:0 4px 14px rgba(0,0,0,0.06);
+    }
+    .mobile-menu-btn:active, .mobile-menu-btn.active{
+      background:var(--menu-hover-bg);
+      color:var(--menu-hover-color);
+      transform:translateY(-4px);
+    }
+
+    /* --- ELREJTETT: edit controls (élesített oldalon ne látszódjon) --- */
+    #editControls {
+      display: none !important;
+      pointer-events: none !important;
+      opacity: 0 !important;
+    }
+
+    /* responsive tweaks */
+    @media (max-width:700px){
+      body{padding:12px}
+      h1{font-size:15px}
+      .hotspot{width:14px;height:14px}
+    }
+    @media (max-width:880px){
+      /* hide overlay menu on small screens and show bottom bar */
+      .overlay-menu{ display:none !important }
+      .mobile-menu-bar{ display:flex !important }
+      .overlay-menu-item{ pointer-events:none !important } /* ensure not tappable */
+    }
+
+    /* control buttons style */
+    #editControls button{font-family:inherit}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Kattintson a képen látható termékkategóriák valamelyikére a találatok megjelenítéséhez!</h1>
+
+    <!-- moved this sentence directly under the H1; same font, centered -->
+    <div class="below-note" id="belowNote">
+      Amennyiben nem találta meg, amit keresett, illetve kíváncsi a többi termékünkre is, keressen az összes kategória között
+      <a href="/categories" aria-label="Összes kategória"> &nbsp;&nbsp;&gt;&gt;&gt; </a>
+    </div>
+
+    <div id="menuPlaceholder"></div>
+
+    <div class="image-wrap" id="imageWrap">
+      <img id="targetImage" src="25_TA_200S_OH004.jpg" alt="Hajó - kategória kereső"/>
+    </div>
+
+    <!-- mobile menu bar (appears under image on small screens) -->
+    <div id="mobileMenuBar" class="mobile-menu-bar" aria-hidden="true"></div>
+
+  </div>
+
+  <script>
+    /* Frissített categories tömb a feltöltött JSON alapján (pozíciók és menük) */
+    let categories = [
+      {"name":"Halradarok","left":35.7,"top":40.9,"link":"https://www.trinexus.hu/halradar","anchor":"left","menuLeft":30.7,"menuTop":44.5},
+      {"name":"Bikák","left":68.6,"top":73.6,"link":"https://www.trinexus.hu/hajofelszereles-bika","anchor":"left","menuLeft":68.6,"menuTop":78.2},
+      {"name":"Kapcsolók, panelek","left":39.5,"top":40.4,"link":"https://www.trinexus.hu/elektronika-kapcsolo-panel","anchor":"left","menuLeft":33.7,"menuTop":36.4},
+      {"name":"Ülések, talpak","left":48.5,"top":38.7,"link":"https://www.trinexus.hu/hajofelszereles-ules-talp","anchor":"left","menuLeft":46,"menuTop":43.7},
+      {"name":"Zárak, reteszek, zsanérok","left":38.5,"top":48.5,"link":"https://www.trinexus.hu/hajofelszereles-zar-retesz-zsaner","anchor":"left","menuLeft":39.4,"menuTop":53.1},
+      {"name":"Műszerek","left":38.2,"top":31.6,"link":"https://www.trinexus.hu/hajofelszereles-muszer","anchor":"left","menuLeft":36,"menuTop":27.7},
+      {"name":"Üzemanyag rendszer és tartozékai","left":54.4,"top":50.1,"link":"https://www.trinexus.hu/hajofelszereles-uzemanyag-rendszer-es-tartozekai","anchor":"left","menuLeft":62.5,"menuTop":46.1},
+      {"name":"Kormányzás","left":42.4,"top":37,"link":"https://www.trinexus.hu/hajofelszereles-kormanyzas","anchor":"left","menuLeft":45.4,"menuTop":32.9},
+      {"name":"Napfénytető és tartozékai","left":70.6,"top":60,"link":"https://www.trinexus.hu/hajofelszereles-napfenyteto-tartozekai","anchor":"right","menuLeft":64.6,"menuTop":65.2},
+      {"name":"Festékek, vegyi anyagok","left":70.8,"top":26.4,"link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag","anchor":"left","menuLeft":72.2,"menuTop":22.6},
+      {"name":"Létrák, roll bárok","left":85.8,"top":31.4,"link":"https://www.trinexus.hu/hajofelszereles-letra-hid-daru-roll-bar","anchor":"right","menuLeft":86.3,"menuTop":26.7},
+      {"name":"Robbanómotorok","left":93.3,"top":49.9,"link":"https://www.trinexus.hu/robbanomotor","anchor":"right","menuLeft":94.1,"menuTop":45.9},
+      {"name":"Ablakok, fedelek, rekeszek","left":75.3,"top":54,"link":"https://www.trinexus.hu/hajofelszereles-ablak-fedel-rekesz-tarolo","anchor":"right","menuLeft":81.6,"menuTop":59.2},
+      {"name":"Vonószemek","left":85.6,"top":65.9,"link":"https://www.trinexus.hu/hajofelszereles-vonoszem","anchor":"left","menuLeft":89,"menuTop":70.6},
+      {"name":"Audió","left":8,"top":38.9,"link":"https://www.trinexus.hu/audio-video","anchor":"left","menuLeft":9.4,"menuTop":35.4},
+      {"name":"Kötelező felszerelések","left":16.8,"top":56.7,"link":"https://www.trinexus.hu/kotelezo-felszereles","anchor":"left","menuLeft":18.6,"menuTop":52.3},
+      {"name":"Pohártartók, tárolók","left":41.7,"top":65.9,"link":"https://www.trinexus.hu/hajofelszereles-tarolo-rekesz-tarto","anchor":"left","menuLeft":41.8,"menuTop":70.9},
+      {"name":"Navigációs fények","left":20.3,"top":29.9,"link":"https://www.trinexus.hu/hajofelszereles-navigacios-feny","anchor":"left","menuLeft":20,"menuTop":26.2},
+      {"name":"Akasztók, kapaszkodók","left":26.2,"top":68.2,"link":"https://www.trinexus.hu/hajofelszereles-akaszto-kapaszkodo-egyeb","anchor":"left","menuLeft":24.2,"menuTop":64.1},
+      {"name":"Orrcsigák","left":3.6,"top":49.7,"link":"https://www.trinexus.hu/hajofelszereles-orrcsiga-csiga-rogzitok","anchor":"left","menuLeft":4.4,"menuTop":54.3},
+      {"name":"Víz ki- és bevezetés","left":74,"top":73.2,"link":"https://www.trinexus.hu/hajofelszereles-vizi-ki-bevezetes","anchor":"left","menuLeft":81,"menuTop":77.6}
+    ];
+
+    const LS_KEY = 'kepes_kereso_positions_v1';
+    const wrap = document.getElementById('imageWrap');
+    const mobileBar = document.getElementById('mobileMenuBar');
+
+    function clearHotspotsAndMenu(){
+      Array.from(wrap.querySelectorAll('.hotspot, .overlay-menu')).forEach(el => el.remove());
+      if(mobileBar) mobileBar.innerHTML = '';
+    }
+
+    function createHotspots(){
+      Array.from(wrap.querySelectorAll('.hotspot')).forEach(el => el.remove());
+      categories.forEach((c, idx)=>{
+        const btn = document.createElement('button');
+        btn.className = 'hotspot';
+        btn.style.left = c.left + '%';
+        btn.style.top = c.top + '%';
+        btn.setAttribute('aria-label', c.name);
+        btn.dataset.index = idx;
+
+        const dot = document.createElement('span'); dot.className='dot';
+        btn.appendChild(dot);
+
+        btn.addEventListener('click', (ev)=>{ ev.stopPropagation(); if(c.link) window.location.href = c.link; });
+        btn.addEventListener('dblclick', ()=>{ if(c.link) window.location.href = c.link; });
+
+        btn.addEventListener('mouseenter', ()=>{
+          const mi = document.querySelector(`.overlay-menu-item[data-index="${idx}"]`);
+          mi && mi.classList.add('active');
+          btn.classList.add('highlight');
+        });
+        btn.addEventListener('mouseleave', ()=>{
+          const mi = document.querySelector(`.overlay-menu-item[data-index="${idx}"]`);
+          mi && mi.classList.remove('active');
+          btn.classList.remove('highlight');
+        });
+
+        wrap.appendChild(btn);
+      });
+    }
+
+    function createMenu(){
+      const oldOverlay = document.getElementById('overlayMenu'); if(oldOverlay) oldOverlay.remove();
+      if(mobileBar) mobileBar.innerHTML = '';
+
+      const isMobile = window.innerWidth <= 880;
+      if(isMobile){
+        mobileBar.setAttribute('aria-hidden','false');
+        categories.forEach((c, idx)=>{
+          const btn = document.createElement('button');
+          btn.className = 'mobile-menu-btn';
+          btn.dataset.index = idx;
+          btn.textContent = c.name;
+          btn.addEventListener('click', ()=>{ if(c.link) window.location.href = c.link; });
+          btn.addEventListener('pointerdown', (e)=>{
+            const hs = document.querySelector(`.hotspot[data-index="${idx}"]`);
+            if(hs){
+              hs.classList.add('highlight');
+              if(!editMode) setTimeout(()=>{ hs.classList.remove('highlight'); }, 800);
+            }
+          });
+          mobileBar.appendChild(btn);
+        });
+        return;
+      }
+
+      const overlay = document.createElement('div'); overlay.id = 'overlayMenu'; overlay.className = 'overlay-menu';
+      wrap.style.position = wrap.style.position || 'relative';
+      wrap.appendChild(overlay);
+
+      categories.forEach((c, idx)=>{
+        const left = (typeof c.menuLeft !== 'undefined') ? c.menuLeft : c.left;
+        const top  = (typeof c.menuTop  !== 'undefined') ? c.menuTop  : (c.top + 8);
+
+        const mi = document.createElement('div');
+        mi.className = 'overlay-menu-item';
+        mi.dataset.index = idx;
+        mi.textContent = c.name;
+        mi.style.left = left + '%';
+        mi.style.top  = top  + '%';
+
+        mi.addEventListener('mouseenter', ()=>{
+          mi.classList.add('active');
+          const hs = document.querySelector(`.hotspot[data-index="${idx}"]`);
+          hs && hs.classList.add('highlight');
+        });
+        mi.addEventListener('mouseleave', ()=>{
+          mi.classList.remove('active');
+          const hs = document.querySelector(`.hotspot[data-index="${idx}"]`);
+          hs && hs.classList.remove('highlight');
+        });
+
+        mi.addEventListener('click', ()=>{ if(c.link) window.location.href = c.link; });
+
+        overlay.appendChild(mi);
+      });
+    }
+
+    /* Save / Load / Export / Import / Reset (same as before) */
+    function savePositionsToLocalStorage(){
+      document.querySelectorAll('.hotspot').forEach(h=>{
+        const i = parseInt(h.dataset.index,10);
+        if(!isNaN(i) && categories[i]){
+          const left = parseFloat(h.style.left || categories[i].left) || categories[i].left;
+          const top = parseFloat(h.style.top || categories[i].top) || categories[i].top;
+          categories[i].left = Number(left);
+          categories[i].top  = Number(top);
+        }
+      });
+      document.querySelectorAll('.overlay-menu-item').forEach(mi=>{
+        const i = parseInt(mi.dataset.index,10);
+        if(!isNaN(i) && categories[i]){
+          categories[i].menuLeft = Number(parseFloat(mi.style.left || categories[i].menuLeft || categories[i].left));
+          categories[i].menuTop  = Number(parseFloat(mi.style.top  || categories[i].menuTop  || (categories[i].top + 8)));
+        }
+      });
+      try{ localStorage.setItem(LS_KEY, JSON.stringify(categories)); console.log('Pozíciók mentve.'); }catch(e){console.warn('Mentés sikertelen', e);}
+    }
+
+    function loadPositionsFromLocalStorage(){
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if(!raw) return false;
+        const parsed = JSON.parse(raw);
+        if(!Array.isArray(parsed)) return false;
+        categories = parsed;
+        console.log('Pozíciók betöltve localStorage-ból.');
+        return true;
+      }catch(e){ console.warn('Betöltés sikertelen', e); return false; }
+    }
+
+    function exportPositionsAsFile(){ const blob = new Blob([JSON.stringify(categories, null, 2)], {type: 'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'kepes_kereso_positions.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+    function importPositionsFromFile(file){ const reader = new FileReader(); reader.onload = function(e){ try{ const parsed = JSON.parse(e.target.result); if(!Array.isArray(parsed)) throw new Error('Nem valid JSON (várható tömb).'); categories = parsed; savePositionsToLocalStorage(); buildAll(); alert('Pozíciók importálva és mentve.'); }catch(err){ alert('Import hiba: ' + err.message); } }; reader.readAsText(file); }
+    function resetToDefaults(){ if(!confirm('Biztosan vissza szeretnéd állítani az alapértelmezett pozíciókat?')) return; localStorage.removeItem(LS_KEY); location.reload(); }
+
+    (function addControls(){
+      if(document.getElementById('editControls')) return;
+      const container = document.createElement('div');
+      container.id = 'editControls';
+      Object.assign(container.style,{position:'fixed',right:'12px',bottom:'12px',zIndex:9999,display:'flex',flexDirection:'column',gap:'8px'});
+      function makeBtn(text, onclick){
+        const b = document.createElement('button');
+        b.textContent = text;
+        Object.assign(b.style,{padding:'8px 10px',borderRadius:'6px',background:'#111',color:'#fff',border:'none',cursor:'pointer',opacity:.95});
+        b.addEventListener('click', onclick);
+        return b;
+      }
+      const editBtn = makeBtn('Edit mode: OFF', ()=>{ editMode = !editMode; editBtn.textContent = 'Edit mode: ' + (editMode? 'ON':'OFF'); });
+      const saveBtn = makeBtn('Mentés (localStorage)', ()=>{ savePositionsToLocalStorage(); alert('Mentve (localStorage).'); });
+      const exportBtn = makeBtn('Exportálás (JSON)', exportPositionsAsFile);
+      const importBtn = makeBtn('Importálás (JSON)', ()=>{ fileInput.click(); });
+      const resetBtn = makeBtn('Alaphelyzet', resetToDefaults);
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file'; fileInput.accept = '.json,application/json'; fileInput.style.display = 'none';
+      fileInput.addEventListener('change', (e)=>{ if(e.target.files && e.target.files[0]) importPositionsFromFile(e.target.files[0]); });
+      container.appendChild(editBtn); container.appendChild(saveBtn); container.appendChild(exportBtn); container.appendChild(importBtn); container.appendChild(resetBtn);
+      document.body.appendChild(container); document.body.appendChild(fileInput);
+    })();
+
+    let editMode = false;
+    (function enableDragging(){
+      let dragging = null; let draggingType = null;
+      const down = (e)=>{ if(!editMode) return; const tHot = e.target.closest('.hotspot'); const tMenu = e.target.closest('.overlay-menu-item'); if(tHot){ dragging = tHot; draggingType = 'hotspot'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); } else if(tMenu){ dragging = tMenu; draggingType = 'menu'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); } };
+      const move = (e)=>{ if(!dragging) return; const r = wrap.getBoundingClientRect(); const lx = Math.max(0, Math.min(r.width, e.clientX - r.left)); const ty = Math.max(0, Math.min(r.height, e.clientY - r.top)); const leftPct = (lx / r.width * 100).toFixed(1); const topPct  = (ty / r.height * 100).toFixed(1); dragging.style.left = leftPct + '%'; dragging.style.top  = topPct + '%'; dragging.title = `left:${leftPct}%, top:${topPct}%`; };
+      const up = (e)=>{ if(!dragging) return; const idx = parseInt(dragging.dataset.index,10); if(!isNaN(idx) && categories[idx]){ if(draggingType === 'hotspot'){ categories[idx].left = parseFloat(dragging.style.left); categories[idx].top  = parseFloat(dragging.style.top); } else if(draggingType === 'menu'){ categories[idx].menuLeft = parseFloat(dragging.style.left); categories[idx].menuTop  = parseFloat(dragging.style.top); } try{ localStorage.setItem(LS_KEY, JSON.stringify(categories)); console.log('Pozíciók mentve.'); }catch(e){console.warn(e)} } dragging = null; draggingType = null; };
+      document.addEventListener('pointerdown', down); document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
+    })();
+
+    function buildAll(){ loadPositionsFromLocalStorage(); createHotspots(); createMenu(); }
+
+    /* Wait for image to load before building to ensure percentages map properly;
+       if image errors, still build UI but show a notice. */
+    const targetImage = document.getElementById('targetImage');
+    function safeBuild(){
+      buildAll();
+    }
+    if(targetImage.complete && targetImage.naturalWidth !== 0){
+      safeBuild();
+    } else {
+      targetImage.addEventListener('load', safeBuild);
+      targetImage.addEventListener('error', ()=>{
+        console.error('Kép betöltési hiba:', targetImage.src);
+        const note = document.createElement('div');
+        note.style.cssText = 'text-align:center;color:#a00;margin-top:8px;font-weight:600';
+        note.textContent = 'A képet nem sikerült betölteni. Ellenőrizd a fájlnevet/útvonalat.';
+        document.querySelector('.page').insertBefore(note, document.getElementById('menuPlaceholder'));
+        // fallback UI so page remains usable:
+        createHotspots();
+        createMenu();
+      });
+    }
+
+    buildAll(); // safe fallback in case image is already loaded and events missed
+
+    let resizeTimer = null;
+    window.addEventListener('resize', ()=> { clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>{ createMenu(); }, 160); });
+
+    // Debug helper: press D to show titles with coords
+    let debug=false;
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='d'){
+        debug=!debug;
+        document.querySelectorAll('.hotspot').forEach((h,i)=>{
+          h.title = debug? `#${i} ${categories[i].name} (${categories[i].left}%,${categories[i].top}%)` : '';
+        });
+      }
+    });
+
+    // Quick tip: if you changed names in the HTML but still see old ones, clear LS:
+    // localStorage.removeItem('kepes_kereso_positions_v1'); location.reload();
+
+    /* --- SHOW / HIDE edit controls logic
+       - alapból a #editControls rejtett via CSS (display:none !important)
+       - ha ?showEdit=1 vagy localStorage 'showEditControls' === '1' -> visszakapcsoljuk
+       - ha ?persist=1 hozzá is van adva, beállítjuk localStorage-ben is */
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const allow = params.get('showEdit') === '1' || localStorage.getItem('showEditControls') === '1';
+
+      if(!allow) {
+        return; // marad elrejtve
+      }
+
+      // polling: várjuk meg, hogy az addControls() létrehozza az elemet, majd láthatóvá tesszük
+      let tries = 0;
+      const timer = setInterval(()=>{
+        const el = document.getElementById('editControls');
+        tries++;
+        if(el){
+          // visszaállítjuk a stílusokat (css display fontos miatt korábban !important volt)
+          el.style.display = '';
+          el.style.pointerEvents = '';
+          el.style.opacity = '';
+          clearInterval(timer);
+        } else if(tries > 40){
+          // timeout ~8s (40*200ms) - leállítjuk a próbálkozást
+          clearInterval(timer);
+        }
+      }, 200);
+
+      if(params.get('persist') === '1') {
+        localStorage.setItem('showEditControls', '1');
+      }
+    })();
+  </script>
+</body>
+</html>
