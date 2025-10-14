@@ -117,11 +117,11 @@
       transform:translateY(-4px);
     }
 
-    /* FIXED scroll hint (single element, controlled by JS) */
+    /* FIXED scroll hint (viewport-hoz rögzített) */
     .scroll-hint{
-      position:fixed;              /* FIXED to viewport */
-      right:16px;                  /* jobbra kicsit kihelyezve */
-      bottom:6vh;                  /* kicsit feljebb a képernyő aljától */
+      position:fixed;
+      right:16px;
+      bottom:6vh;
       background: rgba(0,0,0,0.6);
       color:#fff;
       padding:8px 12px;
@@ -167,6 +167,12 @@
       .scroll-hint{ padding:5px 8px; font-size:11px; background:rgba(0,0,0,0.55) }
       .scroll-hint .arrow{ font-size:13px }
     }
+
+    /* Hide the fixed hint on small screens (mobile) */
+    @media (max-width: 880px) {
+      .scroll-hint { display: none !important; pointer-events: none; }
+    }
+
     @media (max-width:880px){
       .overlay-menu{ display:none !important }
       .mobile-menu-bar{ display:flex !important }
@@ -176,25 +182,15 @@
     /* --- Edit controls kept hidden --- */
     #editControls{ position:fixed; right:12px; bottom:12px; z-index:9999; display:none; flex-direction:column; gap:8px }
     #editControls button{ font-family:inherit; padding:8px 10px; border-radius:6px; background:#111; color:#fff; border:none; cursor:pointer; opacity:.95 }
-    /* Hide the fixed "Görgess tovább" hint on small screens */
-    @media (max-width: 880px) {
-      .scroll-hint {
-        display: none !important;
-        pointer-events: none;
-      }
-    }
-
 
   </style>
-  <!-- === Google Analytics (GA4) snippet (PLACEHOLDER) ===
-       Replace G-XXXXXXX with your GA4 Measurement ID if you want pageview/GA available.
-       If you use Google Tag Manager, omit this and configure events via GTM. -->
+  <!-- GA4 placeholder (ha használod: cseréld ki a G-XXXXXXX-et) -->
   <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
     gtag('js', new Date());
-    gtag('config', 'G-XXXXXXX'); // <-- your GA4 measurement id
+    gtag('config', 'G-XXXXXXX');
   </script> -->
 </head>
 <body>
@@ -206,29 +202,27 @@
       <a href="https://www.trinexus.hu/" aria-label="Összes kategória"> &nbsp;&nbsp;&gt;&gt;&gt; </a>
     </div>
 
-    <!-- ELSŐ KÉP (teljes: 21 hotspot) -->
+    <!-- ELSŐ KÉP -->
     <div class="image-wrap" id="imageWrap1">
       <img id="targetImage1" src="25_TA_200S_OH004.jpg" alt="Hajó - kategória kereső"/>
-      <!-- no per-image hint here any more -->
     </div>
     <div id="mobileMenuBar1" class="mobile-menu-bar" aria-hidden="true"></div>
 
-    <!-- MÁSODIK KÉP (5 hotspotra bővítve) -->
+    <!-- MÁSODIK KÉP -->
     <div class="image-wrap" id="imageWrap2">
       <img id="targetImage2" src="25-T21_FA02%20másolat.jpg" alt="Hajó 2 - kategória kereső"/>
-      <!-- NO hint on second image as requested -->
     </div>
     <div id="mobileMenuBar2" class="mobile-menu-bar" aria-hidden="true"></div>
 
   </div>
 
-  <!-- Single fixed scroll hint element (JS will show/hide it) -->
+  <!-- Single fixed scroll hint element -->
   <div id="fixedScrollHint" class="scroll-hint" aria-hidden="true">
     <span>Görgess tovább</span><span class="arrow">↓</span>
   </div>
 
   <script>
-    /* Categories arrays (same as before) */
+    /* 1. kép: 21 kategória */
     let categories = [
       {"name":"Halradarok","left":35.7,"top":40.9,"link":"https://www.trinexus.hu/halradar","anchor":"left","menuLeft":30.7,"menuTop":44.5},
       {"name":"Bikák","left":68.6,"top":73.6,"link":"https://www.trinexus.hu/hajofelszereles-bika","anchor":"left","menuLeft":68.6,"menuTop":78.2},
@@ -253,6 +247,7 @@
       {"name":"Víz ki- és bevezetés","left":74,"top":73.2,"link":"https://www.trinexus.hu/hajofelszereles-vizi-ki-bevezetes","anchor":"left","menuLeft":81,"menuTop":77.6}
     ];
 
+    /* 2. kép: 5 hotspot */
     let categories2 = [
       {"name":"Motortakaró ponyva","left":91.7,"top":39,"link":"https://www.trinexus.hu/fedelzeti-felszereles-motor-egyeb-takaro","menuLeft":90.7,"menuTop":34.8},
       {"name":"Hajóponyva","left":53.4,"top":31.9,"link":"https://www.trinexus.hu/fedelzeti-felszereles-hajoponyva","menuLeft":53.4,"menuTop":27.2},
@@ -268,11 +263,7 @@
     const mobileBar2 = document.getElementById('mobileMenuBar2');
     const fixedHint = document.getElementById('fixedScrollHint');
 
-    /* --- Analytics helper (GA4) ---
-       Replace or remove gtag snippet in <head> and set your Measurement ID.
-       This helper will try to call gtag('event',...) if available, otherwise pushes to dataLayer,
-       otherwise falls back to console.log for debugging.
-    */
+    /* Analytics helper (ha használod GA4-et) */
     function sendAnalytics(eventName, params){
       try{
         if(window.gtag){
@@ -392,7 +383,6 @@
       });
     }
 
-    /* Save/load/export/import/reset functions remain identical to your previous working code */
     function savePositionsToLocalStorage(){
       document.querySelectorAll('.hotspot').forEach(h=>{
         const i = parseInt(h.dataset.index,10);
@@ -442,7 +432,6 @@
       }catch(e){ console.warn('Betöltés sikertelen', e); return false; }
     }
 
-    /* controls (hidden by default) */
     (function addControls(){
       if(document.getElementById('editControls')) return;
       const container = document.createElement('div');
@@ -514,24 +503,53 @@
     let resizeTimer = null;
     window.addEventListener('resize', ()=> { clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>{ createMenuFor(wrap1, categories, 1, mobileBar1); createMenuFor(wrap2, categories2, 2, mobileBar2); }, 160); });
 
-    // IntersectionObserver: show fixed hint only when the FIRST image is (partially) visible:
+    // NEW: improved IntersectionObserver logic so hint hides when second image becomes visible
     (function setupHintVisibility(){
       if(!fixedHint) return;
+
+      // don't show on small screens
+      if (window.innerWidth <= 880) {
+        fixedHint.classList.remove('show');
+        return;
+      }
+
+      const SHOW_THRESHOLD_IMAGE1 = 0.15; // tune: how much of image1 must be visible
+      const HIDE_IF_IMAGE2_VISIBLE = 0.05; // if image2 reaches this ratio, hide hint
+
       if('IntersectionObserver' in window){
+        const targets = {
+          img1: document.getElementById('imageWrap1'),
+          img2: document.getElementById('imageWrap2')
+        };
+        let r1 = 0, r2 = 0;
+
         const obs = new IntersectionObserver((entries)=>{
           entries.forEach(en=>{
-            if(en.isIntersecting && en.intersectionRatio > 0.05){
-              fixedHint.classList.add('show');
-            } else {
-              fixedHint.classList.remove('show');
-            }
+            if(en.target === targets.img1) r1 = en.intersectionRatio;
+            if(en.target === targets.img2) r2 = en.intersectionRatio;
           });
-        }, { root: null, threshold: [0.05, 0.2] });
-        const target = document.getElementById('imageWrap1');
-        if(target) obs.observe(target);
+
+          if(r1 > SHOW_THRESHOLD_IMAGE1 && r2 < HIDE_IF_IMAGE2_VISIBLE){
+            fixedHint.classList.add('show');
+          } else {
+            fixedHint.classList.remove('show');
+          }
+        }, { root: null, threshold: [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.25, 0.5] });
+
+        if(targets.img1) obs.observe(targets.img1);
+        if(targets.img2) obs.observe(targets.img2);
       } else {
-        // fallback: always show on older browsers
-        fixedHint.classList.add('show');
+        // fallback for very old browsers
+        const check = ()=>{
+          const rect1 = document.getElementById('imageWrap1').getBoundingClientRect();
+          const rect2 = document.getElementById('imageWrap2').getBoundingClientRect();
+          const visible1 = (rect1.bottom > 100 && rect1.top < window.innerHeight - 100);
+          const visible2 = (rect2.bottom > 100 && rect2.top < window.innerHeight - 100);
+          if(visible1 && !visible2) fixedHint.classList.add('show'); else fixedHint.classList.remove('show');
+        };
+        check();
+        window.addEventListener('scroll', check, {passive:true});
+        window.addEventListener('resize', check);
       }
     })();
 
@@ -549,7 +567,7 @@
       }
     });
 
-    // Expose quick save for console:
+    // convenience: expose save function to console:
     window.kepesKeresoSave = savePositionsToLocalStorage;
 
   </script>
