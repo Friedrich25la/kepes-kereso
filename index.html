@@ -383,7 +383,11 @@
       });
     }
 
-    function savePositionsToLocalStorage(){
+    /* Save / Load: savePositionsToLocalStorage(showAlert = true|false)
+       - showAlert=true -> shows alert after save (used by manual Save button)
+       - showAlert=false -> silent save (used after drag end)
+    */
+    function savePositionsToLocalStorage(showAlert = true){
       document.querySelectorAll('.hotspot').forEach(h=>{
         const i = parseInt(h.dataset.index,10);
         const img = parseInt(h.dataset.image,10);
@@ -409,7 +413,14 @@
       });
 
       const payload = { categories: categories, categories2: categories2 };
-      try{ localStorage.setItem(LS_KEY, JSON.stringify(payload)); console.log('Pozíciók mentve.'); alert('Pozíciók mentve.'); }catch(e){ console.warn('Mentés sikertelen', e); alert('Mentés sikertelen: ' + e.message); }
+      try{
+        localStorage.setItem(LS_KEY, JSON.stringify(payload));
+        console.log('Pozíciók mentve.');
+        if(showAlert) alert('Pozíciók mentve.'); // csak ha kéred
+      }catch(e){
+        console.warn('Mentés sikertelen', e);
+        if(showAlert) alert('Mentés sikertelen: ' + (e && e.message ? e.message : 'unknown'));
+      }
     }
 
     function loadPositionsFromLocalStorage(){
@@ -442,13 +453,13 @@
         b.addEventListener('click', onclick);
         return b;
       }
-      const editBtn = makeBtn('Edit mode: ON', ()=>{ editMode = !editMode; editBtn.textContent = 'Edit mode: ' + (editMode? 'ON':'OFF'); });
-      const saveBtn = makeBtn('Mentés (localStorage)', savePositionsToLocalStorage);
+      const editBtn = makeBtn('Edit mode: OFF', ()=>{ editMode = !editMode; editBtn.textContent = 'Edit mode: ' + (editMode? 'ON':'OFF'); });
+      const saveBtn = makeBtn('Mentés (localStorage)', ()=> savePositionsToLocalStorage(true));
       const exportBtn = makeBtn('Exportálás (JSON)', ()=>{ const payload = { categories, categories2 }; const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='kepes_kereso_positions.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);});
       const importBtn = makeBtn('Importálás (JSON)', ()=>fileInput.click());
       const resetBtn = makeBtn('Alaphelyzet', ()=>{ if(confirm('Visszaállítod?')) { localStorage.removeItem(LS_KEY); location.reload(); }});
       const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='.json,application/json'; fileInput.style.display='none';
-      fileInput.addEventListener('change',(e)=>{ if(e.target.files && e.target.files[0]){ const reader=new FileReader(); reader.onload=(ev)=>{ try{ const parsed=JSON.parse(ev.target.result); if(parsed.categories) categories=parsed.categories; if(parsed.categories2) categories2=parsed.categories2; savePositionsToLocalStorage(); safeBuildAll(); alert('Importálva'); }catch(err){ alert('Import hiba: '+err.message) } }; reader.readAsText(e.target.files[0]); }});
+      fileInput.addEventListener('change',(e)=>{ if(e.target.files && e.target.files[0]){ const reader=new FileReader(); reader.onload=(ev)=>{ try{ const parsed=JSON.parse(ev.target.result); if(parsed.categories) categories=parsed.categories; if(parsed.categories2) categories2=parsed.categories2; savePositionsToLocalStorage(false); safeBuildAll(); alert('Importálva'); }catch(err){ alert('Import hiba: '+err.message) } }; reader.readAsText(e.target.files[0]); }});
       container.appendChild(editBtn); container.appendChild(saveBtn); container.appendChild(exportBtn); container.appendChild(importBtn); container.appendChild(resetBtn);
       document.body.appendChild(container); document.body.appendChild(fileInput);
     })();
@@ -466,12 +477,47 @@
       }
     })();
 
-    let editMode = true;
+    // DEFAULT: edit mode OFF (so you can't accidentally move things in production)
+    let editMode = false;
+
     (function enableDragging(){
       let dragging = null; let draggingType = null;
-      const down = (e)=>{ if(!editMode) return; const tHot = e.target.closest('.hotspot'); const tMenu = e.target.closest('.overlay-menu-item'); if(tHot){ dragging = tHot; draggingType = 'hotspot'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); } else if(tMenu){ dragging = tMenu; draggingType = 'menu'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); } };
-      const move = (e)=>{ if(!dragging) return; const parentWrap = dragging.closest('.image-wrap'); const r = parentWrap.getBoundingClientRect(); const lx = Math.max(0, Math.min(r.width, e.clientX - r.left)); const ty = Math.max(0, Math.min(r.height, e.clientY - r.top)); const leftPct = (lx / r.width * 100).toFixed(1); const topPct  = (ty / r.height * 100).toFixed(1); dragging.style.left = leftPct + '%'; dragging.style.top  = topPct + '%'; dragging.title = `left:${leftPct}%, top:${topPct}%`; };
-      const up = (e)=>{ if(!dragging) return; const idx = parseInt(dragging.dataset.index,10); const img = parseInt(dragging.dataset.image,10) || (dragging.closest('#imageWrap2')?2:1); if(!isNaN(idx)){ if(draggingType === 'hotspot'){ if(img===1 && categories[idx]){ categories[idx].left = parseFloat(dragging.style.left); categories[idx].top  = parseFloat(dragging.style.top); } else if(img===2 && categories2[idx]){ categories2[idx].left = parseFloat(dragging.style.left); categories2[idx].top  = parseFloat(dragging.style.top); } } else if(draggingType === 'menu'){ if(img===1 && categories[idx]){ categories[idx].menuLeft = parseFloat(dragging.style.left); categories[idx].menuTop  = parseFloat(dragging.style.top); } else if(img===2 && categories2[idx]){ categories2[idx].menuLeft = parseFloat(dragging.style.left); categories2[idx].menuTop  = parseFloat(dragging.style.top); } } try{ localStorage.setItem(LS_KEY, JSON.stringify({categories, categories2})); console.log('Pozíciók mentve.'); }catch(e){console.warn(e)} } dragging = null; draggingType = null; };
+      const down = (e)=>{ 
+        if(!editMode) return;
+        const tHot = e.target.closest('.hotspot');
+        const tMenu = e.target.closest('.overlay-menu-item');
+        if(tHot){ dragging = tHot; draggingType = 'hotspot'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); }
+        else if(tMenu){ dragging = tMenu; draggingType = 'menu'; dragging.setPointerCapture && dragging.setPointerCapture(e.pointerId); }
+      };
+      const move = (e)=>{ 
+        if(!dragging) return;
+        const parentWrap = dragging.closest('.image-wrap');
+        const r = parentWrap.getBoundingClientRect();
+        const lx = Math.max(0, Math.min(r.width, e.clientX - r.left));
+        const ty = Math.max(0, Math.min(r.height, e.clientY - r.top));
+        const leftPct = (lx / r.width * 100).toFixed(1);
+        const topPct  = (ty / r.height * 100).toFixed(1);
+        dragging.style.left = leftPct + '%';
+        dragging.style.top  = topPct + '%';
+        dragging.title = `left:${leftPct}%, top:${topPct}%`;
+      };
+      const up = (e)=>{ 
+        if(!dragging) return;
+        const idx = parseInt(dragging.dataset.index,10);
+        const img = parseInt(dragging.dataset.image,10) || (dragging.closest('#imageWrap2')?2:1);
+        if(!isNaN(idx)){
+          if(draggingType === 'hotspot'){
+            if(img===1 && categories[idx]){ categories[idx].left = parseFloat(dragging.style.left); categories[idx].top  = parseFloat(dragging.style.top); }
+            else if(img===2 && categories2[idx]){ categories2[idx].left = parseFloat(dragging.style.left); categories2[idx].top  = parseFloat(dragging.style.top); }
+          } else if(draggingType === 'menu'){
+            if(img===1 && categories[idx]){ categories[idx].menuLeft = parseFloat(dragging.style.left); categories[idx].menuTop  = parseFloat(dragging.style.top); }
+            else if(img===2 && categories2[idx]){ categories2[idx].menuLeft = parseFloat(dragging.style.left); categories2[idx].menuTop  = parseFloat(dragging.style.top); }
+          }
+          // AUTO-SAVE (silent) after drag finished
+          try{ savePositionsToLocalStorage(false); console.log('Pozíciók automatikusan mentve drag után.'); }catch(e){console.warn(e)}
+        }
+        dragging = null; draggingType = null;
+      };
       document.addEventListener('pointerdown', down);
       document.addEventListener('pointermove', move);
       document.addEventListener('pointerup', up);
@@ -503,43 +549,26 @@
     let resizeTimer = null;
     window.addEventListener('resize', ()=> { clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>{ createMenuFor(wrap1, categories, 1, mobileBar1); createMenuFor(wrap2, categories2, 2, mobileBar2); }, 160); });
 
-    // NEW: improved IntersectionObserver logic so hint hides when second image becomes visible
+    // improved IntersectionObserver logic so hint hides when second image becomes visible
     (function setupHintVisibility(){
       if(!fixedHint) return;
-
-      // don't show on small screens
-      if (window.innerWidth <= 880) {
-        fixedHint.classList.remove('show');
-        return;
-      }
-
-      const SHOW_THRESHOLD_IMAGE1 = 0.15; // tune: how much of image1 must be visible
-      const HIDE_IF_IMAGE2_VISIBLE = 0.05; // if image2 reaches this ratio, hide hint
-
+      if (window.innerWidth <= 880) { fixedHint.classList.remove('show'); return; }
+      const SHOW_THRESHOLD_IMAGE1 = 0.15;
+      const HIDE_IF_IMAGE2_VISIBLE = 0.05;
       if('IntersectionObserver' in window){
-        const targets = {
-          img1: document.getElementById('imageWrap1'),
-          img2: document.getElementById('imageWrap2')
-        };
+        const targets = { img1: document.getElementById('imageWrap1'), img2: document.getElementById('imageWrap2') };
         let r1 = 0, r2 = 0;
-
         const obs = new IntersectionObserver((entries)=>{
           entries.forEach(en=>{
             if(en.target === targets.img1) r1 = en.intersectionRatio;
             if(en.target === targets.img2) r2 = en.intersectionRatio;
           });
-
-          if(r1 > SHOW_THRESHOLD_IMAGE1 && r2 < HIDE_IF_IMAGE2_VISIBLE){
-            fixedHint.classList.add('show');
-          } else {
-            fixedHint.classList.remove('show');
-          }
+          if(r1 > SHOW_THRESHOLD_IMAGE1 && r2 < HIDE_IF_IMAGE2_VISIBLE) fixedHint.classList.add('show');
+          else fixedHint.classList.remove('show');
         }, { root: null, threshold: [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.25, 0.5] });
-
         if(targets.img1) obs.observe(targets.img1);
         if(targets.img2) obs.observe(targets.img2);
       } else {
-        // fallback for very old browsers
         const check = ()=>{
           const rect1 = document.getElementById('imageWrap1').getBoundingClientRect();
           const rect2 = document.getElementById('imageWrap2').getBoundingClientRect();
