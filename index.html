@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Képes kereső — almenü + hint + főmenü link (javított)</title>
+  <title>Képes kereső</title>
   <style>
     :root{
       --accent:#33CCBE;
@@ -21,6 +21,34 @@
     .below-note{margin:6px 0 14px;font-size:14px;color:#333;text-align:center;font-family:inherit;line-height:1.4}
     .below-note a{color:var(--menu-hover-color);background:var(--menu-hover-bg);padding:2px 6px;border-radius:4px;text-decoration:none}
 
+    /* SEARCH UI */
+    /* margin-bottom csökkentve, hogy a kép közelebb legyen */
+    .search-wrap{max-width:920px;margin:0 auto 8px auto;display:flex;flex-direction:column;gap:8px;}
+    .search-hint{font-size:14px;color:#666;text-align:center}
+    .search-input-row{display:flex;gap:8px;align-items:center;justify-content:center}
+    /* szegély erősebb, finomabb fókusz-árnyék */
+    .search-input{
+      width:100%;
+      max-width:720px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(0,0,0,0.14);
+      box-shadow:0 6px 18px rgba(0,0,0,0.03);
+      font-size:15px;
+      transition: box-shadow .18s ease, border-color .18s ease, transform .12s ease;
+      background: #fff;
+    }
+    .search-input:focus{
+      outline: none;
+      border-color: rgba(51,204,190,0.9);
+      box-shadow: 0 8px 30px rgba(51,204,190,0.12);
+      transform: translateY(-1px);
+    }
+    .search-feedback{font-size:13px;color:#444;text-align:center;min-height:18px}
+
+    /* move first image a little closer to search */
+    .image-wrap:first-of-type{ margin-top:6px; }
+
     .image-wrap{position:relative;background:#fff;border-radius:8px;overflow:hidden;box-shadow:none;margin-bottom:12px;min-height:200px;}
     .image-wrap img{display:block;width:100%;height:auto;user-select:none}
 
@@ -32,6 +60,14 @@
     .overlay-menu-item{ position:absolute; transform:translate(-50%,-50%); pointer-events:auto; padding:8px 12px; border-radius:8px; background:var(--menu-bg); border:1px solid rgba(0,0,0,0.06); cursor:pointer; transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease; font-size:var(--menu-font-size); color:#111; box-shadow:0 4px 14px rgba(0,0,0,0.06); z-index:56; white-space:nowrap; }
     .overlay-menu-item:hover, .overlay-menu-item.active{ background:var(--menu-hover-bg); color:var(--menu-hover-color); transform:translate(-50%,-60%) scale(1.02); box-shadow:0 10px 30px rgba(0,0,0,0.12); }
 
+    /* persistent (search-activated) visual state */
+    .overlay-menu-item.persistent, .overlay-menu-item.persistent.active {
+      background: var(--menu-hover-bg) !important;
+      color: var(--menu-hover-color) !important;
+      transform: translate(-50%,-60%) scale(1.03);
+      box-shadow:0 12px 36px rgba(0,0,0,0.2);
+    }
+
     .mobile-menu-bar{ display:none; margin-top:8px; width:100%; box-sizing:border-box; overflow-x:auto; -webkit-overflow-scrolling:touch; display:flex; gap:8px; padding:6px 6px; align-items:center; background:transparent; border-radius:8px; }
     .mobile-menu-btn{ flex:0 0 auto; min-width:84px; max-width:220px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; padding:8px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); background:var(--menu-bg); color:#111; cursor:pointer; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,0.06); }
     .mobile-menu-btn:active, .mobile-menu-btn.active{ background:var(--menu-hover-bg); color:var(--menu-hover-color); transform:translateY(-4px); }
@@ -42,7 +78,7 @@
       display:flex;
       gap:10px;
       padding:8px;
-      background:#e6e6e6; /* világosszürke keret */
+      background:#e6e6e6;
       border-radius:8px;
       box-shadow:0 8px 30px rgba(0,0,0,0.12);
       border:1px solid rgba(0,0,0,0.08);
@@ -52,10 +88,10 @@
       visibility:hidden;
       transition:opacity .18s ease, transform .18s ease;
       pointer-events:auto;
-      box-sizing: border-box;               /* <-- fontos: padding+border benne lesz a width-ben */
-      max-height: calc(100vh - 160px);      /* ha túl sok thumb, belső görgetés jön elő */
-      overflow: auto;                       /* belső scroll, ne növelje a panel szélességét */
-      -webkit-overflow-scrolling: touch;    /* simább scroll mobilon */
+      box-sizing: border-box;
+      max-height: calc(100vh - 160px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .submenu-panel.show{ opacity:1; visibility:visible; transform: translateY(0) scale(1); }
     .submenu-thumb{
@@ -98,7 +134,10 @@
     .submenu-item-row{ display:flex; gap:8px; align-items:center }
     .submenu-item-row input[type="text"]{ padding:6px 8px; border-radius:6px; border:1px solid #ddd; width:100% }
     .submenu-item-row .thumb-input{ width:260px; flex:0 0 260px }
+
     .modal .controls{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px }
+
+    .keywords-box{ width:100%; height:64px; padding:8px; border-radius:6px; border:1px solid #ddd; resize:vertical; font-family:inherit }
 
     @media (max-width:880px){
       .overlay-menu{ display:none !important }
@@ -112,9 +151,24 @@
       .submenu-thumb{ width:86px;height:86px;flex:0 0 86px }
     }
 
-    /* edit controls hidden by default */
+    /* edit controls: VISIBLE by default as requested */
     #editControls{ position:fixed; right:12px; bottom:12px; z-index:10001; display:none; flex-direction:column; gap:8px }
     #editControls button{ font-family:inherit; padding:8px 10px; border-radius:6px; background:#111; color:#fff; border:none; cursor:pointer; opacity:.95 }
+    /* opcionális: gyengébb vizuális jelzés hover-suggest esetén */
+    .overlay-menu-item.hover-suggest {
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      transform: translate(-50%,-58%) scale(1.01);
+      opacity: 0.95;
+    }
+    .overlay-menu-item {
+      text-decoration: none;
+    }
+
+    .overlay-menu-item:hover,
+    .overlay-menu-item:focus {
+      text-decoration: none;
+    }
+
 
   </style>
 </head>
@@ -126,13 +180,20 @@
       <a href="https://www.trinexus.hu/" aria-label="Összes kategória"> &nbsp;&nbsp;&gt;&gt;&gt; </a>
     </div>
 
-    <!-- ELSŐ KÉP -->
+    <!-- SEARCH BAR + HINT -->
+    <div class="search-wrap" aria-hidden="false">
+            <div class="search-input-row">
+        <input id="categorySearchInput" class="search-input" type="search" placeholder="Kezdje el gépelni a keresett termék nevét..." aria-label="Termék kereső"/>
+      </div>
+      <div id="searchFeedback" class="search-feedback" aria-live="polite"></div>
+    </div>
+
+    <!-- IMAGES -->
     <div class="image-wrap" id="imageWrap1">
       <img id="targetImage1" src="25_TA_200S_OH004.jpg" alt="Hajó - kategória kereső"/>
     </div>
     <div id="mobileMenuBar1" class="mobile-menu-bar" aria-hidden="true"></div>
 
-    <!-- MÁSODIK KÉP -->
     <div class="image-wrap" id="imageWrap2">
       <img id="targetImage2" src="25-T21_FA02%20másolat.jpg" alt="Hajó 2 - kategória kereső"/>
     </div>
@@ -143,16 +204,23 @@
   <div id="fixedScrollHint" class="scroll-hint" aria-hidden="true"><span>Görgess tovább</span><span class="arrow">↓</span></div>
 
   <!-- Submenu floating panel -->
-  <div id="submenuPanel" class="submenu-panel" aria-hidden="true"></div>
+  <div id="submenuPanel" class="submenu-panel" aria-hidden="true" data-persistent="false"></div>
 
-  <!-- Modal for submenu editor (kept hidden unless ?showEdit=1) -->
+  <!-- Modal for submenu editor -->
   <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal" id="submenuEditor">
-      <h3>Almenü-szerkesztő</h3>
-      <p style="margin:6px 0 12px 0;font-size:13px;color:#444">Válassz menüt, majd szerkeszd az almenü-elemeket. Mentés a localStorage-be (és exportálható).</p>
+      <h3>Almenü-szerkesztő és kulcsszavak</h3>
+      <p style="margin:6px 0 12px 0;font-size:13px;color:#444">Válassz menüt, szerkeszd az almenü-elemeket és a kategória kulcsszavait. A kulcsszavakat vesszővel vagy új sorokkal add meg. A változtatások elmentődnek a böngészőben.</p>
 
       <label for="menuSelect">Főmenü:</label>
       <select id="menuSelect" style="width:100%;padding:8px;margin:6px 0 12px 0;border-radius:6px;border:1px solid #ddd"></select>
+
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <div style="flex:1">
+          <label for="keywordsBox">Kézi kulcsszavak (vesszővel vagy új sorral):</label>
+          <textarea id="keywordsBox" class="keywords-box" placeholder="pld: radar, halradar, garmin, depth..."></textarea>
+        </div>
+      </div>
 
       <div id="submenuRows" class="submenu-list"></div>
 
@@ -168,14 +236,14 @@
     </div>
   </div>
 
-  <!-- Edit controls (hidden; can show with ?showEdit=1) -->
+  <!-- Edit controls: VISIBLE -->
   <div id="editControls" aria-hidden="true">
     <button id="toggleEditBtn">Edit mode: OFF</button>
     <button id="openSubEditorBtn">Almenü-szerkesztő</button>
   </div>
 
   <script>
-    /* ---------- initial data (a teljes JSON beillesztve) ---------- */
+    /* ---------- initial data (beillesztve: alap kategóriák + submenu + kézzel megadott kulcsszavak feltöltve a mentésből) ---------- */
     const initialData = {
       categories: [
         {"name":"Halradarok","left":35.7,"top":40.9,"link":"https://www.trinexus.hu/halradar","anchor":"left","menuLeft":30.7,"menuTop":44.5},
@@ -189,7 +257,7 @@
         {"name":"Napfénytető és tartozékai","left":70.6,"top":60,"link":"https://www.trinexus.hu/hajofelszereles-napfenyteto-tartozekai","anchor":"right","menuLeft":64.6,"menuTop":65.2},
         {"name":"Festékek, vegyi anyagok","left":70.8,"top":26.4,"link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag","anchor":"left","menuLeft":72.2,"menuTop":22.6},
         {"name":"Létrák, roll bárok","left":85.8,"top":31.4,"link":"https://www.trinexus.hu/hajofelszereles-letra-hid-daru-roll-bar","anchor":"right","menuLeft":86.3,"menuTop":26.7},
-        {"name":"Robbanómotorok","left":93.3,"top":49.9,"link":"https://www.trinexus.hu/robbanomotor","anchor":"right","menuLeft":88.1,"menuTop":45.9},
+        {"name":"Robbanómotorok","left":89.3,"top":49.9,"link":"https://www.trinexus.hu/robbanomotor","anchor":"right","menuLeft":84.1,"menuTop":45.9},
         {"name":"Ablakok, fedelek, rekeszek","left":75.3,"top":54,"link":"https://www.trinexus.hu/hajofelszereles-ablak-fedel-rekesz-tarolo","anchor":"right","menuLeft":81.6,"menuTop":59.2},
         {"name":"Vonószemek","left":85.6,"top":65.9,"link":"https://www.trinexus.hu/hajofelszereles-vonoszem","anchor":"left","menuLeft":89,"menuTop":70.6},
         {"name":"Audió","left":8,"top":38.9,"link":"https://www.trinexus.hu/audio-video","anchor":"left","menuLeft":9.4,"menuTop":35.4},
@@ -207,6 +275,8 @@
         {"name":"Csörlő, heveder, rögzítő","left":12.9,"top":52.5,"link":"https://www.trinexus.hu/csorlo-heveder-rogzito","menuLeft":9.7,"menuTop":57.7},
         {"name":"Görgő, Y ütköző","left":19.5,"top":49.3,"link":"https://www.trinexus.hu/gorgo-y-utkozo","menuLeft":23.7,"menuTop":44.6}
       ],
+
+      /* ------ a feltöltött JSON-ból beemelt submenuStore (az export tartalma) ------ */
       submenuStore: {
         "Navigációs fények": [
           {"name":"Fehér fény","link":"https://www.trinexus.hu/hajofelszereles-feher-feny","thumb":"https://www.trinexus.hu/img/17496/catpic_879351/286x286,r/879351.webp?time=1540910797"},
@@ -280,7 +350,435 @@
           {"name":"Tohatsu","link":"https://www.trinexus.hu/robbanomotor-tohatsu","thumb":"https://www.trinexus.hu/img/17496/catpic_477241/572x572,r/477241.webp?time=1693314525"},
           {"name":"Honda","link":"https://www.trinexus.hu/robbanomotor-honda","thumb":"https://www.trinexus.hu/img/17496/catpic_883582/572x572,r/883582.webp?time=1693314591"},
           {"name":"Selva","link":"https://www.trinexus.hu/Selva","thumb":"https://www.trinexus.hu/img/17496/catpic_176061/572x572,r/176061.webp?time=1693315417"},
-          {"name":"Parsun","link":"https://www.trinexus.hu/robbanomotor-parsun","thumb":"https://www.trinexus.hu/img/17496/catpic_865594/572x572,r/865594.webp?time=1693315730"}
+          {"name":"Parsun","link":"https://www.trinexus.hu/robbanomotor-parsun","thumb":"https://www.trinexus.hu/img/17496/catpic_865594/572x572,r/865594.webp?time=1693315730"},
+          {"name":"Olaj","link":"https://www.trinexus.hu/sct/997623/Olaj","thumb":"https://www.trinexus.hu/img/17496/catpic_997623/572x572,r/997623.webp?time=1693316624"}
+        ],
+        "Pohártartók, tárolók": [
+          {"name":"Pohártartó, egyéb","link":"https://www.trinexus.hu/hajofelszereles-pohartarto","thumb":"https://www.trinexus.hu/img/17496/310400/286x286,r/310400.webp?time=1689995627"}
+        ],
+        "Akasztók, kapaszkodók": [
+          {"name":"Akasztók, kapaszkodók","link":"https://www.trinexus.hu/hajofelszereles-kapaszkodo","thumb":"https://www.trinexus.hu/img/17496/150003/572x572,r/150003.webp?time=1689984775"}
+        ],
+        "Orrcsigák": [
+          {"name":"Orrcsigák, csigák","link":"https://www.trinexus.hu/hajofelszereles-orrcsiga","thumb":"https://www.trinexus.hu/img/17496/120201/572x572,r/120201.webp?time=1689996363"}
+        ],
+        "Víz ki- és bevezetés": [
+          {"name":"Víz ki- és bevezetés","link":"https://www.trinexus.hu/hajofelszereles-vizi-ki-bevezetes?infinite_page=8","thumb":"https://www.trinexus.hu/img/17496/921/486x486,r/921.webp?time=1739187604"}
+        ],
+        "Motortakaró ponyva": [
+          {"name":"Motortakaró ponyva","link":"https://www.trinexus.hu/fedelzeti-felszereles-motor-egyeb-takaro","thumb":"https://www.trinexus.hu/img/17496/504640/572x572,r/504640.webp?time=1689618499"}
+        ],
+        "Hajóponyva": [
+          {"name":"Hajóponyva","link":"https://www.trinexus.hu/fedelzeti-felszereles-hajoponyva","thumb":"https://www.trinexus.hu/img/17496/3487-3/486x486,r/3487-3.webp?time=1684429699"}
+        ],
+        "Tréler és tartozékai": [
+          {"name":"Tréler és tartozékai","link":"https://www.trinexus.hu/treler-tartozekai","thumb":"https://www.trinexus.hu/img/17496/1507-4/286x286,r/1507-4.webp?time=1689995658"}
+        ],
+        "Csörlő, heveder, rögzítő": [
+          {"name":"Csörlő, heveder, rögzítő","link":"https://www.trinexus.hu/csorlo-heveder-rogzito","thumb":"https://www.trinexus.hu/img/17496/1611-14/286x286,r/1611-14.webp?time=1687374487"}
+        ],
+        "Görgő, Y ütköző": [
+          {"name":"Görgő, Y ütköző","link":"https://www.trinexus.hu/gorgo-y-utkozo","thumb":"https://www.trinexus.hu/img/17496/TP25100/286x286,r/TP25100.webp?time=1689995653"}
+        ],
+        "Bikák": [
+          {"name":"Bika rögzítő","link":"https://www.trinexus.hu/hajofelszereles-bika","thumb":"https://www.trinexus.hu/img/17496/220092/572x572,r/220092.webp?time=1739547370"}
+        ],
+        "Kapcsolótábla": [
+          {"name":"Kapcsolótábla komplett","link":"https://www.trinexus.hu/elektronika-kapcsolotabla-komplett","thumb":"https://www.trinexus.hu/img/17496/catpic_345890/286x286,r/345890.webp?time=1540902010"}
+        ],
+        "Ülések, talpak": [
+          {"name":"Ülések, talpak","link":"https://www.trinexus.hu/hajofelszereles-ules-talp?infinite_page=3","thumb":"https://www.trinexus.hu/img/17496/740902/572x572,r/740902.webp?time=1689995771"}
+        ],
+        "Vonószemek": [
+          {"name":"Vonószemek","link":"https://www.trinexus.hu/hajofelszereles-vonoszem?infinite_page=3","thumb":"https://www.trinexus.hu/img/17496/382006/572x572,r/382006.webp?time=1689995855"}
+        ]
+      },
+
+      /* kézzel beállítható kulcsszavak (beemelve az exportból) */
+      "manualKeywords": {
+        "Orrcsigák": [
+          "orrcsiga",
+          "orrcsigák",
+          "csiga",
+          "csigák"
+        ],
+        "Audió": [
+          "hangszóró",
+          "mélynyomó",
+          "erősítő",
+          "mélysugárzó",
+          "médialejátszó",
+          "fejegység"
+        ],
+        "Navigációs fények": [
+          "fény",
+          "ledes",
+          "led",
+          "körfény",
+          "fehér",
+          "lehajtható",
+          "piros",
+          "zzöld",
+          "fehér",
+          "izzó",
+          "pozíció"
+        ],
+        "Kötelező felszerelések": [
+          "horgony",
+          "légkürt",
+          "kürt",
+          "kúp",
+          "gömb",
+          "segédhorgony",
+          "szapoly",
+          "kötél"
+        ],
+        "Akasztók, kapaszkodók": [
+          "akasztószem",
+          "kapaszkodó",
+          "feszítő",
+          "akasztó",
+          "fenderakasztó",
+          "kötélhorog",
+          "átvezető",
+          "orrvédő"
+        ],
+        "Műszerek": [
+          "Áramerősség",
+          "áramerősségmérő",
+          "feszültség",
+          "feszültségmérő",
+          "fordulatszám",
+          "üzemóra",
+          "olajhőmérséklet",
+          "olajnyomás",
+          "óra",
+          "sebességmérő",
+          "trimműszer",
+          "szintjelző",
+          "vízhőmérséklet",
+          "vízszintmérő",
+          "multifunkciós",
+          "riasztásjelző",
+          "képernyő",
+          "kormányműszer",
+          "pipa",
+          "szennyvíz"
+        ],
+        "Kormányzás": [
+          "kormány",
+          "Z kar",
+          "bovden",
+          "kivezető",
+          "gyűrű",
+          "bovdenkivezető",
+          "gumiharang",
+          "kormányagy",
+          "kormánykábel",
+          "bowden",
+          "távtartó",
+          "végtartó",
+          "bekötő szett",
+          "hidraulikus"
+        ],
+        "Kapcsolók, panelek": [
+          "kapcsoló",
+          "kapcsolótábla",
+          "biztosítékház",
+          "biztosíték",
+          "gyújtáskapcsoló"
+        ],
+        "Ülések, talpak": [
+          "ülőpárna",
+          "ülés",
+          "talp",
+          "szerelőtalp",
+          "pad",
+          "üléspad"
+        ],
+        "Halradarok": [
+          "Helix",
+          "Eagle",
+          "Striker",
+          "flexarm",
+          "chirp",
+          "Xplore",
+          "Apex",
+          "Solix",
+          "Autochart",
+          "Navionics",
+          "Piranhamax",
+          "tápkábel",
+          "neoprén",
+          "jeladó",
+          "jeladótartó",
+          "mega",
+          "live",
+          "Echomap",
+          "Livescope",
+          "Eagle",
+          "Hook",
+          "Reveal",
+          "Hds",
+          "Elite"
+        ],
+        "Zárak, reteszek, zsanérok": [
+          "Rögzítőgyűrű",
+          "zár",
+          "retesz",
+          "ajtózár",
+          "lakat",
+          "lakatpánt",
+          "rekesznyitó",
+          "retesz",
+          "tolózár",
+          "pántos",
+          "nyomógombbal",
+          "zsanér",
+          "fedett"
+        ],
+        "Pohártartók, tárolók": [
+          "tárolódoboz",
+          "doboz",
+          "tárolórekesz",
+          "rekesz",
+          "pohártartó",
+          "ablakkitámasztó",
+          "kitámasztó",
+          "tárolóháló",
+          "üvegtartó",
+          "korlátzseb"
+        ],
+        "Festékek, vegyi anyagok": [
+          "Boatguard",
+          "Cruiser",
+          "Gelshield",
+          "Interprotect",
+          "Micron",
+          "Ultra",
+          "Perfection",
+          "Toplac",
+          "VC-Offshore",
+          "Yacht Primer",
+          "One Up",
+          "higító",
+          "alapozó",
+          "Interstrip",
+          "Sprenger",
+          "Thin film",
+          "VC Prop o drev",
+          "Moravia",
+          "Morapox",
+          "SPC",
+          "Cuprolin",
+          "Epifanes",
+          "Izofix",
+          "Danboline",
+          "Interdeck",
+          "Super gloss",
+          "VC Tar2",
+          "Original",
+          "Tar",
+          "Ecoflow",
+          "Watertite",
+          "TK Slide",
+          "Interstain",
+          "Schooner",
+          "Compass",
+          "Woodskin",
+          "tisztító",
+          "polírozó",
+          "alga",
+          "kagylóeltávolító",
+          "anti gilb",
+          "politur",
+          "hajótisztító",
+          "wax",
+          "gumitisztító",
+          "impregnáló",
+          "rozsdafolt",
+          "teak fényesítő",
+          "szagtalanító",
+          "polírpaszta",
+          "teflonos",
+          "teflonnal",         
+          "shampoo",
+          "wonder bilge",
+          "eltávolító",
+          "anti freeze",
+          "pury nature",
+          "hajósampon",
+          "ápoló",
+          "kárpit tisztító",
+          "rozsdaeltávolító",
+          "só",
+          "oxid",
+          "penész",
+          "koncentrátum",
+          "cleaner",
+          "Plastidip",
+          "Gelcoat",
+          "üvegszál",
+          "tömítő",
+          "ragasztó",
+          "dekor"
+        ],
+        "Üzemanyag rendszer és tartozékai": [
+          "tank",
+          "kanna",
+          "Eltex",
+          "Big Joe",
+          "beépíthető",
+          "csonk",
+          "betöltővel",
+          "kivezetés",
+          "szintjelzővel",
+          "levegőztető",
+          "mérő",
+          "jeladó",
+          "betöltő",
+          "fedéllel",
+          "fedél kulcs",
+          "kivezető",
+          "csatlakozó",
+          "pumpa",
+          "üzemanyagcső",
+          "cső",
+          "tankcsatlakozó",
+          "bekötő"
+        ],
+        "Napfénytető és tartozékai": [
+          "Bimini",
+          "bimini tető",
+          "korláttalp",
+          "csőcsatlakozó",
+          "hüvely",
+          "fémcsukló",
+          "bimini talp",
+          "alumínium cső",
+          "befogadó elem",
+          "csővég",
+          "stifttel",
+          "biztosítószeggel",
+          "biminicsatlakozó",
+          "biminitalp",
+          "biminitartó",
+          "csatlakozótalp",
+          "csatlakozószár",
+          "kédersín",
+          "kéder",
+          "befogadó elem",
+          "csőszegély"
+        ],
+        "Bikák": [
+          "bika",
+          "bikák",
+          "kötélvezető",
+          "kötélfogó",
+          "lehajtható bika",
+          "kikötőbak"
+        ],
+        "Létrák, roll bárok": [
+          "platform",
+          "hajólétra",
+          "kötéllétra",
+          "létra",
+          "létrafok"
+        ],
+        "Robbanómotorok": [
+          "Parsun",
+          "Suzuki",
+          "Tomos",
+          "propeller",
+          "propellervédő",
+          "propellerzár",
+          "Quicksilver",
+          "Motul",
+          "Johnson",
+          "Honda marine",
+          "Yamalube",
+          "Total",
+          "Mannol",
+          "Castrol",
+          "motorolaj",
+          "hajtómű olaj",
+          "hajtóműolaj",
+          "trimmolaj",
+          "üzemanyagszűrő",
+          "olajszűrő",
+          "szűrő",
+          "szeparátor",
+          "sasszeg",
+          "stift"
+        ],
+        "Ablakok, fedelek, rekeszek": [
+          "ablak",
+          "elipszis",
+          "kör ablak",
+          "fedélzeti ablak",
+          "kitámasztó",
+          "hajóablak",
+          "tárolórekesz fedéllel",
+          "rekeszfedél",
+          "fedél",
+          "előlap",
+          "retesszel",
+          "zárral",
+          "fedélnyitó",
+          "zárható",
+          "előlap tok hifihez",
+          "tárolórekesz"
+        ],
+        "Vonószemek": [
+          "Vonószem"
+        ],
+        "Víz ki- és bevezetés": [
+          "kivezető cső",
+          "vízkivezető",
+          "fenékvíz leeresztő dugó",
+          "cső szűkítő",
+          "bevezető",
+          "bevezetés",
+          "kifolyó",
+          "leeresztő",
+          "betőltő"
+        ],
+        "Hajóponyva": [
+          "hajóponyva",
+          "jet-ski",
+          "Aeolus",
+          "ponyvakitámasztó",
+          "teleszkóp",
+          "ponyvához",
+          "ponyvaszellőző"
+        ],
+        "Motortakaró ponyva": [
+          "Motortakaró",
+          "motortakaró-ponyva",
+          "motorponyva"
+        ],
+        "Görgő, Y ütköző": [
+          "görgő",
+          "keelgörgő",
+          "oldalgörgő",
+          "orrgörgő",
+          "orr",
+          "ütköző",
+          "Y stop"
+        ],
+        "Csörlő, heveder, rögzítő": [
+          "csörlő",
+          "heveder",
+          "csörlőkábel",
+          "csörlőkötél"
+        ],
+        "Tréler és tartozékai": [
+          "trailer",
+          "tréler",
+          "orrkerék",
+          "csónakszállító",
+          "hajószállító",
+          "szállító"
         ]
       }
     };
@@ -290,6 +788,7 @@
     let categories = initialData.categories.slice();
     let categories2 = initialData.categories2.slice();
     let submenuStore = JSON.parse(JSON.stringify(initialData.submenuStore));
+    let manualKeywords = Object.assign({}, initialData.manualKeywords || {});
 
     (function loadFromLS(){
       try{
@@ -299,6 +798,7 @@
         if(parsed.categories) categories = parsed.categories;
         if(parsed.categories2) categories2 = parsed.categories2;
         if(parsed.submenuStore) submenuStore = parsed.submenuStore;
+        if(parsed.manualKeywords) manualKeywords = parsed.manualKeywords;
         console.log('Betöltve localStorage-ból.');
       }catch(e){ console.warn('LS load err', e) }
     })();
@@ -310,18 +810,52 @@
     const mobileBar2 = document.getElementById('mobileMenuBar2');
     const submenuPanel = document.getElementById('submenuPanel');
     const fixedHint = document.getElementById('fixedScrollHint');
-    const tImg1 = document.getElementById('targetImage1');
-    const tImg2 = document.getElementById('targetImage2');
+
+    const searchInput = document.getElementById('categorySearchInput');
+    const searchFeedback = document.getElementById('searchFeedback');
+
+    /* editor refs */
+    const menuSelect = document.getElementById('menuSelect');
+    const keywordsBox = document.getElementById('keywordsBox');
+    const submenuRows = document.getElementById('submenuRows');
+    const addSubBtn = document.getElementById('addSubBtn');
+    const saveSubBtn = document.getElementById('saveSubBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const exportSubBtn = document.getElementById('exportSubBtn');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+
+    /* ---------- helper: normalize (lowercase + strip diacritics) ---------- */
+    function normalizeStr(s){
+      if(!s) return '';
+      return s.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u00f1\u00e6\u0153\u0107\u0105\-\s]/g,' ').trim();
+    }
+
+    /* ---------- persistence state for search-driven activation ---------- */
+    let persistentCategory = null; // név (string) ha a kereső aktiválta és tartós legyen
 
     /* ---------- shared hideSubmenu (ensures active classes removed) ---------- */
-    function hideSubmenuShared(){
+    function hideSubmenuShared(force = false){
+      try {
+        const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
+        if(!force && isPersistent){
+          const q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
+          const still = findBestCategoryForQuery(q);
+          if(still && submenuPanel.getAttribute('data-parent-menu') === still){
+            return; // maradjon nyitva
+          }
+        }
+      } catch(e){ /* ignore */ }
+
       if(!submenuPanel) return;
       submenuPanel.classList.remove('show');
       submenuPanel.setAttribute('aria-hidden','true');
       submenuPanel.innerHTML = '';
       submenuPanel.removeAttribute('data-parent-menu');
-      // remove active state from all overlay menu items
-      document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active'));
+      submenuPanel.setAttribute('data-persistent','false');
+      persistentCategory = null;
+      document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active','persistent'));
+      document.querySelectorAll('.mobile-menu-btn.active').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.hotspot.highlight').forEach(h => h.classList.remove('highlight'));
     }
 
     /* ---------- create hotspots + overlay menus for an image ---------- */
@@ -375,7 +909,7 @@
             btn.addEventListener('click', ()=>{ if(c.link) window.open(c.link,'_blank','noopener'); });
             btn.addEventListener('pointerdown', ()=>{
               const hs = document.querySelector(`.hotspot[data-image="${imageIndex}"][data-index="${idx}"]`);
-              if(hs){ hs.classList.add('highlight'); setTimeout(()=>hs.classList.remove('highlight'),700); }
+              if(hs){ hs.classList.add('highlight'); setTimeout(()=>hs.classList.remove('highlight'), 900); }
             });
             mobileBar.appendChild(btn);
           });
@@ -383,7 +917,8 @@
         return;
       }
 
-      const overlay = document.createElement('div'); overlay.id = overlayId; overlay.className = 'overlay-menu';
+      const overlay = document.createElement('div');
+      overlay.id = overlayId; overlay.className = 'overlay-menu';
       wrap.style.position = wrap.style.position || 'relative';
       wrap.appendChild(overlay);
 
@@ -391,7 +926,9 @@
         const left = (typeof c.menuLeft !== 'undefined') ? c.menuLeft : c.left;
         const top  = (typeof c.menuTop  !== 'undefined') ? c.menuTop : (c.top + 8);
 
-        const mi = document.createElement('div');
+        // Ha van link, használjunk natív <a>-t, különben div-et.
+        const elTag = c.link ? 'a' : 'div';
+        const mi = document.createElement(elTag);
         mi.className = 'overlay-menu-item';
         mi.dataset.index = idx;
         mi.dataset.image = imageIndex;
@@ -399,114 +936,232 @@
         mi.style.left = left + '%';
         mi.style.top  = top  + '%';
 
-        /* hover and click behavior for showing submenu thumbnails */
-        const showSubmenu = (ev)=>{
-          const key = c.name;
-          const items = submenuStore[key];
-          if(!items || !items.length) return hideSubmenuShared();
-          // position panel near the menu item (centered over the button)
-          const rect = mi.getBoundingClientRect();
-          const panel = submenuPanel;
-          const panelWidth = Math.min(items.length * 110 + 20, window.innerWidth - 40);
-          panel.style.width = panelWidth + 'px';
+        if(c.link && mi.tagName.toLowerCase() === 'a'){
+          mi.href = c.link;
+          mi.target = '_blank';
+          mi.rel = 'noopener';
+        }
 
-          let left = rect.left + window.scrollX + (rect.width/2) - (panelWidth/2);
-          let top  = rect.top + window.scrollY - 8 - 110; // default above
-          if(top < window.scrollY + 10) top = rect.bottom + window.scrollY + 8;
-          if(left + panelWidth > window.scrollX + window.innerWidth - 12) left = Math.max(window.scrollX + 12, (window.scrollX + window.innerWidth - 12) - panelWidth);
-          if(left < window.scrollX + 12) left = window.scrollX + 12;
-
-          panel.style.left = left + 'px';
-          panel.style.top = top + 'px';
-
-          panel.innerHTML = '';
-          items.forEach(it=>{
-            const t = document.createElement('a');
-            t.href = it.link || '#';
-            t.target = '_blank';
-            t.rel = 'noopener';
-            t.className = 'submenu-thumb';
-            const img = document.createElement('img');
-            img.alt = it.name || '';
-            img.src = it.thumb || '';
-            img.loading = 'lazy';
-            t.appendChild(img);
-            const st = document.createElement('div');
-            st.className = 'stitle';
-            st.textContent = it.name || '';
-            t.appendChild(st);
-            panel.appendChild(t);
-          });
-
-          // clear active from others, set for this
-          document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active'));
-          mi.classList.add('active');
-
-          panel.classList.add('show');
-          panel.setAttribute('data-parent-menu', key);
-          panel.setAttribute('aria-hidden','false');
+        const showSubmenu = (ev, {persistent=false} = {})=>{
+          if(typeof openSubmenuByName === 'function'){
+            openSubmenuByName(c.name, {persistent});
+          }
         };
 
-        mi.addEventListener('pointerenter', (ev)=>{ showSubmenu(ev); });
-        mi.addEventListener('mouseenter', (ev)=>{ showSubmenu(ev); });
-
-        // pointerleave + mouseleave both ensure we clear active state no matter direction
-        mi.addEventListener('pointerleave', (ev)=>{
-          setTimeout(()=>{
-            const hovered = Array.from(document.querySelectorAll(':hover'));
-            if(!hovered.includes(submenuPanel) && !hovered.includes(mi)){
-              hideSubmenuShared();
-            }
-          }, 120);
-        });
-        mi.addEventListener('mouseleave', (ev)=>{
-          setTimeout(()=>{
-            const hovered = Array.from(document.querySelectorAll(':hover'));
-            if(!hovered.includes(submenuPanel) && !hovered.includes(mi)){
-              hideSubmenuShared();
-            }
-          }, 120);
-        });
-
-        // ON CLICK: open main category in new tab AND toggle submenu (so editor/users keep page)
-        mi.addEventListener('click', (ev)=>{
+        // ---- START: improved hover handlers (preserve existing logics) ----
+        mi.addEventListener('pointerenter', (ev) => {
           ev.stopPropagation();
-          // open main link in a new tab if available
-          if(c.link) {
-            try { window.open(c.link, '_blank', 'noopener'); } catch(e){ /* ignore */ }
+          const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
+          const currentParent = submenuPanel.getAttribute('data-parent-menu');
+          if (isPersistent && currentParent && currentParent !== c.name) {
+            mi.classList.add('hover-suggest');
+            return;
           }
-          // toggle submenu panel (if present)
-          const key = c.name;
-          if(submenuPanel.getAttribute('data-parent-menu') === key && submenuPanel.classList.contains('show')){
-            hideSubmenuShared();
-          } else {
-            showSubmenu(ev);
-          }
+
+          mi.classList.add('active');
+          if (mi._hoverTimeout) clearTimeout(mi._hoverTimeout);
+          mi._hoverTimeout = setTimeout(() => {
+            showSubmenu(ev, { persistent: false });
+            mi._hoverTimeout = null;
+          }, 120);
         });
+
+        mi.addEventListener('mouseenter', (ev) => {
+          ev.stopPropagation();
+          const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
+          const currentParent = submenuPanel.getAttribute('data-parent-menu');
+          if (isPersistent && currentParent && currentParent !== c.name) {
+            mi.classList.add('hover-suggest');
+            return;
+          }
+
+          mi.classList.add('active');
+          if (mi._hoverTimeout) clearTimeout(mi._hoverTimeout);
+          mi._hoverTimeout = setTimeout(() => {
+            showSubmenu(ev, { persistent: false });
+            mi._hoverTimeout = null;
+          }, 120);
+        });
+
+        mi.addEventListener('pointerleave', (ev) => {
+          if (mi._hoverTimeout) { clearTimeout(mi._hoverTimeout); mi._hoverTimeout = null; }
+          mi.classList.remove('active', 'hover-suggest');
+          setTimeout(() => {
+            const hovered = Array.from(document.querySelectorAll(':hover'));
+            if (!hovered.includes(submenuPanel) && !hovered.includes(mi)) {
+              // ha nincs más hover a submenuPanel-en vagy az adott elemre, zárjuk
+              if(typeof hideSubmenuShared === 'function') hideSubmenuShared();
+              else submenuPanel.classList.remove('show');
+            }
+          }, 120);
+        });
+
+        mi.addEventListener('mouseleave', (ev) => {
+          if (mi._hoverTimeout) { clearTimeout(mi._hoverTimeout); mi._hoverTimeout = null; }
+          mi.classList.remove('active', 'hover-suggest');
+          setTimeout(() => {
+            const hovered = Array.from(document.querySelectorAll(':hover'));
+            if (!hovered.includes(submenuPanel) && !hovered.includes(mi)) {
+              if(typeof hideSubmenuShared === 'function') hideSubmenuShared();
+              else submenuPanel.classList.remove('show');
+            }
+          }, 120);
+        });
+        // ---- END: improved hover handlers ----
+
+        // --- CLICK / NAVIGÁCIÓ kezelése ---
+        // Ha a kategóriához tartozik link, engedjük a natív viselkedést (középső gomb / ctrl/cmd működjön),
+        // de fogjuk a sima bal-kattintást, hogy biztosan új ablakban nyíljon noopener-rel.
+        if(c.link){
+          mi.addEventListener('click', (ev) => {
+            // Ha a felhasználó ctrl/cmd vagy középső gombot használt, hagyjuk a natív viselkedést
+            if (ev.ctrlKey || ev.metaKey || ev.button === 1) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            // új ablak biztonságosan
+            window.open(c.link, '_blank', 'noopener');
+          });
+        } else {
+          // nincs külső link -> kattintás nyitja az almenüt persistent módban
+          mi.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            showSubmenu(ev, { persistent: true });
+          });
+        }
 
         overlay.appendChild(mi);
       });
     }
 
-    /* hide submenu when clicking outside */
+
+    /* New: programmatically open submenu by menu name (used by search to reliably open + highlight + scroll) */
+    function openSubmenuByName(menuName, {persistent=false} = {}){
+      if(!menuName) return false;
+
+      // find overlay element
+      const overlayItems = Array.from(document.querySelectorAll('.overlay-menu-item'));
+      let foundEl = null;
+      for(const el of overlayItems){
+        if(normalizeStr(el.textContent) === normalizeStr(menuName)){
+          foundEl = el; break;
+        }
+      }
+
+      // If not found (maybe mobile view), try mobile buttons
+      if(!foundEl){
+        const mobileBtns = Array.from(document.querySelectorAll('.mobile-menu-btn'));
+        for(const b of mobileBtns){
+          if(normalizeStr(b.textContent) === normalizeStr(menuName)){
+            mobileBtns.forEach(x=>x.classList.remove('active'));
+            b.classList.add('active');
+            // highlight corresponding hotspot if exists
+            highlightHotspotForMenu(menuName, true);
+            return true;
+          }
+        }
+      }
+
+      if(!foundEl) return false;
+
+      // scroll the page so that the image-wrap containing the found element is visible and centered
+      const imageWrap = foundEl.closest('.image-wrap');
+      if(imageWrap){
+        const rectWrap = imageWrap.getBoundingClientRect();
+        // scroll to center the image-wrap vertically (with slight offset)
+        const targetScrollTop = window.scrollY + rectWrap.top - (window.innerHeight/2) + (rectWrap.height/2);
+        window.scrollTo({ top: Math.max(0, targetScrollTop - 30), behavior: 'smooth' });
+      }
+
+      // wait a tiny bit so the browser has scrolled, then compute positioning
+      setTimeout(()=>{
+        const items = submenuStore[menuName] || [];
+        const rect = foundEl.getBoundingClientRect();
+        const panel = submenuPanel;
+        const panelWidth = Math.min(items.length * 110 + 20, window.innerWidth - 40);
+        panel.style.width = panelWidth + 'px';
+
+        let left = rect.left + window.scrollX + (rect.width/2) - (panelWidth/2);
+        let top  = rect.top + window.scrollY - 8 - 110;
+        if(top < window.scrollY + 10) top = rect.bottom + window.scrollY + 8;
+        if(left + panelWidth > window.scrollX + window.innerWidth - 12) left = Math.max(window.scrollX + 12, (window.scrollX + window.innerWidth - 12) - panelWidth);
+        if(left < window.scrollX + 12) left = window.scrollX + 12;
+
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+
+        panel.innerHTML = '';
+        items.forEach(it=>{
+          const t = document.createElement('a');
+          t.href = it.link || '#';
+          t.target = '_blank';
+          t.rel = 'noopener';
+          t.className = 'submenu-thumb';
+          const img = document.createElement('img');
+          img.alt = it.name || '';
+          img.src = it.thumb || '';
+          img.loading = 'lazy';
+          t.appendChild(img);
+          const st = document.createElement('div');
+          st.className = 'stitle';
+          st.textContent = it.name || '';
+          t.appendChild(st);
+          panel.appendChild(t);
+        });
+
+        // clear previous active/persistent
+        document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active','persistent'));
+        foundEl.classList.add('active');
+        if(persistent) foundEl.classList.add('persistent');
+
+        panel.classList.add('show');
+        panel.setAttribute('data-parent-menu', menuName);
+        panel.setAttribute('aria-hidden','false');
+
+        if(persistent){
+          panel.setAttribute('data-persistent','true');
+          persistentCategory = menuName;
+        } else {
+          panel.setAttribute('data-persistent','false');
+        }
+
+        // mark matching mobile button active and highlight hotspot(s)
+        document.querySelectorAll('.mobile-menu-btn').forEach(b => {
+          if(normalizeStr(b.textContent) === normalizeStr(menuName)) b.classList.add('active'); else b.classList.remove('active');
+        });
+        highlightHotspotForMenu(menuName, true);
+      }, 220);
+
+      return true;
+    }
+
+    function highlightHotspotForMenu(menuName, on=true){
+      document.querySelectorAll('.hotspot').forEach(h => {
+        if(normalizeStr(h.getAttribute('aria-label')) === normalizeStr(menuName)){
+          if(on) h.classList.add('highlight'); else h.classList.remove('highlight');
+        }
+      });
+    }
+
+    /* hide submenu when clicking outside - respect persistence if search still matches */
     document.addEventListener('click', (e)=>{
+      const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
+      if(isPersistent){
+        const q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
+        const best = findBestCategoryForQuery(q);
+        if(best && submenuPanel.getAttribute('data-parent-menu') === best) return;
+      }
       if(!submenuPanel.contains(e.target)) {
         hideSubmenuShared();
       }
     });
 
-    /* hide on scroll/resize to keep UI tidy */
+    /* hide on scroll/resize */
     let hideTimer = null;
-    window.addEventListener('scroll', ()=>{ clearTimeout(hideTimer); hideTimer = setTimeout(()=>{ hideSubmenuShared(); }, 120); }, {passive:true});
+    window.addEventListener('scroll', ()=>{ clearTimeout(hideTimer); hideTimer = setTimeout(()=>{ hideSubmenuShared(); }, 160); }, {passive:true});
     window.addEventListener('resize', ()=>{ hideSubmenuShared(); });
 
-    /* also ensure panel hides when mouse leaves the panel itself */
     if(submenuPanel){
-      submenuPanel.addEventListener('mouseleave', ()=>{ setTimeout(()=>{ 
-        const hovered = Array.from(document.querySelectorAll(':hover'));
-        const anyMenuHover = hovered.some(h => h.classList && h.classList.contains('overlay-menu-item'));
-        if(!hovered.includes(submenuPanel) && !anyMenuHover) hideSubmenuShared();
-      }, 80); });
+      submenuPanel.addEventListener('mouseleave', ()=>{ setTimeout(()=>{ const hovered = Array.from(document.querySelectorAll(':hover')); const anyMenuHover = hovered.some(h => h.classList && h.classList.contains('overlay-menu-item')); if(!hovered.includes(submenuPanel) && !anyMenuHover) hideSubmenuShared(); }, 80); });
       submenuPanel.addEventListener('mouseenter', ()=>{ /* keep open */ });
     }
 
@@ -521,29 +1176,182 @@
     buildAll();
     window.addEventListener('resize', ()=>{ setTimeout(()=>{ createMenuFor(wrap1, categories, 1, mobileBar1); createMenuFor(wrap2, categories2, 2, mobileBar2); }, 120); });
 
-    /* ---------- small modal editor scripts (kept, hidden unless ?showEdit=1) ---------- */
-    const editBtn = document.getElementById('toggleEditBtn');
-    const openEditorBtn = document.getElementById('openSubEditorBtn');
-    const modalBackdrop = document.getElementById('modalBackdrop');
-    const menuSelect = document.getElementById('menuSelect');
-    const submenuRows = document.getElementById('submenuRows');
-    const addSubBtn = document.getElementById('addSubBtn');
-    const saveSubBtn = document.getElementById('saveSubBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const exportSubBtn = document.getElementById('exportSubBtn');
+    /* ---------- KEYWORD INDEX (includes manualKeywords) ---------- */
+    let keywordsStore = {}; // { "Kategória neve": ["token1","token2", ...], ... }
 
-    let editMode = false;
-    if(editBtn){
-      editBtn.addEventListener('click', ()=>{
-        editMode = !editMode;
-        editBtn.textContent = 'Edit mode: ' + (editMode ? 'ON' : 'OFF');
-        document.querySelectorAll('.hotspot').forEach(h => h.style.outline = editMode ? '2px dashed rgba(0,0,0,0.06)' : 'none');
+    function buildKeywordIndex(){
+      keywordsStore = {};
+      const allCats = categories.concat(categories2);
+      allCats.forEach(c=>{
+        const key = c.name;
+        const set = new Set();
+        // category name tokens
+        normalizeStr(key).split(/\s+/).forEach(t => { if(t && t.length>0) set.add(t); });
+        set.add(normalizeStr(key));
+        // submenu items
+        const items = submenuStore[key] || [];
+        items.forEach(it=>{
+          const nm = it.name || '';
+          normalizeStr(nm).split(/\s+/).forEach(t => { if(t && t.length>0) set.add(t); });
+          set.add(normalizeStr(nm));
+        });
+        // manual keywords (higher priority)
+        const mks = manualKeywords[key] || [];
+        mks.forEach(mk=>{
+          const tokens = normalizeStr(mk).split(/\s+/);
+          tokens.forEach(t => { if(t && t.length>0) set.add(t); });
+          set.add(normalizeStr(mk));
+        });
+        keywordsStore[key] = Array.from(set).slice(0,1000);
       });
     }
-    if(openEditorBtn) openEditorBtn.addEventListener('click', openEditor);
 
+    buildKeywordIndex();
+
+    /* ---------- FUZZY helpers (Levenshtein) ---------- */
+    function levenshtein(a,b){
+      a = a || ''; b = b || '';
+      if(a === b) return 0;
+      const an = a.length, bn = b.length;
+      if(an === 0) return bn;
+      if(bn === 0) return an;
+      const v0 = new Array(bn + 1);
+      const v1 = new Array(bn + 1);
+      for(let j=0;j<=bn;j++) v0[j]=j;
+      for(let i=0;i<an;i++){
+        v1[0]=i+1;
+        const ai = a.charAt(i);
+        for(let j=0;j<bn;j++){
+          const cost = ai === b.charAt(j) ? 0 : 1;
+          v1[j+1] = Math.min(v1[j]+1, v0[j+1]+1, v0[j]+cost);
+        }
+        for(let j=0;j<=bn;j++) v0[j]=v1[j];
+      }
+      return v1[bn];
+    }
+
+    function fuzzyScore(q, token){
+      if(!q || !token) return 0;
+      if(q === token) return 100;
+      if(token.startsWith(q)) return 80;
+      if(token.includes(q)) return 50;
+      const dist = levenshtein(q, token);
+      const maxLen = Math.max(q.length, token.length);
+      if(maxLen === 0) return 0;
+      const ratio = dist / maxLen;
+      const base = Math.max(0, Math.round((1 - ratio) * 40));
+      return base;
+    }
+
+    /* ---------- SEARCH MATCHING & MENU ACTIVATION (fuzzy) ---------- */
+    let searchTimeout = null;
+    function clearSearchHighlights(){
+      document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active','persistent'));
+      document.querySelectorAll('.mobile-menu-btn.active').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.hotspot.highlight').forEach(h => h.classList.remove('highlight'));
+    }
+
+    function highlightMenuByName(menuName, {persistent=false} = {}){
+      if(!menuName){ hideSubmenuShared(); return false; }
+      return openSubmenuByName(menuName, {persistent});
+    }
+
+    function findBestCategoryForQuery(q){
+      if(!q || q.length < 3) return null;
+      const nq = normalizeStr(q);
+      const allCats = Object.keys(keywordsStore || {});
+      let best = null; let bestScore = -1;
+      // first: prefer categories whose name matches/prefix
+      allCats.forEach(cat=>{
+        const ncat = normalizeStr(cat);
+        if(ncat === nq){ best = cat; bestScore = 200; }
+        else if(ncat.startsWith(nq) && 150 > bestScore){ best = cat; bestScore = 150; }
+      });
+      if(bestScore >= 150) return best;
+      // otherwise evaluate tokens with fuzzyScore
+      allCats.forEach(cat=>{
+        const kws = keywordsStore[cat] || [];
+        let top = 0;
+        for(let i=0;i<kws.length;i++){
+          const tok = kws[i];
+          const sc = fuzzyScore(nq, tok);
+          if(sc > top) top = sc;
+          if(top >= 100) break;
+        }
+        const catBonus = normalizeStr(cat).includes(nq) ? 8 : 0;
+        const total = top + catBonus;
+        if(total > bestScore){
+          bestScore = total;
+          best = cat;
+        }
+      });
+      if(bestScore >= 18) return best;
+      return null;
+    }
+
+    // debounce input to avoid excessive DOM events
+    searchInput.addEventListener('input', (ev)=>{
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(()=>{
+        const val = searchInput.value || '';
+        const q = val.trim();
+        if(q.length < 3){
+          searchFeedback.textContent = q.length === 0 ? '' : 'Írj legalább 3 karaktert a találathoz.';
+          persistentCategory = null;
+          submenuPanel.setAttribute('data-persistent','false');
+          hideSubmenuShared();
+          clearSearchHighlights();
+          return;
+        }
+        buildKeywordIndex(); // ensure index current
+        const best = findBestCategoryForQuery(q);
+        if(best){
+          searchFeedback.textContent = 'Találat: ' + best;
+          // Set persistent activation for this search result
+          persistentCategory = best;
+          submenuPanel.setAttribute('data-persistent','true');
+          const ok = highlightMenuByName(best, {persistent:true});
+          if(!ok) searchFeedback.textContent = 'Talált kategória: ' + best;
+        } else {
+          searchFeedback.textContent = 'Nincs találat.';
+          persistentCategory = null;
+          submenuPanel.setAttribute('data-persistent','false');
+          hideSubmenuShared();
+          clearSearchHighlights();
+        }
+      }, 120);
+    });
+
+    // Escape clears; Enter opens matched category link
+    searchInput.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape'){
+        searchInput.value = '';
+        searchFeedback.textContent = '';
+        persistentCategory = null;
+        submenuPanel.setAttribute('data-persistent','false');
+        hideSubmenuShared(true);
+        clearSearchHighlights();
+        searchInput.blur();
+      }
+      if(ev.key === 'Enter'){
+        ev.preventDefault();
+        const q = searchInput.value || '';
+        const best = findBestCategoryForQuery(q);
+        if(best){
+          const allCats = categories.concat(categories2);
+          const catObj = allCats.find(c => normalizeStr(c.name) === normalizeStr(best));
+          if(catObj && catObj.link){
+            window.open(catObj.link, '_blank', 'noopener');
+          } else {
+            searchFeedback.textContent = 'Nincs elérhető oldal a kategóriához.';
+          }
+        }
+      }
+    });
+
+    /* ---------- Editor: populate menu select and rows ---------- */
     function openEditor(){
-      const menuNames = [...new Set(categories.map(c=>c.name).concat(categories2.map(c=>c.name)))];
+      const menuNames = [...new Set(categories.map(c=>c.name).concat(categories2.map(c=>c.name)))].sort();
       menuSelect.innerHTML = '';
       menuNames.forEach(n=>{
         const opt = document.createElement('option'); opt.value = n; opt.textContent = n; menuSelect.appendChild(opt);
@@ -551,8 +1359,18 @@
       if(!menuSelect.value && menuSelect.options.length) menuSelect.selectedIndex = 0;
       populateEditorRows(menuSelect.value);
       modalBackdrop.style.display = 'flex';
+      populateKeywordsBox(menuSelect.value);
     }
-    menuSelect.addEventListener('change', ()=> populateEditorRows(menuSelect.value));
+
+    function populateKeywordsBox(menuName){
+      const arr = manualKeywords[menuName] || [];
+      keywordsBox.value = arr.join(', ');
+    }
+
+    menuSelect.addEventListener('change', ()=>{
+      populateEditorRows(menuSelect.value);
+      populateKeywordsBox(menuSelect.value);
+    });
 
     function populateEditorRows(menuName){
       submenuRows.innerHTML = '';
@@ -568,10 +1386,10 @@
     function makeSubRow(menuName, index, item){
       const row = document.createElement('div');
       row.className = 'submenu-item-row';
+      const inpThumb = document.createElement('input'); inpThumb.type='text'; inpThumb.value = item.thumb||''; inpThumb.placeholder='Thumb URL'; inpThumb.className='thumb-input';
       const inpName = document.createElement('input'); inpName.type='text'; inpName.value = item.name || ''; inpName.placeholder='Név';
       const inpLink = document.createElement('input'); inpLink.type='text'; inpLink.value = item.link||''; inpLink.placeholder='Link (URL)';
       inpLink.style.width = '100%';
-      const inpThumb = document.createElement('input'); inpThumb.type='text'; inpThumb.value = item.thumb||''; inpThumb.placeholder='Thumb URL'; inpThumb.className='thumb-input';
       const delBtn = document.createElement('button'); delBtn.textContent = 'Töröl'; delBtn.style.background='#e55'; delBtn.style.color='#fff'; delBtn.style.border='none'; delBtn.style.padding='6px 8px'; delBtn.style.borderRadius='6px'; delBtn.style.cursor='pointer';
       delBtn.addEventListener('click', ()=>{
         const arr = submenuStore[menuName] || [];
@@ -580,13 +1398,15 @@
         populateEditorRows(menuName);
         saveAllToLocalStorage();
         buildAll();
+        buildKeywordIndex();
       });
-      inpName.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].name = inpName.value; });
+      inpName.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].name = inpName.value; buildKeywordIndex(); });
       inpLink.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].link = inpLink.value; });
       inpThumb.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].thumb = inpThumb.value; });
       row.appendChild(inpThumb); row.appendChild(inpName); row.appendChild(inpLink); row.appendChild(delBtn);
       return row;
     }
+
     addSubBtn.addEventListener('click', ()=>{
       const menuName = menuSelect.value;
       if(!menuName) return alert('Válassz egy menüpontot először.');
@@ -595,38 +1415,62 @@
       populateEditorRows(menuName);
       saveAllToLocalStorage();
       buildAll();
+      buildKeywordIndex();
     });
-    saveSubBtn.addEventListener('click', ()=>{ saveAllToLocalStorage(); alert('Almenük elmentve localStorage-be.'); populateEditorRows(menuSelect.value); buildAll(); });
+
+    saveSubBtn.addEventListener('click', ()=>{
+      const menuName = menuSelect.value;
+      if(menuName){
+        const raw = keywordsBox.value || '';
+        const arr = raw.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length>0);
+        manualKeywords[menuName] = arr;
+      }
+      saveAllToLocalStorage();
+      populateEditorRows(menuSelect.value);
+      buildAll();
+      buildKeywordIndex();
+      alert('Almenük és kulcsszavak elmentve localStorage-be.');
+    });
+
     closeModalBtn.addEventListener('click', ()=>{ modalBackdrop.style.display='none'; });
+
     exportSubBtn.addEventListener('click', ()=>{
-      const payload = JSON.stringify(submenuStore, null, 2);
+      const payload = JSON.stringify({submenuStore, manualKeywords}, null, 2);
       const blob = new Blob([payload], {type:'application/json'});
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'submenu_store_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      const a = document.createElement('a'); a.href = url; a.download = 'submenu_and_keywords_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     });
+
     function saveAllToLocalStorage(){
       try{
-        const payload = { categories, categories2, submenuStore };
+        const payload = { categories, categories2, submenuStore, manualKeywords };
         localStorage.setItem(LS_KEY, JSON.stringify(payload));
         console.log('Saved to LS');
       }catch(e){ console.warn('save err', e) }
     }
 
-    // expose for debugging
-    window.kepesKereso = { categories, categories2, submenuStore, saveAllToLocalStorage };
+    /* expose for debugging */
+    window.kepesKereso = { categories, categories2, submenuStore, manualKeywords, saveAllToLocalStorage, buildKeywordIndex, keywordsStore };
 
-    // show edit controls only if ?showEdit=1
-    (function maybeShowEditControls(){
-      const params = new URLSearchParams(location.search);
-      if(params.get('showEdit') === '1'){
-        const tryUnhide = () => {
-          const el = document.getElementById('editControls');
-          if(el){ el.style.display = 'flex'; el.setAttribute('aria-hidden','false'); return; }
-          setTimeout(tryUnhide, 120);
-        };
-        tryUnhide();
+    // show edit controls always (already visible via CSS). Hook up buttons:
+    const editBtn = document.getElementById('toggleEditBtn');
+    const openEditorBtn = document.getElementById('openSubEditorBtn');
+    if(editBtn){
+      let editMode = false;
+      editBtn.addEventListener('click', ()=>{
+        editMode = !editMode;
+        editBtn.textContent = 'Edit mode: ' + (editMode ? 'ON' : 'OFF');
+        document.querySelectorAll('.hotspot').forEach(h => h.style.outline = editMode ? '2px dashed rgba(0,0,0,0.06)' : 'none');
+      });
+    }
+    if(openEditorBtn) openEditorBtn.addEventListener('click', openEditor);
+
+    // keyboard shortcut to open editor
+    document.addEventListener('keydown', (e)=>{
+      if(e.ctrlKey && e.key.toLowerCase() === 'e'){
+        openEditor();
       }
-    })();
+    });
 
     /* ---------- IntersectionObserver logic for "scroll hint" ---------- */
     (function setupHintVisibility(){
@@ -666,6 +1510,10 @@
         window.addEventListener('resize', check);
       }
     })();
+
+    /* ---------- final initializations ---------- */
+    buildAll();
+    buildKeywordIndex();
 
   </script>
 </body>
