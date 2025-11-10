@@ -56,7 +56,7 @@
       padding: 5px 5px;
     }
 
-   
+    
     .text {
       font-weight: 900;
       font-size: 2vw;
@@ -102,7 +102,7 @@
       opacity: 0.95;
     }
 
-   
+    
     .text::after {
       animation-delay: -5s;
       animation-duration: 8s;
@@ -114,6 +114,8 @@
         transform: translate(-50%, 0) rotate(360deg);
       }
     }
+
+    
 
     
     .toggle {
@@ -184,7 +186,7 @@
       outline: none;
     }
 
-    /* Results */
+    
     .results {
       display: flex;
       flex-direction: column;
@@ -222,7 +224,7 @@
 
     .card .overlay {
       position: relative;
-      z-index: 2; 
+      z-index: 2; /* ensure overlay content is above glow visuals */
     }
 
     .card img {
@@ -303,7 +305,7 @@
     
     .logo-link {
       position: absolute;
-      left: 12px;                   
+      left: 12px;                    
       top: 50%;
       transform: translateY(-50%);
       display: inline-block;
@@ -320,12 +322,13 @@
 
     
     .header-wrap {
-      max-width: var(--max-width, 1200px); 
-      margin: 0 auto;               
+      max-width: var(--max-width, 1200px); /* vagy a te meglévő --max-width változód */
+      margin: 0 auto;               /* középre hozza a tartalmat */
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0 56px;              
+      padding: 0 56px;              /* oldalpaddings: biztosít helyet a logó mellett, ne fedje le a szöveget */
+      /* ha a logó igazán balra van (left:0), növeld az oldalpaddings-et szükség szerint */
       position: relative;
       z-index: 2;
     }
@@ -339,9 +342,9 @@
       background-clip: text;
       -webkit-background-clip: text;
       overflow: clip;
-      background-color: transparent;  
+      background-color: transparent;  /* fontos: ne legyen fehér hátter */
       padding: 6px 18px;
-      z-index: 3;                      
+      z-index: 3;                      /* legyen a pseudo hullámok fölött */
       white-space: nowrap;
     }
 
@@ -369,7 +372,7 @@
     }
 
     @media (min-width:900px) {
-      
+      /* at wide view ensure card width is as set, more columns fit automatically */
     }
 
     @media (max-width:480px) {
@@ -390,7 +393,7 @@
 
     
     :root {
-      
+      /* variables for the glow effect - do not conflict with existing --card-width etc */
       --glow-backdrop: hsl(0 0% 60% / 0.12);
       --radius: 14;
       --border: 3;
@@ -461,7 +464,7 @@
     }
 
 
-    
+    /* nested glow element (empty element used for blur/outer glow layer) */
     [data-glow] [data-glow] {
       position: absolute;
       inset: 0;
@@ -491,33 +494,35 @@
       border: var(--border-size) solid transparent;
     }
 
-    
+    /* small safety: ensure internal overlay content sits above glow visuals */
     .card > .overlay,
     .card > .meta {
       position: relative;
       z-index: 2;
     }
 
-    
+    /* tweak highlight strength for light background */
     @media (prefers-color-scheme: light) {
       [data-glow] { --bg-spot-opacity: 0.06; --border-spot-opacity: 0.8; --border-light-opacity: 0.6; }
     }
 
-    
+    /* End glow CSS */
+
+    /* -------------------- Strong preset overrides (fehér háttérre) -------------------- */
     :root {
-      --bg-spot-opacity: 0.9;       
-      --border-spot-opacity: 1.5;     
-      --border-light-opacity: 0.35;     
-      --size: 90;                  
-      --border: 9;                   
+      --bg-spot-opacity: 0.9;       /* háttér folt intenzitása */
+      --border-spot-opacity: 1.5;      /* kontúr színes folt erőssége */
+      --border-light-opacity: 0.35;     /* fehér szikra intenzitása */
+      --size: 90;                   /* spot méret (px) — kisebb = élesebb) */
+      --border: 9;                   /* keret vastagság */
       --saturation: 140;
       --lightness: 60;
     }
-   
+    /* MOBIL: tiltjuk a glow vizuált és a touch interferenciát */
     @media (max-width: 800px) {
       [data-glow] {
-        touch-action: auto !important;        
-        background-image: none !important;   
+        touch-action: auto !important;        /* engedjük az érintéses görgetést */
+        background-image: none !important;    /* eltávolítjuk a spot-ot */
         background-color: transparent !important;
         border: none !important;
         background-attachment: scroll !important;
@@ -526,7 +531,7 @@
       [data-glow]::after,
       [data-glow] [data-glow],
       [data-glow] > [data-glow] {
-        display: none !important;             
+        display: none !important;             /* elrejti a pseudo / blur rétegeket */
       }
     }
 
@@ -612,13 +617,13 @@
     })();
   </script>
 
-  
+  <!-- ======= PONTOS, RÉGI KERESÉSI LOGIKA & RENDER (beillesztve teljesen) ======= -->
   <script>
     /* ---------- Config ---------- */
-    const GLOBAL_MAX_RESULTS = 500; 
+    const GLOBAL_MAX_RESULTS = 500; // megjeleníthető találatok felső korlátja
     const MIN_TOKEN_LEN = 3;
 
-    
+    /* ---------- Data + preprocessing ---------- */
     let PRODUCTS = [];
 
     function stripDiacriticsSimple(s) {
@@ -649,25 +654,26 @@
       }
     }
 
-    
+    /* ---------- Parse embedded JSON if present in placeholder ---------- */
     (function parsePlaceholderIfPresent() {
       try {
         var rawScript = document.getElementById('products-data');
         if (rawScript) {
           var raw = rawScript.textContent || '';
           if (raw && raw.trim().length > 10) {
-            
+            // Próbáljuk egyszerűen parse-olni először
             try {
               PRODUCTS = JSON.parse(raw);
             } catch (err1) {
-              
+              // Ha valami miatt a sima parse sikertelen (különös escape-ok), próbáljunk egy biztonságosabb string-cserét
               try {
-                
+                // string-split/join használata biztonságosabb, mintha regex literált hagynánk,
+                // mert néha valami közbeavatkozik és a /.../g felsértődhet a futtatási környezetben
                 var safe = raw.split('\\/').join('/');
                 PRODUCTS = JSON.parse(safe);
               } catch (err2) {
                 console.error('AUTO-INIT parse error (both attempts):', err2);
-                
+                // tovább dobhatjuk, vagy a debug mezőbe írjuk az üzenetet:
                 var dbg = document.getElementById('debug');
                 if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'AUTO-INIT parse error: ' + (err2 && err2.toString ? err2.toString() : 'ismeretlen'); }
               }
@@ -693,28 +699,28 @@
       }
     })();
 
-    
+    /* ---------- Matching logic (exact old algorithm) ---------- */
     function matches(product, q) {
         if (!q) return false;
         var nq = q.toString().trim();
         if (nq.length < MIN_TOKEN_LEN) return false;
 
-        
+        // egyszerű normalizálás
         try {
           nq = stripDiacriticsSimple(nq);
           nq = nq.normalize ? nq.normalize('NFD').replace(/[̀-ͯ]/g, '') : nq;
         } catch (e) { }
         nq = nq.toLowerCase();
 
-        k
+        // felhasználó által beírt szavak
         var tokens = nq.split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
         if (tokens.length === 0) return false;
 
-        
+        // termék adatok normalizálva
         var name = product.__norm_name || ((product.name || '').toString().toLowerCase());
         var sku = product.__norm_sku || (product.sku || '').toString().toLowerCase();
 
-        
+        // minden tokennek szerepelnie kell legalább a névben vagy cikkszámban
         var allFound = tokens.every(function (tk) {
           if (tk.length < MIN_TOKEN_LEN) return false;
           return (
@@ -727,7 +733,7 @@
       }
 
 
-    
+    /* ---------- Utilities ---------- */
     function formatPrice(raw) {
       var n = Number(raw);
       if (isFinite(n)) {
@@ -742,7 +748,7 @@
       return imgField.toString().split(/\||,|;|\n/).map(function (x) { return x.trim(); }).filter(Boolean);
     }
 
-    
+    /* ---------- Rendering ---------- */
     function renderProductsList(list) {
       var results = document.getElementById('results');
       results.innerHTML = '';
@@ -751,7 +757,7 @@
         return;
       }
 
-      
+      // create row flex container
       var row = document.createElement('div');
       row.className = 'row';
 
@@ -763,13 +769,13 @@
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
 
-        
+        // add data-glow attribute so the glow CSS applies
         a.setAttribute('data-glow', '');
 
-        
+        // nested empty data-glow element used for blur/outer glow layer (per CSS)
         var innerGlow = document.createElement('div');
         innerGlow.setAttribute('data-glow', '');
-        
+        // ensure the inner glow sits behind content via z-index in CSS
         a.appendChild(innerGlow);
 
         var overlay = document.createElement('div');
@@ -814,13 +820,13 @@
       }
 
       results.appendChild(row);
-      
+      // after rendering, attach pointer handlers so glow follows per-card
       if (window.attachCardPointer) {
         setTimeout(window.attachCardPointer, 30);
       }
     }
 
-    
+    /* ---------- Render for query (core) ---------- */
     function renderForQuery(q) {
       var results = document.getElementById('results');
       var debugEl = document.getElementById('debug');
@@ -914,7 +920,7 @@
       renderProductsList(matchesList);
     }
 
-    
+    /* ---------- Event wiring ---------- */
     (function wireEvents() {
       var qInput = document.getElementById('q');
       var timer = null;
@@ -930,14 +936,14 @@
       var imgOnlyCb = document.getElementById('imgOnly');
       if (imgOnlyCb) imgOnlyCb.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
 
-      
+      // also support alternative IDs (compat)
       var altSort = document.getElementById('sort');
       if (altSort) altSort.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
       var altImg = document.getElementById('onlyWithImage');
       if (altImg) altImg.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
     })();
 
-    
+    /* ---------- Auto-init when external JSON loaded ---------- */
     (function autoInit() {
       function finishInit() {
         try {
@@ -965,7 +971,7 @@
     })();
   </script>
 
-  
+  <!-- small navigation wiring -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       try {
@@ -979,7 +985,7 @@
     });
   </script>
 
-  
+  <!-- ---------- Per-card Pointer sync script for glow (from modified JS snippet) ---------- -->
   <script>
     function attachCardPointer() {
       const cards = Array.from(document.querySelectorAll('.card[data-glow]'));
@@ -989,7 +995,7 @@
         if (card._glowPointerAttached) return;
         card._glowPointerAttached = true;
 
-        
+        // We'll track a single handler reference for attach/detach
         let onMove = (ev) => {
           const rect = card.getBoundingClientRect();
           const x = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
@@ -1039,7 +1045,7 @@
       attachCardPointer();
     });
 
-    
+    // Wrap existing renderProductsList so newly rendered cards reattach pointers
     if (typeof window.renderProductsList === 'function') {
       const _orig = window.renderProductsList.bind(window);
       window.renderProductsList = function (list) {
