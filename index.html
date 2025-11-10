@@ -37,7 +37,7 @@
       padding: 18px;
     }
 
-    /* ---------- Header: fehér sáv, szöveg előtt türkíz hullámok ---------- */
+    
     header {
       background: #9b9b9b; /* fehér sáv */
       color: #000;
@@ -52,11 +52,11 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      overflow: hidden; /* a hullámok csak a sávon belül látszanak */
+      overflow: hidden; 
       padding: 5px 5px;
     }
 
-    /* A te kódod pontos logikáját átültetve érvényes CSS-re */
+   
     .text {
       font-weight: 900;
       font-size: 2vw;
@@ -66,28 +66,28 @@
       -webkit-background-clip: text;
       overflow: clip;
       background-color: #fefcef;
-      /* padding, hogy a pseudo-elemek ne érjenek túl közel a szélhez */
+      
       padding: 6px 18px;
-      z-index: 1; /* legyen a szöveg a pseudo-elemek fölött */
+      z-index: 1; 
       white-space: nowrap;
     }
 
-    /* pseudo-elemek: ezek a türkíz "hullámok" (a te beállításaid alapján) */
+    
     .text::before,
     .text::after {
       content: '';
       position: absolute;
-      /* z-index mögé, hogy a szöveg látszódjon előtte */
+      
       z-index: -1;
 
-      /* türkíz szín áttetsző változata: a te kódod #33ccbee6 volt */
+      
       background-color: #199c9c;
 
       width: 175%;
       top: 50%;
       left: 50%;
       aspect-ratio: 1;
-      /* modern CSS translate: (a te snippeted "translate: -50% 0") */
+      
       transform: translate(-50%, 0) rotate(0deg);
 
       border-top-left-radius: 60% 80%;
@@ -96,13 +96,13 @@
       border-bottom-right-radius: 50% 80%;
 
       mix-blend-mode: multiply;
-      /* animáció: rot 10s linear infinite - ahogy megadtad */
+      
       animation: rot 10s linear infinite;
       pointer-events: none;
       opacity: 0.95;
     }
 
-    /* a második hullám: késleltetett és rövidebb időtartam, ahogy a snippetben volt */
+   
     .text::after {
       animation-delay: -5s;
       animation-duration: 8s;
@@ -110,14 +110,12 @@
 
     @keyframes rot {
       to {
-        /* eredeti snippet: rotate: 360deg; - modern, de kompatibilisebb transform használata */
+        
         transform: translate(-50%, 0) rotate(360deg);
       }
     }
 
-    /* ---------- A többi stílus (eredeti fájlból, érintetlenül) ---------- */
-
-    /* Toggle */
+    
     .toggle {
       display: flex;
       border: 1px solid #e6e6e6;
@@ -142,7 +140,7 @@
       color: #fff;
     }
 
-    /* Search / controls */
+    
     .search-row {
       display: flex;
       gap: 12px;
@@ -200,7 +198,7 @@
       gap: 12px;
     }
 
-    /* Modified .card so the glow effect can layer correctly */
+    
     .card {
       width: var(--card-width);
       background: #fff;
@@ -224,7 +222,7 @@
 
     .card .overlay {
       position: relative;
-      z-index: 2; /* ensure overlay content is above glow visuals */
+      z-index: 2; 
     }
 
     .card img {
@@ -292,48 +290,47 @@
       color: #0066cc;
     }
 
-    /* ---------- Header teljes szélességű sáv és balra kitűzött logó ---------- */
+    
     .site-header {
       width: 100%;
-      background: #8a8989;           /* a szürke sáv színe (állítható) */
-      position: relative;            /* a logo abszolút pozícionálásához */
-      padding: 8px 0;                /* függőleges padding: sáv magassága */
+      background: #8a8989;           
+      position: relative;            
+      padding: 8px 0;                
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
       overflow: visible;
     }
 
-    /* a logó a sáv bal szélére kerül */
+    
     .logo-link {
       position: absolute;
-      left: 12px;                    /* távolság a bal oldaltól; tedd 0-ra, ha teljesen a szélére kell */
+      left: 12px;                   
       top: 50%;
       transform: translateY(-50%);
       display: inline-block;
-      z-index: 5;                    /* legyen a hullámok/ szöveg fölött */
+      z-index: 5;                    
       text-decoration: none;
     }
 
-    /* logó mérete - állítható */
+    
     .logo {
       height: 44px;
       width: auto;
       display: block;
     }
 
-    /* a középső tartalom (a hullámos text) középre igazítva egy max-width konténerben */
+    
     .header-wrap {
-      max-width: var(--max-width, 1200px); /* vagy a te meglévő --max-width változód */
-      margin: 0 auto;               /* középre hozza a tartalmat */
+      max-width: var(--max-width, 1200px); 
+      margin: 0 auto;               
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0 56px;              /* oldalpaddings: biztosít helyet a logó mellett, ne fedje le a szöveget */
-      /* ha a logó igazán balra van (left:0), növeld az oldalpaddings-et szükség szerint */
+      padding: 0 56px;              
       position: relative;
       z-index: 2;
     }
 
-    /* A hullámos .text: eltávolítjuk a fehér hátteret, megtartjuk az animációt */
+    
     .text {
       font-weight: 900;
       font-size: 2vw;
@@ -342,9 +339,9 @@
       background-clip: text;
       -webkit-background-clip: text;
       overflow: clip;
-      background-color: transparent;  /* fontos: ne legyen fehér hátter */
+      background-color: transparent;  
       padding: 6px 18px;
-      z-index: 3;                      /* legyen a pseudo hullámok fölött */
+      z-index: 3;                      
       white-space: nowrap;
     }
 
@@ -372,7 +369,7 @@
     }
 
     @media (min-width:900px) {
-      /* at wide view ensure card width is as set, more columns fit automatically */
+      
     }
 
     @media (max-width:480px) {
@@ -391,9 +388,9 @@
 
 
 
-    /* -------------------- Glow CSS (integrated from your snippet) -------------------- */
+    
     :root {
-      /* variables for the glow effect - do not conflict with existing --card-width etc */
+      
       --glow-backdrop: hsl(0 0% 60% / 0.12);
       --radius: 14;
       --border: 3;
@@ -464,7 +461,7 @@
     }
 
 
-    /* nested glow element (empty element used for blur/outer glow layer) */
+    
     [data-glow] [data-glow] {
       position: absolute;
       inset: 0;
@@ -494,35 +491,33 @@
       border: var(--border-size) solid transparent;
     }
 
-    /* small safety: ensure internal overlay content sits above glow visuals */
+    
     .card > .overlay,
     .card > .meta {
       position: relative;
       z-index: 2;
     }
 
-    /* tweak highlight strength for light background */
+    
     @media (prefers-color-scheme: light) {
       [data-glow] { --bg-spot-opacity: 0.06; --border-spot-opacity: 0.8; --border-light-opacity: 0.6; }
     }
 
-    /* End glow CSS */
-
-    /* -------------------- Strong preset overrides (fehér háttérre) -------------------- */
+    
     :root {
-      --bg-spot-opacity: 0.9;       /* háttér folt intenzitása */
-      --border-spot-opacity: 1.5;      /* kontúr színes folt erőssége */
-      --border-light-opacity: 0.35;     /* fehér szikra intenzitása */
-      --size: 90;                   /* spot méret (px) — kisebb = élesebb) */
-      --border: 9;                   /* keret vastagság */
+      --bg-spot-opacity: 0.9;       
+      --border-spot-opacity: 1.5;     
+      --border-light-opacity: 0.35;     
+      --size: 90;                  
+      --border: 9;                   
       --saturation: 140;
       --lightness: 60;
     }
-    /* MOBIL: tiltjuk a glow vizuált és a touch interferenciát */
+   
     @media (max-width: 800px) {
       [data-glow] {
-        touch-action: auto !important;        /* engedjük az érintéses görgetést */
-        background-image: none !important;    /* eltávolítjuk a spot-ot */
+        touch-action: auto !important;        
+        background-image: none !important;   
         background-color: transparent !important;
         border: none !important;
         background-attachment: scroll !important;
@@ -531,7 +526,7 @@
       [data-glow]::after,
       [data-glow] [data-glow],
       [data-glow] > [data-glow] {
-        display: none !important;             /* elrejti a pseudo / blur rétegeket */
+        display: none !important;             
       }
     }
 
@@ -617,13 +612,13 @@
     })();
   </script>
 
-  <!-- ======= PONTOS, RÉGI KERESÉSI LOGIKA & RENDER (beillesztve teljesen) ======= -->
+  
   <script>
     /* ---------- Config ---------- */
-    const GLOBAL_MAX_RESULTS = 500; // megjeleníthető találatok felső korlátja
+    const GLOBAL_MAX_RESULTS = 500; 
     const MIN_TOKEN_LEN = 3;
 
-    /* ---------- Data + preprocessing ---------- */
+    
     let PRODUCTS = [];
 
     function stripDiacriticsSimple(s) {
@@ -654,26 +649,25 @@
       }
     }
 
-    /* ---------- Parse embedded JSON if present in placeholder ---------- */
+    
     (function parsePlaceholderIfPresent() {
       try {
         var rawScript = document.getElementById('products-data');
         if (rawScript) {
           var raw = rawScript.textContent || '';
           if (raw && raw.trim().length > 10) {
-            // Próbáljuk egyszerűen parse-olni először
+            
             try {
               PRODUCTS = JSON.parse(raw);
             } catch (err1) {
-              // Ha valami miatt a sima parse sikertelen (különös escape-ok), próbáljunk egy biztonságosabb string-cserét
+              
               try {
-                // string-split/join használata biztonságosabb, mintha regex literált hagynánk,
-                // mert néha valami közbeavatkozik és a /.../g felsértődhet a futtatási környezetben
+                
                 var safe = raw.split('\\/').join('/');
                 PRODUCTS = JSON.parse(safe);
               } catch (err2) {
                 console.error('AUTO-INIT parse error (both attempts):', err2);
-                // tovább dobhatjuk, vagy a debug mezőbe írjuk az üzenetet:
+                
                 var dbg = document.getElementById('debug');
                 if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'AUTO-INIT parse error: ' + (err2 && err2.toString ? err2.toString() : 'ismeretlen'); }
               }
@@ -699,28 +693,28 @@
       }
     })();
 
-    /* ---------- Matching logic (exact old algorithm) ---------- */
+    
     function matches(product, q) {
         if (!q) return false;
         var nq = q.toString().trim();
         if (nq.length < MIN_TOKEN_LEN) return false;
 
-        // egyszerű normalizálás
+        
         try {
           nq = stripDiacriticsSimple(nq);
           nq = nq.normalize ? nq.normalize('NFD').replace(/[̀-ͯ]/g, '') : nq;
         } catch (e) { }
         nq = nq.toLowerCase();
 
-        // felhasználó által beírt szavak
+        k
         var tokens = nq.split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
         if (tokens.length === 0) return false;
 
-        // termék adatok normalizálva
+        
         var name = product.__norm_name || ((product.name || '').toString().toLowerCase());
         var sku = product.__norm_sku || (product.sku || '').toString().toLowerCase();
 
-        // minden tokennek szerepelnie kell legalább a névben vagy cikkszámban
+        
         var allFound = tokens.every(function (tk) {
           if (tk.length < MIN_TOKEN_LEN) return false;
           return (
@@ -733,7 +727,7 @@
       }
 
 
-    /* ---------- Utilities ---------- */
+    
     function formatPrice(raw) {
       var n = Number(raw);
       if (isFinite(n)) {
@@ -748,7 +742,7 @@
       return imgField.toString().split(/\||,|;|\n/).map(function (x) { return x.trim(); }).filter(Boolean);
     }
 
-    /* ---------- Rendering ---------- */
+    
     function renderProductsList(list) {
       var results = document.getElementById('results');
       results.innerHTML = '';
@@ -757,7 +751,7 @@
         return;
       }
 
-      // create row flex container
+      
       var row = document.createElement('div');
       row.className = 'row';
 
@@ -769,13 +763,13 @@
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
 
-        // add data-glow attribute so the glow CSS applies
+        
         a.setAttribute('data-glow', '');
 
-        // nested empty data-glow element used for blur/outer glow layer (per CSS)
+        
         var innerGlow = document.createElement('div');
         innerGlow.setAttribute('data-glow', '');
-        // ensure the inner glow sits behind content via z-index in CSS
+        
         a.appendChild(innerGlow);
 
         var overlay = document.createElement('div');
@@ -820,13 +814,13 @@
       }
 
       results.appendChild(row);
-      // after rendering, attach pointer handlers so glow follows per-card
+      
       if (window.attachCardPointer) {
         setTimeout(window.attachCardPointer, 30);
       }
     }
 
-    /* ---------- Render for query (core) ---------- */
+    
     function renderForQuery(q) {
       var results = document.getElementById('results');
       var debugEl = document.getElementById('debug');
@@ -920,7 +914,7 @@
       renderProductsList(matchesList);
     }
 
-    /* ---------- Event wiring ---------- */
+    
     (function wireEvents() {
       var qInput = document.getElementById('q');
       var timer = null;
@@ -936,14 +930,14 @@
       var imgOnlyCb = document.getElementById('imgOnly');
       if (imgOnlyCb) imgOnlyCb.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
 
-      // also support alternative IDs (compat)
+      
       var altSort = document.getElementById('sort');
       if (altSort) altSort.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
       var altImg = document.getElementById('onlyWithImage');
       if (altImg) altImg.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
     })();
 
-    /* ---------- Auto-init when external JSON loaded ---------- */
+    
     (function autoInit() {
       function finishInit() {
         try {
@@ -971,7 +965,7 @@
     })();
   </script>
 
-  <!-- small navigation wiring -->
+  
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       try {
@@ -985,7 +979,7 @@
     });
   </script>
 
-  <!-- ---------- Per-card Pointer sync script for glow (from modified JS snippet) ---------- -->
+  
   <script>
     function attachCardPointer() {
       const cards = Array.from(document.querySelectorAll('.card[data-glow]'));
@@ -995,7 +989,7 @@
         if (card._glowPointerAttached) return;
         card._glowPointerAttached = true;
 
-        // We'll track a single handler reference for attach/detach
+        
         let onMove = (ev) => {
           const rect = card.getBoundingClientRect();
           const x = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
@@ -1045,7 +1039,7 @@
       attachCardPointer();
     });
 
-    // Wrap existing renderProductsList so newly rendered cards reattach pointers
+    
     if (typeof window.renderProductsList === 'function') {
       const _orig = window.renderProductsList.bind(window);
       window.renderProductsList = function (list) {
