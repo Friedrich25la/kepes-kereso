@@ -142,7 +142,7 @@
       color: #fff;
     }
 
-    
+    /* Search / controls */
     .search-row {
       display: flex;
       gap: 12px;
@@ -186,7 +186,7 @@
       outline: none;
     }
 
-    
+    /* Results */
     .results {
       display: flex;
       flex-direction: column;
@@ -200,7 +200,7 @@
       gap: 12px;
     }
 
-    
+    /* Modified .card so the glow effect can layer correctly */
     .card {
       width: var(--card-width);
       background: #fff;
@@ -295,9 +295,9 @@
     
     .site-header {
       width: 100%;
-      background: #8a8989;           
-      position: relative;            
-      padding: 8px 0;                
+      background: #8a8989;           /* a szürke sáv színe (állítható) */
+      position: relative;            /* a logo abszolút pozícionálásához */
+      padding: 8px 0;                /* függőleges padding: sáv magassága */
       box-shadow: 0 2px 6px rgba(0,0,0,0.06);
       overflow: visible;
     }
@@ -342,9 +342,9 @@
       background-clip: text;
       -webkit-background-clip: text;
       overflow: clip;
-      background-color: transparent;  /* fontos: ne legyen fehér hátter */
+      background-color: transparent;  
       padding: 6px 18px;
-      z-index: 3;                      /* legyen a pseudo hullámok fölött */
+      z-index: 3;                      
       white-space: nowrap;
     }
 
@@ -518,7 +518,7 @@
       --saturation: 140;
       --lightness: 60;
     }
-    /* MOBIL: tiltjuk a glow vizuált és a touch interferenciát */
+    
     @media (max-width: 800px) {
       [data-glow] {
         touch-action: auto !important;        /* engedjük az érintéses görgetést */
@@ -537,7 +537,7 @@
 
   </style>
 
-  <script src="products_with_status_min.js"></script>
+  
 </head>
 
 <body>
@@ -603,8 +603,19 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.text();
           }).then(function (txt) {
-            try { placeholder.textContent = txt; } catch (e) { placeholder.innerText = txt; }
+            try {
+              PRODUCTS = JSON.parse(txt);
+            } catch (e) {
+              console.error('JSON parse error from fetch', e);
+              PRODUCTS = [];
+            }
+            if (PRODUCTS && PRODUCTS.length > 0) preprocessProducts();
             document.dispatchEvent(new Event('productsDataReady'));
+
+            // ha a placeholder létezik, ürítsd ki / távolítsd el
+            if (placeholder && placeholder.parentNode) {
+              placeholder.parentNode.removeChild(placeholder);
+            }
           }).catch(function (e) {
             console.error('Failed to fetch products JSON', e);
             var results = document.getElementById('results');
@@ -617,7 +628,7 @@
     })();
   </script>
 
-  <!-- =======  ======= -->
+  <!--  ======= -->
   <script>
     /* ---------- Config ---------- */
     const GLOBAL_MAX_RESULTS = 500; // megjeleníthető találatok felső korlátja
