@@ -1,1520 +1,1049 @@
 <!doctype html>
 <html lang="hu">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Képes kereső</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Termékkereső — Trinexus (külső JSON)</title>
+
   <style>
-    :root{
-      --accent:#33CCBE;
-      --hotspot-size:18px;
-      --menu-font-size:15px;
-      --menu-bg: rgba(51,204,190,0.85);
-      --menu-hover-bg:#111;
-      --menu-hover-color:#fff;
-      --breakpoint:880px;
-    }
-    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, Roboto, "Segoe UI", "Helvetica Neue", Arial}
-    body{background:#fff;color:#111;display:flex;align-items:flex-start;justify-content:center;padding:20px}
-    .page{max-width:1200px;width:100%}
-    h1{font-size:18px;margin:10px 0 6px;text-align:center;font-weight:600}
-    .below-note{margin:6px 0 14px;font-size:14px;color:#333;text-align:center;font-family:inherit;line-height:1.4}
-    .below-note a{color:var(--menu-hover-color);background:var(--menu-hover-bg);padding:2px 6px;border-radius:4px;text-decoration:none}
-
-    /* SEARCH UI */
-    /* margin-bottom csökkentve, hogy a kép közelebb legyen */
-    .search-wrap{max-width:920px;margin:0 auto 8px auto;display:flex;flex-direction:column;gap:8px;}
-    .search-hint{font-size:14px;color:#666;text-align:center}
-    .search-input-row{display:flex;gap:8px;align-items:center;justify-content:center}
-    /* szegély erősebb, finomabb fókusz-árnyék */
-    .search-input{
-      width:100%;
-      max-width:720px;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid rgba(0,0,0,0.14);
-      box-shadow:0 6px 18px rgba(0,0,0,0.03);
-      font-size:15px;
-      transition: box-shadow .18s ease, border-color .18s ease, transform .12s ease;
-      background: #fff;
-    }
-    .search-input:focus{
-      outline: none;
-      border-color: rgba(51,204,190,0.9);
-      box-shadow: 0 8px 30px rgba(51,204,190,0.12);
-      transform: translateY(-1px);
-    }
-    .search-feedback{font-size:13px;color:#444;text-align:center;min-height:18px}
-
-    /* move first image a little closer to search */
-    .image-wrap:first-of-type{ margin-top:6px; }
-
-    .image-wrap{position:relative;background:#fff;border-radius:8px;overflow:hidden;box-shadow:none;margin-bottom:12px;min-height:200px;}
-    .image-wrap img{display:block;width:100%;height:auto;user-select:none}
-
-    .hotspot{position:absolute;transform:translate(-50%,-50%);width:var(--hotspot-size);height:var(--hotspot-size);border-radius:50%;border:3px solid white;background:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,0.25);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:60;transition: transform .14s ease, box-shadow .14s ease, background .18s ease;}
-    .hotspot .dot{width:6px;height:6px;background:white;border-radius:50%}
-    .hotspot:hover, .hotspot.highlight{transform: translate(-50%,-50%) scale(1.35);box-shadow:0 10px 30px rgba(0,0,0,0.18);}
-
-    .overlay-menu{ position:absolute; inset:0; pointer-events:none; z-index:55 }
-    .overlay-menu-item{ position:absolute; transform:translate(-50%,-50%); pointer-events:auto; padding:8px 12px; border-radius:8px; background:var(--menu-bg); border:1px solid rgba(0,0,0,0.06); cursor:pointer; transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease; font-size:var(--menu-font-size); color:#111; box-shadow:0 4px 14px rgba(0,0,0,0.06); z-index:56; white-space:nowrap; }
-    .overlay-menu-item:hover, .overlay-menu-item.active{ background:var(--menu-hover-bg); color:var(--menu-hover-color); transform:translate(-50%,-60%) scale(1.02); box-shadow:0 10px 30px rgba(0,0,0,0.12); }
-
-    /* persistent (search-activated) visual state */
-    .overlay-menu-item.persistent, .overlay-menu-item.persistent.active {
-      background: var(--menu-hover-bg) !important;
-      color: var(--menu-hover-color) !important;
-      transform: translate(-50%,-60%) scale(1.03);
-      box-shadow:0 12px 36px rgba(0,0,0,0.2);
+    :root {
+      --accent: #33CCBE;
+      --bg: #ffffffe9;
+      --muted: #666;
+      --thumb: 150px;
+      --gap: 12px;
+      --overlay-height: 38px;
+      --max-width: 1200px;
+      --card-width: 180px;
     }
 
-    .mobile-menu-bar{ display:none; margin-top:8px; width:100%; box-sizing:border-box; overflow-x:auto; -webkit-overflow-scrolling:touch; display:flex; gap:8px; padding:6px 6px; align-items:center; background:transparent; border-radius:8px; }
-    .mobile-menu-btn{ flex:0 0 auto; min-width:84px; max-width:220px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; padding:8px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); background:var(--menu-bg); color:#111; cursor:pointer; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,0.06); }
-    .mobile-menu-btn:active, .mobile-menu-btn.active{ background:var(--menu-hover-bg); color:var(--menu-hover-color); transform:translateY(-4px); }
-
-    /* SUBMENU PANEL (thumbnails) */
-    .submenu-panel{
-      position:absolute;
-      display:flex;
-      gap:10px;
-      padding:8px;
-      background:#e6e6e6;
-      border-radius:8px;
-      box-shadow:0 8px 30px rgba(0,0,0,0.12);
-      border:1px solid rgba(0,0,0,0.08);
-      z-index:999;
-      transform-origin:center top;
-      opacity:0;
-      visibility:hidden;
-      transition:opacity .18s ease, transform .18s ease;
-      pointer-events:auto;
+    * {
       box-sizing: border-box;
-      max-height: calc(100vh - 160px);
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .submenu-panel.show{ opacity:1; visibility:visible; transform: translateY(0) scale(1); }
-    .submenu-thumb{
-      width:100px;height:100px;flex:0 0 100px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,0.06);cursor:pointer;display:flex;align-items:center;justify-content:center;background:#f7f7f7;position:relative;
-    }
-    .submenu-thumb img{max-width:100%;max-height:100%;display:block}
-    .submenu-thumb .stitle{position:absolute;bottom:4px;left:4px;right:4px;padding:4px 6px;background:rgba(0,0,0,0.55);color:#fff;font-size:12px;border-radius:4px;text-align:center;opacity:0;transition:opacity .12s;}
-    .submenu-thumb:hover .stitle{opacity:1}
-
-    /* SCROLL HINT (fixed) */
-    .scroll-hint{
-      position:fixed;
-      right:16px;
-      bottom:6vh;
-      background: rgba(0,0,0,0.6);
-      color:#fff;
-      padding:8px 12px;
-      border-radius:20px;
-      font-size:13px;
-      z-index:9998;
-      display:flex;
-      gap:8px;
-      align-items:center;
-      pointer-events:none;
-      opacity:0;
-      transform: translateY(6px);
-      transition: opacity .22s ease, transform .22s ease;
-      box-shadow:0 6px 18px rgba(0,0,0,0.12);
-      user-select:none;
-    }
-    .scroll-hint.show{ opacity:0.95; transform: translateY(0); }
-    .scroll-hint .arrow{ display:inline-block; font-size:16px; transform:translateY(0); animation: bounce 1.1s infinite; line-height:1; }
-    @keyframes bounce{ 0%{ transform:translateY(0); } 50%{ transform:translateY(5px); } 100%{ transform:translateY(0); } }
-
-    /* small modal / editor styles (kept) */
-    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:10000; }
-    .modal{ width:920px; max-width:96%; max-height:86vh; overflow:auto; background:#fff; border-radius:10px; padding:16px; box-shadow:0 12px 40px rgba(0,0,0,0.25); }
-    .modal h3{ margin:0 0 8px 0; font-size:16px }
-    .submenu-list{ display:flex; flex-direction:column; gap:12px; margin-bottom:12px }
-    .submenu-item-row{ display:flex; gap:8px; align-items:center }
-    .submenu-item-row input[type="text"]{ padding:6px 8px; border-radius:6px; border:1px solid #ddd; width:100% }
-    .submenu-item-row .thumb-input{ width:260px; flex:0 0 260px }
-
-    .modal .controls{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px }
-
-    .keywords-box{ width:100%; height:64px; padding:8px; border-radius:6px; border:1px solid #ddd; resize:vertical; font-family:inherit }
-
-    @media (max-width:880px){
-      .overlay-menu{ display:none !important }
-      .mobile-menu-bar{ display:flex !important }
-      .overlay-menu-item{ pointer-events:none !important }
-      .submenu-panel{ display:none !important }
-      .scroll-hint{ display:none !important }
-    }
-    @media (max-width:700px){
-      :root{ --hotspot-size:14px; --menu-font-size:13px }
-      .submenu-thumb{ width:86px;height:86px;flex:0 0 86px }
     }
 
-    /* edit controls: VISIBLE by default as requested */
-    #editControls{ position:fixed; right:12px; bottom:12px; z-index:10001; display:none; flex-direction:column; gap:8px }
-    #editControls button{ font-family:inherit; padding:8px 10px; border-radius:6px; background:#111; color:#fff; border:none; cursor:pointer; opacity:.95 }
-    /* opcionális: gyengébb vizuális jelzés hover-suggest esetén */
-    .overlay-menu-item.hover-suggest {
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-      transform: translate(-50%,-58%) scale(1.01);
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial;
+      margin: 0;
+      background: var(--bg);
+      color: #111;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: var(--max-width);
+      margin: 18px auto;
+      padding: 18px;
+    }
+
+    /* ---------- Header: fehér sáv, szöveg előtt türkíz hullámok ---------- */
+    header {
+      background: #9b9b9b; /* fehér sáv */
+      color: #000;
+      padding: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    .header-wrap {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden; /* a hullámok csak a sávon belül látszanak */
+      padding: 5px 5px;
+    }
+
+    /* A te kódod pontos logikáját átültetve érvényes CSS-re */
+    .text {
+      font-weight: 900;
+      font-size: 2vw;
+      color: #f8f7f7;
+      position: relative;
+      background-clip: text;
+      -webkit-background-clip: text;
+      overflow: clip;
+      background-color: #fefcef;
+      /* padding, hogy a pseudo-elemek ne érjenek túl közel a szélhez */
+      padding: 6px 18px;
+      z-index: 1; /* legyen a szöveg a pseudo-elemek fölött */
+      white-space: nowrap;
+    }
+
+    /* pseudo-elemek: ezek a türkíz "hullámok" (a te beállításaid alapján) */
+    .text::before,
+    .text::after {
+      content: '';
+      position: absolute;
+      /* z-index mögé, hogy a szöveg látszódjon előtte */
+      z-index: -1;
+
+      /* türkíz szín áttetsző változata: a te kódod #33ccbee6 volt */
+      background-color: #199c9c;
+
+      width: 175%;
+      top: 50%;
+      left: 50%;
+      aspect-ratio: 1;
+      /* modern CSS translate: (a te snippeted "translate: -50% 0") */
+      transform: translate(-50%, 0) rotate(0deg);
+
+      border-top-left-radius: 60% 80%;
+      border-top-right-radius: 50% 80%;
+      border-bottom-left-radius: 50% 80%;
+      border-bottom-right-radius: 50% 80%;
+
+      mix-blend-mode: multiply;
+      /* animáció: rot 10s linear infinite - ahogy megadtad */
+      animation: rot 10s linear infinite;
+      pointer-events: none;
       opacity: 0.95;
     }
-    .overlay-menu-item {
+
+    /* a második hullám: késleltetett és rövidebb időtartam, ahogy a snippetben volt */
+    .text::after {
+      animation-delay: -5s;
+      animation-duration: 8s;
+    }
+
+    @keyframes rot {
+      to {
+        /* eredeti snippet: rotate: 360deg; - modern, de kompatibilisebb transform használata */
+        transform: translate(-50%, 0) rotate(360deg);
+      }
+    }
+
+    /* ---------- A többi stílus (eredeti fájlból, érintetlenül) ---------- */
+
+    /* Toggle */
+    .toggle {
+      display: flex;
+      border: 1px solid #e6e6e6;
+      border-radius: 10px;
+      overflow: hidden;
+      width: 420px;
+      margin: 18px auto 18px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .toggle button {
+      flex: 1;
+      padding: 12px 14px;
+      border: 0;
+      background: transparent;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .toggle button.active {
+      background: #111;
+      color: #fff;
+    }
+
+    /* Search / controls */
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      justify-content: center;
+    }
+
+    .search-row input.search {
+      min-width: 320px;
+    }
+
+    .search-row .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-row label {
+      font-size: 13px;
+      color: #333;
+    }
+
+    .search-row select,
+    input[type=checkbox] {
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #e6e6e6;
+    }
+
+    .search-row input[type=checkbox] {
+      width: auto;
+    }
+
+    .search-row input.search {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid #e6e6e6;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    /* Results */
+    .results {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      min-height: 120px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* Modified .card so the glow effect can layer correctly */
+    .card {
+      width: var(--card-width);
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: transform .14s ease, box-shadow .14s ease;
+      position: relative; /* needed for absolute glow child */
+      isolation: isolate; /* keep blending contained */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    .card .overlay {
+      position: relative;
+      z-index: 2; /* ensure overlay content is above glow visuals */
+    }
+
+    .card img {
+      width: 100%;
+      height: var(--thumb);
+      object-fit: cover;
+      display: block;
+      background: #f6f6f6;
+    }
+
+    .name-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--overlay-height);
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 12px;
+      backdrop-filter: blur(2px);
+      z-index: 3;
+    }
+
+    .meta {
+      padding: 8px 10px;
+      border-top: 1px solid #f4f4f4;
+      font-size: 13px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 2;
+    }
+
+    .meta .sku {
+      opacity: 0.8;
+    }
+
+    .meta .price {
+      font-weight: 700;
+    }
+
+    .no-results {
+      padding: 28px;
+      text-align: center;
+      color: #666;
+    }
+
+    .debug {
+      margin-top: 12px;
+      padding: 10px;
+      background: #f3f3f3;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #333;
+      white-space: pre-wrap;
+    }
+
+    .loading {
+      padding: 10px;
+      font-weight: 600;
+      color: #0066cc;
+    }
+
+    /* ---------- Header teljes szélességű sáv és balra kitűzött logó ---------- */
+    .site-header {
+      width: 100%;
+      background: #8a8989;           /* a szürke sáv színe (állítható) */
+      position: relative;            /* a logo abszolút pozícionálásához */
+      padding: 8px 0;                /* függőleges padding: sáv magassága */
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      overflow: visible;
+    }
+
+    /* a logó a sáv bal szélére kerül */
+    .logo-link {
+      position: absolute;
+      left: 12px;                    /* távolság a bal oldaltól; tedd 0-ra, ha teljesen a szélére kell */
+      top: 50%;
+      transform: translateY(-50%);
+      display: inline-block;
+      z-index: 5;                    /* legyen a hullámok/ szöveg fölött */
       text-decoration: none;
     }
 
-    .overlay-menu-item:hover,
-    .overlay-menu-item:focus {
-      text-decoration: none;
+    /* logó mérete - állítható */
+    .logo {
+      height: 44px;
+      width: auto;
+      display: block;
+    }
+
+    /* a középső tartalom (a hullámos text) középre igazítva egy max-width konténerben */
+    .header-wrap {
+      max-width: var(--max-width, 1200px); /* vagy a te meglévő --max-width változód */
+      margin: 0 auto;               /* középre hozza a tartalmat */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 56px;              /* oldalpaddings: biztosít helyet a logó mellett, ne fedje le a szöveget */
+      /* ha a logó igazán balra van (left:0), növeld az oldalpaddings-et szükség szerint */
+      position: relative;
+      z-index: 2;
+    }
+
+    /* A hullámos .text: eltávolítjuk a fehér hátteret, megtartjuk az animációt */
+    .text {
+      font-weight: 900;
+      font-size: 2vw;
+      color: #f8f7f7;
+      position: relative;
+      background-clip: text;
+      -webkit-background-clip: text;
+      overflow: clip;
+      background-color: transparent;  /* fontos: ne legyen fehér hátter */
+      padding: 6px 18px;
+      z-index: 3;                      /* legyen a pseudo hullámok fölött */
+      white-space: nowrap;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width:480px) {
+      :root {
+        --thumb: 120px;
+      }
+
+      .container {
+        padding: 12px;
+      }
+
+      .toggle {
+        width: 100%;
+      }
+
+      .card {
+        width: 100%;
+      }
+
+      .text {
+        font-size: 5.2vw;
+      }
+    }
+
+    @media (min-width:900px) {
+      /* at wide view ensure card width is as set, more columns fit automatically */
+    }
+
+    @media (max-width:480px) {
+      .logo {
+        height: 20px;
+      }
+      .header-wrap {
+        padding: 0 12px;
+      }
+      .text {
+        font-size: 5.5vw;
+        white-space: normal;
+        text-align: center;
+      }
     }
 
 
+
+    /* -------------------- Glow CSS (integrated from your snippet) -------------------- */
+    :root {
+      /* variables for the glow effect - do not conflict with existing --card-width etc */
+      --glow-backdrop: hsl(0 0% 60% / 0.12);
+      --radius: 14;
+      --border: 3;
+      --backup-border: var(--glow-backdrop);
+      --size: 200;
+    }
+
+    /* We scope the heavy selectors to cards that have data-glow attribute */
+    [data-glow] {
+      --border-size: calc(var(--border, 2) * 1px);
+      --spotlight-size: calc(var(--size, 150) * 1px);
+      --hue: calc(var(--base, 190) + (var(--xp, 0) * var(--spread, 0)));
+      background-image: radial-gradient(
+        var(--spotlight-size) var(--spotlight-size) at
+        calc(var(--x, 0) * 1px)
+        calc(var(--y, 0) * 1px),
+        hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 70) * 1%) / var(--bg-spot-opacity, 0.1)), transparent
+      );
+      background-color: var(--glow-backdrop, transparent);
+      background-size: calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)));
+      background-position: 50% 50%;
+      background-attachment: fixed;
+      border: var(--border-size) solid var(--backup-border);
+      position: relative;
+      touch-action: none;
+      border-radius: calc(var(--radius) * 1px);
+      z-index: 1;
+      overflow: visible;
+    }
+
+    [data-glow]::before,
+    [data-glow]::after {
+      pointer-events: none;
+      content: "";
+      position: absolute;
+      inset: calc(var(--border-size) * -1);
+      border: var(--border-size) solid transparent;
+      border-radius: calc(var(--radius) * 1px);
+      background-attachment: fixed;
+      background-size: calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)));
+      background-repeat: no-repeat;
+      background-position: 50% 50%;
+      mask:
+        linear-gradient(transparent, transparent),
+        linear-gradient(white, white);
+      mask-clip: padding-box, border-box;
+      mask-composite: intersect;
+    }
+
+    [data-glow]::before {
+      background-image: radial-gradient(
+        calc(var(--spotlight-size) * 0.75) calc(var(--spotlight-size) * 0.75) at
+        calc(var(--x, 0) * 1px)
+        calc(var(--y, 0) * 1px),
+        hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 50) * 1%) / var(--border-spot-opacity, 1)), transparent 100%
+      );
+      filter: brightness(2);
+      z-index: 0;
+    }
+
+    [data-glow]::after {
+      background-image: radial-gradient(
+        calc(var(--spotlight-size) * 0.5) calc(var(--spotlight-size) * 0.5) at
+        calc(var(--x, 0) * 1px)
+        calc(var(--y, 0) * 1px),
+        hsl(var(--hue,210) calc(var(--saturation,100) * 1%) calc(92 * 1%) / var(--border-light-opacity, 0.85)), transparent 100%
+      );
+    }
+
+
+    /* nested glow element (empty element used for blur/outer glow layer) */
+    [data-glow] [data-glow] {
+      position: absolute;
+      inset: 0;
+      will-change: filter;
+      opacity: var(--outer, 1);
+      border-radius: calc(var(--radius) * 1px);
+      z-index: 0;
+      pointer-events: none;
+    }
+    [data-glow] > [data-glow] {
+      border-radius: calc(var(--radius) * 1px);
+      border-width: calc(var(--border-size) * 20);
+      filter: blur(calc(var(--border-size) * 10));
+      background: none;
+      pointer-events: none;
+    }
+    [data-glow] > [data-glow]::before {
+      inset: -10px;
+      border-width: 10px;
+    }
+    [data-glow] [data-glow] {
+      border: none;
+    }
+
+    [data-glow] :is(a, button) {
+      border-radius: calc(var(--radius) * 1px);
+      border: var(--border-size) solid transparent;
+    }
+
+    /* small safety: ensure internal overlay content sits above glow visuals */
+    .card > .overlay,
+    .card > .meta {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* tweak highlight strength for light background */
+    @media (prefers-color-scheme: light) {
+      [data-glow] { --bg-spot-opacity: 0.06; --border-spot-opacity: 0.8; --border-light-opacity: 0.6; }
+    }
+
+    /* End glow CSS */
+
+    /* -------------------- Strong preset overrides (fehér háttérre) -------------------- */
+    :root {
+      --bg-spot-opacity: 0.9;       /* háttér folt intenzitása */
+      --border-spot-opacity: 1.5;      /* kontúr színes folt erőssége */
+      --border-light-opacity: 0.35;     /* fehér szikra intenzitása */
+      --size: 90;                   /* spot méret (px) — kisebb = élesebb) */
+      --border: 9;                   /* keret vastagság */
+      --saturation: 140;
+      --lightness: 60;
+    }
   </style>
+
+  <script src="products_with_status_min.js"></script>
 </head>
+
 <body>
-  <div class="page">
-    <h1>Kattintson a képen látható termékkategóriák valamelyikére a találatok megjelenítéséhez!</h1>
-    <div class="below-note" id="belowNote">
-      Amennyiben nem találta meg, amit keresett, illetve kíváncsi a többi termékünkre is, keressen az összes kategória között
-      <a href="https://www.trinexus.hu/" aria-label="Összes kategória"> &nbsp;&nbsp;&gt;&gt;&gt; </a>
+  <header class="site-header">
+    <a href="https://www.trinexus.hu" target="_blank" class="logo-link" aria-label="Trinexus főoldal">
+      <img src="logo2.png" alt="Trinexus Aqua" class="logo">
+    </a>
+  
+    <div class="header-wrap">
+      <div class="text">Trinexus Aqua képes termékkereső</div>
+    </div>
+  </header>
+
+
+  <div class="container">
+    <div class="toggle" role="tablist" aria-label="Kereső mód">
+      <button id="prodBtn" class="active">Termékkereső</button>
+      <button id="catBtn">Kategóriakereső</button>
     </div>
 
-    <!-- SEARCH BAR + HINT -->
-    <div class="search-wrap" aria-hidden="false">
-            <div class="search-input-row">
-        <input id="categorySearchInput" class="search-input" type="search" placeholder="Kezdje el gépelni a keresett termék nevét..." aria-label="Termék kereső"/>
-      </div>
-      <div id="searchFeedback" class="search-feedback" aria-live="polite"></div>
+    <div class="search-row">
+      <input id="q" class="search" type="search" placeholder="Írja be a termék nevét vagy cikkszámát..."
+        autocomplete="off" disabled />
     </div>
 
-    <!-- IMAGES -->
-    <div class="image-wrap" id="imageWrap1">
-      <img id="targetImage1" src="25_TA_200S_OH004.jpg" alt="Hajó - kategória kereső"/>
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:12px;">
+      <label for="sortSelect">Rendezés:</label>
+      <select id="sortSelect" aria-label="Rendezés">
+        <option value="relevance">Relevancia</option>
+        <option value="price_asc">Ár: növekvő</option>
+        <option value="price_desc">Ár: csökkenő</option>
+        <option value="name_asc">Név A→Z</option>
+        <option value="name_desc">Név Z→A</option>
+      </select>
+      <label style="margin-left:12px"><input type="checkbox" id="imgOnly"> csak képpel rendelkező termékek</label>
     </div>
-    <div id="mobileMenuBar1" class="mobile-menu-bar" aria-hidden="true"></div>
 
-    <div class="image-wrap" id="imageWrap2">
-      <img id="targetImage2" src="25-T21_FA02%20másolat.jpg" alt="Hajó 2 - kategória kereső"/>
+    <div id="results" class="results">
+      <div class="loading">A kereső betöltése...</div>
     </div>
-    <div id="mobileMenuBar2" class="mobile-menu-bar" aria-hidden="true"></div>
+
+    <div id="debug" class="debug" aria-live="polite" style="display:none"></div>
   </div>
 
-  <!-- fixed scroll hint -->
-  <div id="fixedScrollHint" class="scroll-hint" aria-hidden="true"><span>Görgess tovább</span><span class="arrow">↓</span></div>
-
-  <!-- Submenu floating panel -->
-  <div id="submenuPanel" class="submenu-panel" aria-hidden="true" data-persistent="false"></div>
-
-  <!-- Modal for submenu editor -->
-  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
-    <div class="modal" id="submenuEditor">
-      <h3>Almenü-szerkesztő és kulcsszavak</h3>
-      <p style="margin:6px 0 12px 0;font-size:13px;color:#444">Válassz menüt, szerkeszd az almenü-elemeket és a kategória kulcsszavait. A kulcsszavakat vesszővel vagy új sorokkal add meg. A változtatások elmentődnek a böngészőben.</p>
-
-      <label for="menuSelect">Főmenü:</label>
-      <select id="menuSelect" style="width:100%;padding:8px;margin:6px 0 12px 0;border-radius:6px;border:1px solid #ddd"></select>
-
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <div style="flex:1">
-          <label for="keywordsBox">Kézi kulcsszavak (vesszővel vagy új sorral):</label>
-          <textarea id="keywordsBox" class="keywords-box" placeholder="pld: radar, halradar, garmin, depth..."></textarea>
-        </div>
-      </div>
-
-      <div id="submenuRows" class="submenu-list"></div>
-
-      <div style="display:flex;gap:8px;">
-        <button id="addSubBtn" style="padding:8px 10px;border-radius:6px;border:1px solid #ddd;background:#f5f5f5;cursor:pointer">Új almenüelem</button>
-      </div>
-
-      <div class="controls">
-        <button id="exportSubBtn" style="padding:8px 10px;border-radius:6px;background:#eee;cursor:pointer">Exportálás (JSON)</button>
-        <button id="saveSubBtn" style="padding:8px 10px;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer">Mentés</button>
-        <button id="closeModalBtn" style="padding:8px 10px;border-radius:6px;background:#999;color:#fff;cursor:pointer">Bezár</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Edit controls: VISIBLE -->
-  <div id="editControls" aria-hidden="true">
-    <button id="toggleEditBtn">Edit mode: OFF</button>
-    <button id="openSubEditorBtn">Almenü-szerkesztő</button>
-  </div>
+  <script id="products-data" type="application/json"></script>
 
   <script>
-    /* ---------- initial data (beillesztve: alap kategóriák + submenu + kézzel megadott kulcsszavak feltöltve a mentésből) ---------- */
-    const initialData = {
-      categories: [
-        {"name":"Halradarok","left":35.7,"top":40.9,"link":"https://www.trinexus.hu/halradar","anchor":"left","menuLeft":30.7,"menuTop":44.5},
-        {"name":"Bikák","left":68.6,"top":73.6,"link":"https://www.trinexus.hu/hajofelszereles-bika","anchor":"left","menuLeft":68.6,"menuTop":78.2},
-        {"name":"Kapcsolók, panelek","left":39.5,"top":40.4,"link":"https://www.trinexus.hu/elektronika-kapcsolo-panel","anchor":"left","menuLeft":33.7,"menuTop":36.4},
-        {"name":"Ülések, talpak","left":48.5,"top":38.7,"link":"https://www.trinexus.hu/hajofelszereles-ules-talp","anchor":"left","menuLeft":46,"menuTop":43.7},
-        {"name":"Zárak, reteszek, zsanérok","left":38.5,"top":48.5,"link":"https://www.trinexus.hu/hajofelszereles-zar-retesz-zsaner","anchor":"left","menuLeft":39.4,"menuTop":53.1},
-        {"name":"Műszerek","left":38.2,"top":31.6,"link":"https://www.trinexus.hu/hajofelszereles-muszer","anchor":"left","menuLeft":36.2,"menuTop":27.2},
-        {"name":"Üzemanyag rendszer és tartozékai","left":54.4,"top":50.1,"link":"https://www.trinexus.hu/hajofelszereles-uzemanyag-rendszer-es-tartozekai","anchor":"left","menuLeft":62.5,"menuTop":46.1},
-        {"name":"Kormányzás","left":42.4,"top":37,"link":"https://www.trinexus.hu/hajofelszereles-kormanyzas","anchor":"left","menuLeft":45.4,"menuTop":32.9},
-        {"name":"Napfénytető és tartozékai","left":70.6,"top":60,"link":"https://www.trinexus.hu/hajofelszereles-napfenyteto-tartozekai","anchor":"right","menuLeft":64.6,"menuTop":65.2},
-        {"name":"Festékek, vegyi anyagok","left":70.8,"top":26.4,"link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag","anchor":"left","menuLeft":72.2,"menuTop":22.6},
-        {"name":"Létrák, roll bárok","left":85.8,"top":31.4,"link":"https://www.trinexus.hu/hajofelszereles-letra-hid-daru-roll-bar","anchor":"right","menuLeft":86.3,"menuTop":26.7},
-        {"name":"Robbanómotorok","left":89.3,"top":49.9,"link":"https://www.trinexus.hu/robbanomotor","anchor":"right","menuLeft":84.1,"menuTop":45.9},
-        {"name":"Ablakok, fedelek, rekeszek","left":75.3,"top":54,"link":"https://www.trinexus.hu/hajofelszereles-ablak-fedel-rekesz-tarolo","anchor":"right","menuLeft":81.6,"menuTop":59.2},
-        {"name":"Vonószemek","left":85.6,"top":65.9,"link":"https://www.trinexus.hu/hajofelszereles-vonoszem","anchor":"left","menuLeft":89,"menuTop":70.6},
-        {"name":"Audió","left":8,"top":38.9,"link":"https://www.trinexus.hu/audio-video","anchor":"left","menuLeft":9.4,"menuTop":35.4},
-        {"name":"Kötelező felszerelések","left":16.8,"top":56.7,"link":"https://www.trinexus.hu/kotelezo-felszereles","anchor":"left","menuLeft":18.6,"menuTop":52.3},
-        {"name":"Pohártartók, tárolók","left":41.7,"top":65.9,"link":"https://www.trinexus.hu/hajofelszereles-tarolo-rekesz-tarto","anchor":"left","menuLeft":41.8,"menuTop":70.9},
-        {"name":"Navigációs fények","left":20.3,"top":29.9,"link":"https://www.trinexus.hu/hajofelszereles-navigacios-feny","anchor":"left","menuLeft":20,"menuTop":26.2},
-        {"name":"Akasztók, kapaszkodók","left":26.2,"top":68.2,"link":"https://www.trinexus.hu/hajofelszereles-akaszto-kapaszkodo-egyeb","anchor":"left","menuLeft":24.2,"menuTop":64.1},
-        {"name":"Orrcsigák","left":3.6,"top":49.7,"link":"https://www.trinexus.hu/hajofelszereles-orrcsiga-csiga-rogzitok","anchor":"left","menuLeft":4.4,"menuTop":54.3},
-        {"name":"Víz ki- és bevezetés","left":74,"top":73.2,"link":"https://www.trinexus.hu/hajofelszereles-vizi-ki-bevezetes","anchor":"left","menuLeft":81,"menuTop":77.6}
-      ],
-      categories2: [
-        {"name":"Motortakaró ponyva","left":91.7,"top":39,"link":"https://www.trinexus.hu/fedelzeti-felszereles-motor-egyeb-takaro","menuLeft":90.7,"menuTop":34.8},
-        {"name":"Hajóponyva","left":53.4,"top":31.9,"link":"https://www.trinexus.hu/fedelzeti-felszereles-hajoponyva","menuLeft":53.4,"menuTop":27.2},
-        {"name":"Tréler és tartozékai","left":31.2,"top":63.5,"link":"https://www.trinexus.hu/treler-tartozekai","menuLeft":28.9,"menuTop":68.7},
-        {"name":"Csörlő, heveder, rögzítő","left":12.9,"top":52.5,"link":"https://www.trinexus.hu/csorlo-heveder-rogzito","menuLeft":9.7,"menuTop":57.7},
-        {"name":"Görgő, Y ütköző","left":19.5,"top":49.3,"link":"https://www.trinexus.hu/gorgo-y-utkozo","menuLeft":23.7,"menuTop":44.6}
-      ],
-
-      /* ------ a feltöltött JSON-ból beemelt submenuStore (az export tartalma) ------ */
-      submenuStore: {
-        "Navigációs fények": [
-          {"name":"Fehér fény","link":"https://www.trinexus.hu/hajofelszereles-feher-feny","thumb":"https://www.trinexus.hu/img/17496/catpic_879351/286x286,r/879351.webp?time=1540910797"},
-          {"name":"Oldal fény","link":"https://www.trinexus.hu/hajofelszereles-oldalfeny","thumb":"https://www.trinexus.hu/img/17496/catpic_356220/286x286,r/356220.webp?time=1540910826"},
-          {"name":"Kombinált fény, tartozék","link":"https://www.trinexus.hu/hajofelszereles-kombinalt-feny-tartozek","thumb":"https://www.trinexus.hu/img/17496/catpic_627138/286x286,r/627138.webp?time=1540910852"},
-          {"name":"Izzók","link":"https://www.trinexus.hu/hajofelszereles-ledes-hagyomanyos-izzok","thumb":"https://www.trinexus.hu/img/17496/catpic_196272/286x286,r/196272.webp?time=1540910869"}
-        ],
-        "Műszerek": [
-          {"name":"KUS","link":"https://www.trinexus.hu/hajofelszereles-kus","thumb":"https://www.trinexus.hu/img/17496/catpic_561054/286x286,r/561054.webp?time=1540911382"},
-          {"name":"Uflex műszer","link":"https://www.trinexus.hu/hajofelszereles-uflex-muszer","thumb":"https://www.trinexus.hu/img/17496/catpic_624262/429x429,r/624262.webp?time=1563550701"}
-        ],
-        "Audió": [
-          {"name":"Audió","link":"https://www.trinexus.hu/audio","thumb":"https://www.trinexus.hu/img/17496/catpic_328413/286x286,r/328413.webp?time=1540999594"},
-          {"name":"Videó","link":"https://www.trinexus.hu/spl/861631/Video","thumb":"https://www.trinexus.hu/img/17496/catpic_861631/286x286,r/861631.webp?time=1540999615"},
-          {"name":"Antenna","link":"https://www.trinexus.hu/audio-antenna","thumb":"https://www.trinexus.hu/img/17496/catpic_898387/286x286,r/898387.webp?time=1540999628"}
-        ],
-        "Kötelező felszerelések": [
-          {"name":"0-6 méter","link":"https://www.trinexus.hu/kotelezo-felszereles-0-6-m-kozotti-hajotestek","thumb":"https://www.trinexus.hu/img/17496/catpic_164719/572x572,r/164719.webp?time=1692354127"},
-          {"name":"6-12 méter","link":"https://www.trinexus.hu/kotelezo-felszereles-6-12-m-kozotti-hajotestek","thumb":"https://www.trinexus.hu/img/17496/catpic_658794/572x572,r/658794.webp?time=1692354762"},
-          {"name":"12-15 méter","link":"https://www.trinexus.hu/kotelezo-felszereles-12-15-m-kozotti-hajotestek","thumb":"https://www.trinexus.hu/img/17496/catpic_251487/572x572,r/251487.webp?time=1692354620"},
-          {"name":"15-20 méter","link":"https://www.trinexus.hu/kotelezo-felszereles-15-20-m-kozotti-hajotestek","thumb":"https://www.trinexus.hu/img/17496/catpic_174625/572x572,r/174625.webp?time=1692354529"},
-          {"name":"Csónak, kajak-kenu és egyéb","link":"https://www.trinexus.hu/kotelezo-felszereles-kajak-kenu-egyeb","thumb":"https://www.trinexus.hu/img/17496/catpic_602560/572x572,r/602560.webp?time=1692356305"}
-        ],
-        "Kapcsolók, panelek": [
-          {"name":"Kapcsolótábla","link":"https://www.trinexus.hu/elektronika-kapcsolotabla","thumb":"https://www.trinexus.hu/img/17496/catpic_632329/286x286,r/632329.webp?time=1541430931"},
-          {"name":"Kapcsoló, egyéb","link":"https://www.trinexus.hu/elektronika-kapcsolo-egyeb","thumb":"https://www.trinexus.hu/img/17496/catpic_204965/286x286,r/204965.webp?time=1541430947"}
-        ],
-        "Zárak, reteszek, zsanérok": [
-          {"name":"Zár, retesz","link":"https://www.trinexus.hu/hajofelszereles-zar-retesz","thumb":"https://www.trinexus.hu/img/17496/catpic_470663/286x286,r/470663.webp?time=1540901386"},
-          {"name":"Zsanér","link":"https://www.trinexus.hu/hajolfeszereles-zsaner","thumb":"https://www.trinexus.hu/img/17496/catpic_583246/286x286,r/583246.webp?time=1540901396"}
-        ],
-        "Halradarok": [
-          {"name":"Deeper","link":"https://www.trinexus.hu/halradar-deeper","thumb":"https://www.trinexus.hu/img/17496/catpic_261297/286x286,r/261297.webp?time=1675611489"},
-          {"name":"Humminbird","link":"https://www.trinexus.hu/halradar-humminbird","thumb":"https://www.trinexus.hu/img/17496/catpic_789485/572x572,r/789485.webp?time=1698403898"},
-          {"name":"Garmin","link":"https://www.trinexus.hu/halradar-garmin","thumb":"https://www.trinexus.hu/img/17496/catpic_776048/572x572,r/776048.webp?time=1698403914"},
-          {"name":"Lowrance","link":"https://www.trinexus.hu/halradar-lowrance","thumb":"https://www.trinexus.hu/img/17496/catpic_971398/572x572,r/971398.webp?time=1699009164"},
-          {"name":"Halradar etetőhajóra","link":"https://www.trinexus.hu/halradar-etetohajora","thumb":"https://www.trinexus.hu/img/17496/catpic_972563/572x572,r/972563.webp?time=1699009415"},
-          {"name":"Jeladó- és monitortartó","link":"https://www.trinexus.hu/jelado-monitor-tarto","thumb":"https://www.trinexus.hu/img/17496/catpic_465279/572x572,r/465279.webp?time=1699362624"}
-        ],
-        "Kormányzás": [
-          {"name":"Kormány, kormánymű, tartozék","link":"https://www.trinexus.hu/hajofelszereles-kormany-kormanymu-tartozek","thumb":"https://www.trinexus.hu/img/17496/catpic_507425/572x572,r/507425.webp?time=1699450958"},
-          {"name":"Kormánybovden, kivezető, gumiharang","link":"https://www.trinexus.hu/hajofelszereles-kormanybovden-kivezeto-gumiharang","thumb":"https://www.trinexus.hu/img/17496/catpic_133544/572x572,r/133544.webp?time=1699451230"}
-        ],
-        "Üzemanyag rendszer és tartozékai": [
-          {"name":"Tank, kanna, tartozékaik","link":"https://www.trinexus.hu/hajofelszereles-tank-kanna-tartozekaik","thumb":"https://www.trinexus.hu/img/17496/catpic_218438/286x286,r/218438.webp?time=1540911720"},
-          {"name":"Csatlakozó, cső, pumpa","link":"https://www.trinexus.hu/hajofelszereles-csatlakozo-cso-pumpa","thumb":"https://www.trinexus.hu/img/17496/catpic_695151/286x286,r/695151.webp?time=1540911967"},
-          {"name":"Csap, szűrő, egyéb","link":"https://www.trinexus.hu/hajofelszereles-csap-szuro-egyeb","thumb":"https://www.trinexus.hu/img/17496/catpic_771889/286x286,r/771889.webp?time=1540912012"}
-        ],
-        "Napfénytető és tartozékai": [
-          {"name":"Tető","link":"https://www.trinexus.hu/hajofelszereles-napfenyteto-teto","thumb":"https://www.trinexus.hu/img/17496/catpic_582419/572x572,r/582419.webp?time=1724671136"},
-          {"name":"Tartozék","link":"https://www.trinexus.hu/hajofelszereles-napfenyteto-tartozek","thumb":"https://www.trinexus.hu/img/17496/catpic_581377/572x572,r/581377.webp?time=1699447712"}
-        ],
-        "Festékek, vegyi anyagok": [
-          {"name":"Algagátló, alapozó, fedőfesték","link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-algagatlo-alapozo","thumb":"https://www.trinexus.hu/img/17496/catpic_375984/286x286,r/375984.webp?time=1540998581"},
-          {"name":"Yachticon","link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-yachtikon-tisztitas-karbantartas","thumb":"https://www.trinexus.hu/img/17496/catpic_516271/286x286,r/516271.webp?time=1540998677"},
-          {"name":"Tisztító és ápoló szer","link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-tisztito-apolo-szer","thumb":"https://www.trinexus.hu/img/17496/catpic_969856/286x286,r/969856.webp?time=1540998700"},
-          {"name":"Javító, karbantartó anyag","link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-javito-karbantarto-anyag","thumb":"https://www.trinexus.hu/img/17496/catpic_613176/286x286,r/613176.webp?time=1540998716"},
-          {"name":"International","link":"https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-international-tisztitas-karbantartas","thumb":"https://www.trinexus.hu/img/17496/catpic_402523/286x286,r/402523.webp?time=1540998736"}
-        ],
-        "Létrák, roll bárok": [
-          {"name":"Hajólétra, platform","link":"https://www.trinexus.hu/hajofelszereles-hajoletra-platform","thumb":"https://www.trinexus.hu/img/17496/catpic_446556/286x286,r/446556.webp?time=1540902623"},
-          {"name":"Hajóhíd, daru, roll bar","link":"https://www.trinexus.hu/hajofelszereles-hajohid-daruk-roll-bar","thumb":"https://www.trinexus.hu/img/17496/catpic_391305/286x286,r/391305.webp?time=1540902641"}
-        ],
-        "Ablakok, fedelek, rekeszek": [
-          {"name":"Ablakok","link":"https://www.trinexus.hu/hajofelszereles-ablakok","thumb":"https://www.trinexus.hu/img/17496/catpic_247078/286x286,r/247078.webp?time=1540901130"},
-          {"name":"Fedelek","link":"https://www.trinexus.hu/hajofelszereles-fedelek","thumb":"https://www.trinexus.hu/img/17496/catpic_205714/286x286,r/205714.webp?time=1540901142"},
-          {"name":"Tároló, tartó, rekesz","link":"https://www.trinexus.hu/hajofelszereles-tarolo-rekesz-tarto","thumb":"https://www.trinexus.hu/img/17496/catpic_616634/286x286,r/616634.webp?time=1540901154"}
-        ],
-        "Robbanómotorok": [
-          {"name":"Mercury","link":"https://www.trinexus.hu/robbanomotor-mercury","thumb":"https://www.trinexus.hu/img/17496/catpic_968274/572x572,r/968274.webp?time=1693314514"},
-          {"name":"Tohatsu","link":"https://www.trinexus.hu/robbanomotor-tohatsu","thumb":"https://www.trinexus.hu/img/17496/catpic_477241/572x572,r/477241.webp?time=1693314525"},
-          {"name":"Honda","link":"https://www.trinexus.hu/robbanomotor-honda","thumb":"https://www.trinexus.hu/img/17496/catpic_883582/572x572,r/883582.webp?time=1693314591"},
-          {"name":"Selva","link":"https://www.trinexus.hu/Selva","thumb":"https://www.trinexus.hu/img/17496/catpic_176061/572x572,r/176061.webp?time=1693315417"},
-          {"name":"Parsun","link":"https://www.trinexus.hu/robbanomotor-parsun","thumb":"https://www.trinexus.hu/img/17496/catpic_865594/572x572,r/865594.webp?time=1693315730"},
-          {"name":"Olaj","link":"https://www.trinexus.hu/sct/997623/Olaj","thumb":"https://www.trinexus.hu/img/17496/catpic_997623/572x572,r/997623.webp?time=1693316624"}
-        ],
-        "Pohártartók, tárolók": [
-          {"name":"Pohártartó, egyéb","link":"https://www.trinexus.hu/hajofelszereles-pohartarto","thumb":"https://www.trinexus.hu/img/17496/310400/286x286,r/310400.webp?time=1689995627"}
-        ],
-        "Akasztók, kapaszkodók": [
-          {"name":"Akasztók, kapaszkodók","link":"https://www.trinexus.hu/hajofelszereles-kapaszkodo","thumb":"https://www.trinexus.hu/img/17496/150003/572x572,r/150003.webp?time=1689984775"}
-        ],
-        "Orrcsigák": [
-          {"name":"Orrcsigák, csigák","link":"https://www.trinexus.hu/hajofelszereles-orrcsiga","thumb":"https://www.trinexus.hu/img/17496/120201/572x572,r/120201.webp?time=1689996363"}
-        ],
-        "Víz ki- és bevezetés": [
-          {"name":"Víz ki- és bevezetés","link":"https://www.trinexus.hu/hajofelszereles-vizi-ki-bevezetes?infinite_page=8","thumb":"https://www.trinexus.hu/img/17496/921/486x486,r/921.webp?time=1739187604"}
-        ],
-        "Motortakaró ponyva": [
-          {"name":"Motortakaró ponyva","link":"https://www.trinexus.hu/fedelzeti-felszereles-motor-egyeb-takaro","thumb":"https://www.trinexus.hu/img/17496/504640/572x572,r/504640.webp?time=1689618499"}
-        ],
-        "Hajóponyva": [
-          {"name":"Hajóponyva","link":"https://www.trinexus.hu/fedelzeti-felszereles-hajoponyva","thumb":"https://www.trinexus.hu/img/17496/3487-3/486x486,r/3487-3.webp?time=1684429699"}
-        ],
-        "Tréler és tartozékai": [
-          {"name":"Tréler és tartozékai","link":"https://www.trinexus.hu/treler-tartozekai","thumb":"https://www.trinexus.hu/img/17496/1507-4/286x286,r/1507-4.webp?time=1689995658"}
-        ],
-        "Csörlő, heveder, rögzítő": [
-          {"name":"Csörlő, heveder, rögzítő","link":"https://www.trinexus.hu/csorlo-heveder-rogzito","thumb":"https://www.trinexus.hu/img/17496/1611-14/286x286,r/1611-14.webp?time=1687374487"}
-        ],
-        "Görgő, Y ütköző": [
-          {"name":"Görgő, Y ütköző","link":"https://www.trinexus.hu/gorgo-y-utkozo","thumb":"https://www.trinexus.hu/img/17496/TP25100/286x286,r/TP25100.webp?time=1689995653"}
-        ],
-        "Bikák": [
-          {"name":"Bika rögzítő","link":"https://www.trinexus.hu/hajofelszereles-bika","thumb":"https://www.trinexus.hu/img/17496/220092/572x572,r/220092.webp?time=1739547370"}
-        ],
-        "Kapcsolótábla": [
-          {"name":"Kapcsolótábla komplett","link":"https://www.trinexus.hu/elektronika-kapcsolotabla-komplett","thumb":"https://www.trinexus.hu/img/17496/catpic_345890/286x286,r/345890.webp?time=1540902010"}
-        ],
-        "Ülések, talpak": [
-          {"name":"Ülések, talpak","link":"https://www.trinexus.hu/hajofelszereles-ules-talp?infinite_page=3","thumb":"https://www.trinexus.hu/img/17496/740902/572x572,r/740902.webp?time=1689995771"}
-        ],
-        "Vonószemek": [
-          {"name":"Vonószemek","link":"https://www.trinexus.hu/hajofelszereles-vonoszem?infinite_page=3","thumb":"https://www.trinexus.hu/img/17496/382006/572x572,r/382006.webp?time=1689995855"}
-        ]
-      },
-
-      /* kézzel beállítható kulcsszavak (beemelve az exportból) */
-      "manualKeywords": {
-        "Orrcsigák": [
-          "orrcsiga",
-          "orrcsigák",
-          "csiga",
-          "csigák"
-        ],
-        "Audió": [
-          "hangszóró",
-          "mélynyomó",
-          "erősítő",
-          "mélysugárzó",
-          "médialejátszó",
-          "fejegység"
-        ],
-        "Navigációs fények": [
-          "fény",
-          "ledes",
-          "led",
-          "körfény",
-          "fehér",
-          "lehajtható",
-          "piros",
-          "zzöld",
-          "fehér",
-          "izzó",
-          "pozíció"
-        ],
-        "Kötelező felszerelések": [
-          "horgony",
-          "légkürt",
-          "kürt",
-          "kúp",
-          "gömb",
-          "segédhorgony",
-          "szapoly",
-          "kötél"
-        ],
-        "Akasztók, kapaszkodók": [
-          "akasztószem",
-          "kapaszkodó",
-          "feszítő",
-          "akasztó",
-          "fenderakasztó",
-          "kötélhorog",
-          "átvezető",
-          "orrvédő"
-        ],
-        "Műszerek": [
-          "Áramerősség",
-          "áramerősségmérő",
-          "feszültség",
-          "feszültségmérő",
-          "fordulatszám",
-          "üzemóra",
-          "olajhőmérséklet",
-          "olajnyomás",
-          "óra",
-          "sebességmérő",
-          "trimműszer",
-          "szintjelző",
-          "vízhőmérséklet",
-          "vízszintmérő",
-          "multifunkciós",
-          "riasztásjelző",
-          "képernyő",
-          "kormányműszer",
-          "pipa",
-          "szennyvíz"
-        ],
-        "Kormányzás": [
-          "kormány",
-          "Z kar",
-          "bovden",
-          "kivezető",
-          "gyűrű",
-          "bovdenkivezető",
-          "gumiharang",
-          "kormányagy",
-          "kormánykábel",
-          "bowden",
-          "távtartó",
-          "végtartó",
-          "bekötő szett",
-          "hidraulikus"
-        ],
-        "Kapcsolók, panelek": [
-          "kapcsoló",
-          "kapcsolótábla",
-          "biztosítékház",
-          "biztosíték",
-          "gyújtáskapcsoló"
-        ],
-        "Ülések, talpak": [
-          "ülőpárna",
-          "ülés",
-          "talp",
-          "szerelőtalp",
-          "pad",
-          "üléspad"
-        ],
-        "Halradarok": [
-          "Helix",
-          "Eagle",
-          "Striker",
-          "flexarm",
-          "chirp",
-          "Xplore",
-          "Apex",
-          "Solix",
-          "Autochart",
-          "Navionics",
-          "Piranhamax",
-          "tápkábel",
-          "neoprén",
-          "jeladó",
-          "jeladótartó",
-          "mega",
-          "live",
-          "Echomap",
-          "Livescope",
-          "Eagle",
-          "Hook",
-          "Reveal",
-          "Hds",
-          "Elite"
-        ],
-        "Zárak, reteszek, zsanérok": [
-          "Rögzítőgyűrű",
-          "zár",
-          "retesz",
-          "ajtózár",
-          "lakat",
-          "lakatpánt",
-          "rekesznyitó",
-          "retesz",
-          "tolózár",
-          "pántos",
-          "nyomógombbal",
-          "zsanér",
-          "fedett"
-        ],
-        "Pohártartók, tárolók": [
-          "tárolódoboz",
-          "doboz",
-          "tárolórekesz",
-          "rekesz",
-          "pohártartó",
-          "ablakkitámasztó",
-          "kitámasztó",
-          "tárolóháló",
-          "üvegtartó",
-          "korlátzseb"
-        ],
-        "Festékek, vegyi anyagok": [
-          "Boatguard",
-          "Cruiser",
-          "Gelshield",
-          "Interprotect",
-          "Micron",
-          "Ultra",
-          "Perfection",
-          "Toplac",
-          "VC-Offshore",
-          "Yacht Primer",
-          "One Up",
-          "higító",
-          "alapozó",
-          "Interstrip",
-          "Sprenger",
-          "Thin film",
-          "VC Prop o drev",
-          "Moravia",
-          "Morapox",
-          "SPC",
-          "Cuprolin",
-          "Epifanes",
-          "Izofix",
-          "Danboline",
-          "Interdeck",
-          "Super gloss",
-          "VC Tar2",
-          "Original",
-          "Tar",
-          "Ecoflow",
-          "Watertite",
-          "TK Slide",
-          "Interstain",
-          "Schooner",
-          "Compass",
-          "Woodskin",
-          "tisztító",
-          "polírozó",
-          "alga",
-          "kagylóeltávolító",
-          "anti gilb",
-          "politur",
-          "hajótisztító",
-          "wax",
-          "gumitisztító",
-          "impregnáló",
-          "rozsdafolt",
-          "teak fényesítő",
-          "szagtalanító",
-          "polírpaszta",
-          "teflonos",
-          "teflonnal",         
-          "shampoo",
-          "wonder bilge",
-          "eltávolító",
-          "anti freeze",
-          "pury nature",
-          "hajósampon",
-          "ápoló",
-          "kárpit tisztító",
-          "rozsdaeltávolító",
-          "só",
-          "oxid",
-          "penész",
-          "koncentrátum",
-          "cleaner",
-          "Plastidip",
-          "Gelcoat",
-          "üvegszál",
-          "tömítő",
-          "ragasztó",
-          "dekor"
-        ],
-        "Üzemanyag rendszer és tartozékai": [
-          "tank",
-          "kanna",
-          "Eltex",
-          "Big Joe",
-          "beépíthető",
-          "csonk",
-          "betöltővel",
-          "kivezetés",
-          "szintjelzővel",
-          "levegőztető",
-          "mérő",
-          "jeladó",
-          "betöltő",
-          "fedéllel",
-          "fedél kulcs",
-          "kivezető",
-          "csatlakozó",
-          "pumpa",
-          "üzemanyagcső",
-          "cső",
-          "tankcsatlakozó",
-          "bekötő"
-        ],
-        "Napfénytető és tartozékai": [
-          "Bimini",
-          "bimini tető",
-          "korláttalp",
-          "csőcsatlakozó",
-          "hüvely",
-          "fémcsukló",
-          "bimini talp",
-          "alumínium cső",
-          "befogadó elem",
-          "csővég",
-          "stifttel",
-          "biztosítószeggel",
-          "biminicsatlakozó",
-          "biminitalp",
-          "biminitartó",
-          "csatlakozótalp",
-          "csatlakozószár",
-          "kédersín",
-          "kéder",
-          "befogadó elem",
-          "csőszegély"
-        ],
-        "Bikák": [
-          "bika",
-          "bikák",
-          "kötélvezető",
-          "kötélfogó",
-          "lehajtható bika",
-          "kikötőbak"
-        ],
-        "Létrák, roll bárok": [
-          "platform",
-          "hajólétra",
-          "kötéllétra",
-          "létra",
-          "létrafok"
-        ],
-        "Robbanómotorok": [
-          "Parsun",
-          "Suzuki",
-          "Tomos",
-          "propeller",
-          "propellervédő",
-          "propellerzár",
-          "Quicksilver",
-          "Motul",
-          "Johnson",
-          "Honda marine",
-          "Yamalube",
-          "Total",
-          "Mannol",
-          "Castrol",
-          "motorolaj",
-          "hajtómű olaj",
-          "hajtóműolaj",
-          "trimmolaj",
-          "üzemanyagszűrő",
-          "olajszűrő",
-          "szűrő",
-          "szeparátor",
-          "sasszeg",
-          "stift"
-        ],
-        "Ablakok, fedelek, rekeszek": [
-          "ablak",
-          "elipszis",
-          "kör ablak",
-          "fedélzeti ablak",
-          "kitámasztó",
-          "hajóablak",
-          "tárolórekesz fedéllel",
-          "rekeszfedél",
-          "fedél",
-          "előlap",
-          "retesszel",
-          "zárral",
-          "fedélnyitó",
-          "zárható",
-          "előlap tok hifihez",
-          "tárolórekesz"
-        ],
-        "Vonószemek": [
-          "Vonószem"
-        ],
-        "Víz ki- és bevezetés": [
-          "kivezető cső",
-          "vízkivezető",
-          "fenékvíz leeresztő dugó",
-          "cső szűkítő",
-          "bevezető",
-          "bevezetés",
-          "kifolyó",
-          "leeresztő",
-          "betőltő"
-        ],
-        "Hajóponyva": [
-          "hajóponyva",
-          "jet-ski",
-          "Aeolus",
-          "ponyvakitámasztó",
-          "teleszkóp",
-          "ponyvához",
-          "ponyvaszellőző"
-        ],
-        "Motortakaró ponyva": [
-          "Motortakaró",
-          "motortakaró-ponyva",
-          "motorponyva"
-        ],
-        "Görgő, Y ütköző": [
-          "görgő",
-          "keelgörgő",
-          "oldalgörgő",
-          "orrgörgő",
-          "orr",
-          "ütköző",
-          "Y stop"
-        ],
-        "Csörlő, heveder, rögzítő": [
-          "csörlő",
-          "heveder",
-          "csörlőkábel",
-          "csörlőkötél"
-        ],
-        "Tréler és tartozékai": [
-          "trailer",
-          "tréler",
-          "orrkerék",
-          "csónakszállító",
-          "hajószállító",
-          "szállító"
-        ]
-      }
-    };
-
-    /* ---------- runtime state (load from localStorage if present) ---------- */
-    const LS_KEY = 'kepes_kereso_positions_and_submenus_v1';
-    let categories = initialData.categories.slice();
-    let categories2 = initialData.categories2.slice();
-    let submenuStore = JSON.parse(JSON.stringify(initialData.submenuStore));
-    let manualKeywords = Object.assign({}, initialData.manualKeywords || {});
-
-    (function loadFromLS(){
-      try{
-        const raw = localStorage.getItem(LS_KEY);
-        if(!raw) return;
-        const parsed = JSON.parse(raw);
-        if(parsed.categories) categories = parsed.categories;
-        if(parsed.categories2) categories2 = parsed.categories2;
-        if(parsed.submenuStore) submenuStore = parsed.submenuStore;
-        if(parsed.manualKeywords) manualKeywords = parsed.manualKeywords;
-        console.log('Betöltve localStorage-ból.');
-      }catch(e){ console.warn('LS load err', e) }
-    })();
-
-    /* ---------- DOM refs ---------- */
-    const wrap1 = document.getElementById('imageWrap1');
-    const wrap2 = document.getElementById('imageWrap2');
-    const mobileBar1 = document.getElementById('mobileMenuBar1');
-    const mobileBar2 = document.getElementById('mobileMenuBar2');
-    const submenuPanel = document.getElementById('submenuPanel');
-    const fixedHint = document.getElementById('fixedScrollHint');
-
-    const searchInput = document.getElementById('categorySearchInput');
-    const searchFeedback = document.getElementById('searchFeedback');
-
-    /* editor refs */
-    const menuSelect = document.getElementById('menuSelect');
-    const keywordsBox = document.getElementById('keywordsBox');
-    const submenuRows = document.getElementById('submenuRows');
-    const addSubBtn = document.getElementById('addSubBtn');
-    const saveSubBtn = document.getElementById('saveSubBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const exportSubBtn = document.getElementById('exportSubBtn');
-    const modalBackdrop = document.getElementById('modalBackdrop');
-
-    /* ---------- helper: normalize (lowercase + strip diacritics) ---------- */
-    function normalizeStr(s){
-      if(!s) return '';
-      return s.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u00f1\u00e6\u0153\u0107\u0105\-\s]/g,' ').trim();
-    }
-
-    /* ---------- persistence state for search-driven activation ---------- */
-    let persistentCategory = null; // név (string) ha a kereső aktiválta és tartós legyen
-
-    /* ---------- shared hideSubmenu (ensures active classes removed) ---------- */
-    function hideSubmenuShared(force = false){
+    (function () {
       try {
-        const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
-        if(!force && isPersistent){
-          const q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
-          const still = findBestCategoryForQuery(q);
-          if(still && submenuPanel.getAttribute('data-parent-menu') === still){
-            return; // maradjon nyitva
-          }
+        var placeholder = document.getElementById('products-data');
+        if (!placeholder) {
+          placeholder = document.createElement('script');
+          placeholder.id = 'products-data';
+          placeholder.type = 'application/json';
+          document.body.insertBefore(placeholder, document.body.firstChild);
         }
-      } catch(e){ /* ignore */ }
 
-      if(!submenuPanel) return;
-      submenuPanel.classList.remove('show');
-      submenuPanel.setAttribute('aria-hidden','true');
-      submenuPanel.innerHTML = '';
-      submenuPanel.removeAttribute('data-parent-menu');
-      submenuPanel.setAttribute('data-persistent','false');
-      persistentCategory = null;
-      document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active','persistent'));
-      document.querySelectorAll('.mobile-menu-btn.active').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.hotspot.highlight').forEach(h => h.classList.remove('highlight'));
-    }
-
-    /* ---------- create hotspots + overlay menus for an image ---------- */
-    function createHotspotsFor(wrap, cats, imageIndex){
-      Array.from(wrap.querySelectorAll('.hotspot')).forEach(el=>el.remove());
-      cats.forEach((c, idx)=>{
-        const btn = document.createElement('button');
-        btn.className = 'hotspot';
-        btn.style.left = c.left + '%';
-        btn.style.top  = c.top  + '%';
-        btn.setAttribute('aria-label', c.name);
-        btn.dataset.index = idx;
-        btn.dataset.image = imageIndex;
-
-        const dot = document.createElement('span'); dot.className='dot';
-        btn.appendChild(dot);
-
-        btn.addEventListener('click', (ev)=>{ ev.stopPropagation(); if(c.link) window.open(c.link,'_blank','noopener'); });
-        btn.addEventListener('dblclick', ()=>{ if(c.link) window.open(c.link,'_blank','noopener'); });
-
-        btn.addEventListener('mouseenter', ()=>{
-          const mi = document.querySelector(`.overlay-menu-item[data-image="${imageIndex}"][data-index="${idx}"]`);
-          mi && mi.classList.add('active');
-          btn.classList.add('highlight');
-        });
-        btn.addEventListener('mouseleave', ()=>{
-          const mi = document.querySelector(`.overlay-menu-item[data-image="${imageIndex}"][data-index="${idx}"]`);
-          mi && mi.classList.remove('active');
-          btn.classList.remove('highlight');
-        });
-
-        wrap.appendChild(btn);
-      });
-    }
-
-    function createMenuFor(wrap, cats, imageIndex, mobileBar){
-      const overlayId = 'overlayMenu' + imageIndex;
-      const oldOverlay = document.getElementById(overlayId); if(oldOverlay) oldOverlay.remove();
-      if(mobileBar) mobileBar.innerHTML = '';
-
-      const isMobile = window.innerWidth <= 880;
-      if(isMobile){
-        if(mobileBar){
-          mobileBar.setAttribute('aria-hidden','false');
-          cats.forEach((c, idx)=>{
-            const btn = document.createElement('button');
-            btn.className = 'mobile-menu-btn';
-            btn.dataset.index = idx;
-            btn.dataset.image = imageIndex;
-            btn.textContent = c.name;
-            btn.addEventListener('click', ()=>{ if(c.link) window.open(c.link,'_blank','noopener'); });
-            btn.addEventListener('pointerdown', ()=>{
-              const hs = document.querySelector(`.hotspot[data-image="${imageIndex}"][data-index="${idx}"]`);
-              if(hs){ hs.classList.add('highlight'); setTimeout(()=>hs.classList.remove('highlight'), 900); }
-            });
-            mobileBar.appendChild(btn);
+        if (window.__EMBEDDED_PRODUCTS && Array.isArray(window.__EMBEDDED_PRODUCTS)) {
+          try { placeholder.textContent = JSON.stringify(window.__EMBEDDED_PRODUCTS); } catch (e) { placeholder.innerText = JSON.stringify(window.__EMBEDDED_PRODUCTS); }
+          document.dispatchEvent(new Event('productsDataReady'));
+        } else {
+          fetch('products_with_status_min.json').then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.text();
+          }).then(function (txt) {
+            try { placeholder.textContent = txt; } catch (e) { placeholder.innerText = txt; }
+            document.dispatchEvent(new Event('productsDataReady'));
+          }).catch(function (e) {
+            console.error('Failed to fetch products JSON', e);
+            var results = document.getElementById('results');
+            if (results) results.innerHTML = '<div class="no-results">Hiba a termékadatok betöltésekor.</div>';
           });
         }
+      } catch (err) {
+        console.error('early init error', err);
+      }
+    })();
+  </script>
+
+  <!-- ======= PONTOS, RÉGI KERESÉSI LOGIKA & RENDER (beillesztve teljesen) ======= -->
+  <script>
+    /* ---------- Config ---------- */
+    const GLOBAL_MAX_RESULTS = 500; // megjeleníthető találatok felső korlátja
+    const MIN_TOKEN_LEN = 3;
+
+    /* ---------- Data + preprocessing ---------- */
+    let PRODUCTS = [];
+
+    function stripDiacriticsSimple(s) {
+      if (!s) return '';
+      var map = { 'á': 'a', 'Á': 'A', 'é': 'e', 'É': 'E', 'í': 'i', 'Í': 'I', 'ó': 'o', 'Ó': 'O', 'ö': 'o', 'Ö': 'O', 'ő': 'o', 'Ő': 'O', 'ú': 'u', 'Ú': 'U', 'ü': 'u', 'Ü': 'U', 'ű': 'u', 'Ű': 'U' };
+      return s.replace(/[ÁáÉéÍíÓóÖöŐőÚúÜüŰű]/g, function (ch) { return map[ch] || ch; });
+    }
+
+    function preprocessProducts() {
+      for (var i = 0; i < PRODUCTS.length; i++) {
+        var p = PRODUCTS[i];
+        var name = p.name || '';
+        var sku = p.sku || '';
+        try {
+          var n = name.toString();
+          n = stripDiacriticsSimple(n);
+          n = n.normalize ? n.normalize('NFD').replace(/[̀-ͯ]/g, '') : n;
+          p.__norm_name = n.toLowerCase().replace(/[^a-z0-9À-ſ]+/gi, ' ').trim();
+        } catch (e) { p.__norm_name = (name + '').toLowerCase(); }
+        try {
+          var s = sku.toString();
+          s = stripDiacriticsSimple(s);
+          s = s.normalize ? s.normalize('NFD').replace(/[̀-ͯ]/g, '') : s;
+          p.__norm_sku = s.toLowerCase().replace(/[^a-z0-9]+/gi, '').trim();
+        } catch (e) { p.__norm_sku = (sku + '').toLowerCase(); }
+        p.__name_words = (p.__norm_name || '').split(/\s+/).filter(Boolean);
+        p.__status = (typeof p.status !== 'undefined') ? ((p.status === '0' || p.status === 0) ? 0 : Number(p.status) || 1) : null;
+      }
+    }
+
+    /* ---------- Parse embedded JSON if present in placeholder ---------- */
+    (function parsePlaceholderIfPresent() {
+      try {
+        var rawScript = document.getElementById('products-data');
+        if (rawScript) {
+          var raw = rawScript.textContent || '';
+          if (raw && raw.trim().length > 10) {
+            // Próbáljuk egyszerűen parse-olni először
+            try {
+              PRODUCTS = JSON.parse(raw);
+            } catch (err1) {
+              // Ha valami miatt a sima parse sikertelen (különös escape-ok), próbáljunk egy biztonságosabb string-cserét
+              try {
+                // string-split/join használata biztonságosabb, mintha regex literált hagynánk,
+                // mert néha valami közbeavatkozik és a /.../g felsértődhet a futtatási környezetben
+                var safe = raw.split('\\/').join('/');
+                PRODUCTS = JSON.parse(safe);
+              } catch (err2) {
+                console.error('AUTO-INIT parse error (both attempts):', err2);
+                // tovább dobhatjuk, vagy a debug mezőbe írjuk az üzenetet:
+                var dbg = document.getElementById('debug');
+                if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'AUTO-INIT parse error: ' + (err2 && err2.toString ? err2.toString() : 'ismeretlen'); }
+              }
+            }
+          }
+
+        }
+        if (PRODUCTS && PRODUCTS.length > 0) {
+          preprocessProducts();
+          var debugEl = document.getElementById('debug');
+          if (debugEl) { debugEl.style.display = 'block'; debugEl.textContent = ''; }
+          var qEl = document.getElementById('q');
+          if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
+          var results = document.getElementById('results');
+          if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
+        } else {
+          var dbg = document.getElementById('debug');
+          if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'Nincsenek beágyazott termékek — a külső JSON tölthető be.'; }
+        }
+      } catch (e) {
+        console.error('JSON parse error', e);
+        var dbg = document.getElementById('debug'); if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'JSON parse error: ' + (e && e.toString ? e.toString() : 'ismeretlen'); }
+      }
+    })();
+
+    /* ---------- Matching logic (exact old algorithm) ---------- */
+    function matches(product, q) {
+        if (!q) return false;
+        var nq = q.toString().trim();
+        if (nq.length < MIN_TOKEN_LEN) return false;
+
+        // egyszerű normalizálás
+        try {
+          nq = stripDiacriticsSimple(nq);
+          nq = nq.normalize ? nq.normalize('NFD').replace(/[̀-ͯ]/g, '') : nq;
+        } catch (e) { }
+        nq = nq.toLowerCase();
+
+        // felhasználó által beírt szavak
+        var tokens = nq.split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
+        if (tokens.length === 0) return false;
+
+        // termék adatok normalizálva
+        var name = product.__norm_name || ((product.name || '').toString().toLowerCase());
+        var sku = product.__norm_sku || (product.sku || '').toString().toLowerCase();
+
+        // minden tokennek szerepelnie kell legalább a névben vagy cikkszámban
+        var allFound = tokens.every(function (tk) {
+          if (tk.length < MIN_TOKEN_LEN) return false;
+          return (
+            name.indexOf(tk) !== -1 ||
+            sku.indexOf(tk.replace(/[^a-z0-9]+/g, '')) !== -1
+          );
+        });
+
+        return allFound;
+      }
+
+
+    /* ---------- Utilities ---------- */
+    function formatPrice(raw) {
+      var n = Number(raw);
+      if (isFinite(n)) {
+        var fmt = Math.round(n).toLocaleString('hu-HU').replace(/\u00A0/g, ' ');
+        return fmt + ' Ft';
+      }
+      return raw || '';
+    }
+
+    function splitImageList(imgField) {
+      if (!imgField) return [];
+      return imgField.toString().split(/\||,|;|\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+    }
+
+    /* ---------- Rendering ---------- */
+    function renderProductsList(list) {
+      var results = document.getElementById('results');
+      results.innerHTML = '';
+      if (!list || list.length === 0) {
+        results.innerHTML = '<div class="no-results">Nincs találat.</div>';
         return;
       }
 
-      const overlay = document.createElement('div');
-      overlay.id = overlayId; overlay.className = 'overlay-menu';
-      wrap.style.position = wrap.style.position || 'relative';
-      wrap.appendChild(overlay);
+      // create row flex container
+      var row = document.createElement('div');
+      row.className = 'row';
 
-      cats.forEach((c, idx)=>{
-        const left = (typeof c.menuLeft !== 'undefined') ? c.menuLeft : c.left;
-        const top  = (typeof c.menuTop  !== 'undefined') ? c.menuTop : (c.top + 8);
+      for (var i = 0; i < list.length; i++) {
+        var p = list[i];
+        var a = document.createElement('a');
+        a.className = 'card';
+        a.href = p.url || '#';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
 
-        // Ha van link, használjunk natív <a>-t, különben div-et.
-        const elTag = c.link ? 'a' : 'div';
-        const mi = document.createElement(elTag);
-        mi.className = 'overlay-menu-item';
-        mi.dataset.index = idx;
-        mi.dataset.image = imageIndex;
-        mi.textContent = c.name;
-        mi.style.left = left + '%';
-        mi.style.top  = top  + '%';
+        // add data-glow attribute so the glow CSS applies
+        a.setAttribute('data-glow', '');
 
-        if(c.link && mi.tagName.toLowerCase() === 'a'){
-          mi.href = c.link;
-          mi.target = '_blank';
-          mi.rel = 'noopener';
-        }
+        // nested empty data-glow element used for blur/outer glow layer (per CSS)
+        var innerGlow = document.createElement('div');
+        innerGlow.setAttribute('data-glow', '');
+        // ensure the inner glow sits behind content via z-index in CSS
+        a.appendChild(innerGlow);
 
-        const showSubmenu = (ev, {persistent=false} = {})=>{
-          if(typeof openSubmenuByName === 'function'){
-            openSubmenuByName(c.name, {persistent});
-          }
-        };
+        var overlay = document.createElement('div');
+        overlay.className = 'overlay';
 
-        // ---- START: improved hover handlers (preserve existing logics) ----
-        mi.addEventListener('pointerenter', (ev) => {
-          ev.stopPropagation();
-          const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
-          const currentParent = submenuPanel.getAttribute('data-parent-menu');
-          if (isPersistent && currentParent && currentParent !== c.name) {
-            mi.classList.add('hover-suggest');
-            return;
-          }
+        var img = document.createElement('img');
+        img.loading = 'lazy';
+        img.alt = p.name || p.sku || '';
+        var imgs = splitImageList(p.img || '');
+        img._trying = 0;
+        img.src = imgs.length ? (imgs[0].indexOf('http') === 0 ? imgs[0] : ('https://' + imgs[0])) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+        // onerror fallback
+        img.onerror = (function (__imgs) {
+          return function () {
+            try {
+              if (this._trying < __imgs.length - 1) { this._trying++; this.src = __imgs[this._trying]; return; }
+              var cur = this.src || '';
+              if (cur.indexOf('http://') === 0) { this.src = cur.replace('http://', 'https://'); return; }
+              if (cur.indexOf('https://') === 0) { this.src = cur.replace('https://', 'http://'); return; }
+            } catch (e) { }
+            this.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+          };
+        })(imgs);
 
-          mi.classList.add('active');
-          if (mi._hoverTimeout) clearTimeout(mi._hoverTimeout);
-          mi._hoverTimeout = setTimeout(() => {
-            showSubmenu(ev, { persistent: false });
-            mi._hoverTimeout = null;
-          }, 120);
+        overlay.appendChild(img);
+
+        var nameBar = document.createElement('div');
+        nameBar.className = 'name-bar';
+        nameBar.textContent = p.name || '—';
+        overlay.appendChild(nameBar);
+
+        var meta = document.createElement('div');
+        meta.className = 'meta';
+        var skuSpan = document.createElement('span'); skuSpan.className = 'sku'; skuSpan.textContent = p.sku || '';
+        var priceSpan = document.createElement('span'); priceSpan.className = 'price';
+        (function () { var raw = p.price || ''; var n = Number(raw); if (isFinite(n) && n !== 0) { var fmt = Math.round(n).toLocaleString('hu-HU').replace(/\u00A0/g, ' '); priceSpan.textContent = fmt + ' Ft'; } else { priceSpan.textContent = (n === 0 ? '0 Ft' : (raw || '')); } })();
+        meta.appendChild(skuSpan); meta.appendChild(priceSpan);
+
+        a.appendChild(overlay);
+        a.appendChild(meta);
+        row.appendChild(a);
+      }
+
+      results.appendChild(row);
+      // after rendering, attach pointer handlers so glow follows per-card
+      if (window.attachCardPointer) {
+        setTimeout(window.attachCardPointer, 30);
+      }
+    }
+
+    /* ---------- Render for query (core) ---------- */
+    function renderForQuery(q) {
+      var results = document.getElementById('results');
+      var debugEl = document.getElementById('debug');
+      if (debugEl) debugEl.style.display = 'block';
+      if (debugEl) debugEl.textContent = '';
+
+      if (!q || q.trim().length < MIN_TOKEN_LEN) {
+        results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
+        return;
+      }
+      var trimmed = q.trim();
+
+      // get matches using old matcher
+      var matchesList = PRODUCTS.filter(function (p) {
+        return matches(p, trimmed);
+      });
+
+      // exclude status == 0 explicitly
+      matchesList = matchesList.filter(function (p) {
+        if (p.__status === 0) return false;
+        if (typeof p.status !== 'undefined' && (p.status === 0 || p.status === '0')) return false;
+        return true;
+      });
+
+      // img-only filter (applied to matched items)
+      var imgOnlyChecked = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
+      var altImgOnly = document.getElementById('onlyWithImage') && document.getElementById('onlyWithImage').checked;
+      if (imgOnlyChecked || altImgOnly) {
+        matchesList = matchesList.filter(function (p) {
+          var imgs = splitImageList(p.img || '');
+          return imgs.length > 0;
         });
+      }
 
-        mi.addEventListener('mouseenter', (ev) => {
-          ev.stopPropagation();
-          const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
-          const currentParent = submenuPanel.getAttribute('data-parent-menu');
-          if (isPersistent && currentParent && currentParent !== c.name) {
-            mi.classList.add('hover-suggest');
-            return;
-          }
+      if (debugEl) debugEl.textContent = 'Találatok száma: ' + matchesList.length;
 
-          mi.classList.add('active');
-          if (mi._hoverTimeout) clearTimeout(mi._hoverTimeout);
-          mi._hoverTimeout = setTimeout(() => {
-            showSubmenu(ev, { persistent: false });
-            mi._hoverTimeout = null;
-          }, 120);
-        });
+      // Sorting
+      var sortVal = (document.getElementById('sortSelect') && document.getElementById('sortSelect').value) || (document.getElementById('sort') && document.getElementById('sort').value) || 'relevance';
+      if (sortVal === 'relevance') {
+        matchesList = matchesList.map(function (p) {
+          var score = 0;
+          var name = p.__norm_name || (p.name || '').toString().toLowerCase();
+          var sku = p.__norm_sku || (p.sku || '').toString().toLowerCase();
+          var nameWords = p.__name_words || name.split(/\s+/).filter(Boolean);
+          var tokens = trimmed.toString().toLowerCase().split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
 
-        mi.addEventListener('pointerleave', (ev) => {
-          if (mi._hoverTimeout) { clearTimeout(mi._hoverTimeout); mi._hoverTimeout = null; }
-          mi.classList.remove('active', 'hover-suggest');
-          setTimeout(() => {
-            const hovered = Array.from(document.querySelectorAll(':hover'));
-            if (!hovered.includes(submenuPanel) && !hovered.includes(mi)) {
-              // ha nincs más hover a submenuPanel-en vagy az adott elemre, zárjuk
-              if(typeof hideSubmenuShared === 'function') hideSubmenuShared();
-              else submenuPanel.classList.remove('show');
+          tokens.forEach(function (tk) {
+            if (tk.length < MIN_TOKEN_LEN) return;
+            for (var w = 0; w < nameWords.length; w++) {
+              if (nameWords[w] === tk) { score += 50; }
+              else if (nameWords[w].indexOf(tk) === 0) { score += 30; }
+              else if (nameWords[w].indexOf(tk) !== -1) { score += 15; }
             }
-          }, 120);
-        });
-
-        mi.addEventListener('mouseleave', (ev) => {
-          if (mi._hoverTimeout) { clearTimeout(mi._hoverTimeout); mi._hoverTimeout = null; }
-          mi.classList.remove('active', 'hover-suggest');
-          setTimeout(() => {
-            const hovered = Array.from(document.querySelectorAll(':hover'));
-            if (!hovered.includes(submenuPanel) && !hovered.includes(mi)) {
-              if(typeof hideSubmenuShared === 'function') hideSubmenuShared();
-              else submenuPanel.classList.remove('show');
-            }
-          }, 120);
-        });
-        // ---- END: improved hover handlers ----
-
-        // --- CLICK / NAVIGÁCIÓ kezelése ---
-        // Ha a kategóriához tartozik link, engedjük a natív viselkedést (középső gomb / ctrl/cmd működjön),
-        // de fogjuk a sima bal-kattintást, hogy biztosan új ablakban nyíljon noopener-rel.
-        if(c.link){
-          mi.addEventListener('click', (ev) => {
-            // Ha a felhasználó ctrl/cmd vagy középső gombot használt, hagyjuk a natív viselkedést
-            if (ev.ctrlKey || ev.metaKey || ev.button === 1) return;
-            ev.preventDefault();
-            ev.stopPropagation();
-            // új ablak biztonságosan
-            window.open(c.link, '_blank', 'noopener');
+            if (sku && sku.indexOf(tk.replace(/[^a-z0-9]+/g, '')) !== -1) score += 20;
           });
-        } else {
-          // nincs külső link -> kattintás nyitja az almenüt persistent módban
-          mi.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            showSubmenu(ev, { persistent: true });
-          });
-        }
 
-        overlay.appendChild(mi);
-      });
-    }
-
-
-    /* New: programmatically open submenu by menu name (used by search to reliably open + highlight + scroll) */
-    function openSubmenuByName(menuName, {persistent=false} = {}){
-      if(!menuName) return false;
-
-      // find overlay element
-      const overlayItems = Array.from(document.querySelectorAll('.overlay-menu-item'));
-      let foundEl = null;
-      for(const el of overlayItems){
-        if(normalizeStr(el.textContent) === normalizeStr(menuName)){
-          foundEl = el; break;
-        }
-      }
-
-      // If not found (maybe mobile view), try mobile buttons
-      if(!foundEl){
-        const mobileBtns = Array.from(document.querySelectorAll('.mobile-menu-btn'));
-        for(const b of mobileBtns){
-          if(normalizeStr(b.textContent) === normalizeStr(menuName)){
-            mobileBtns.forEach(x=>x.classList.remove('active'));
-            b.classList.add('active');
-            // highlight corresponding hotspot if exists
-            highlightHotspotForMenu(menuName, true);
-            return true;
-          }
-        }
-      }
-
-      if(!foundEl) return false;
-
-      // scroll the page so that the image-wrap containing the found element is visible and centered
-      const imageWrap = foundEl.closest('.image-wrap');
-      if(imageWrap){
-        const rectWrap = imageWrap.getBoundingClientRect();
-        // scroll to center the image-wrap vertically (with slight offset)
-        const targetScrollTop = window.scrollY + rectWrap.top - (window.innerHeight/2) + (rectWrap.height/2);
-        window.scrollTo({ top: Math.max(0, targetScrollTop - 30), behavior: 'smooth' });
-      }
-
-      // wait a tiny bit so the browser has scrolled, then compute positioning
-      setTimeout(()=>{
-        const items = submenuStore[menuName] || [];
-        const rect = foundEl.getBoundingClientRect();
-        const panel = submenuPanel;
-        const panelWidth = Math.min(items.length * 110 + 20, window.innerWidth - 40);
-        panel.style.width = panelWidth + 'px';
-
-        let left = rect.left + window.scrollX + (rect.width/2) - (panelWidth/2);
-        let top  = rect.top + window.scrollY - 8 - 110;
-        if(top < window.scrollY + 10) top = rect.bottom + window.scrollY + 8;
-        if(left + panelWidth > window.scrollX + window.innerWidth - 12) left = Math.max(window.scrollX + 12, (window.scrollX + window.innerWidth - 12) - panelWidth);
-        if(left < window.scrollX + 12) left = window.scrollX + 12;
-
-        panel.style.left = left + 'px';
-        panel.style.top = top + 'px';
-
-        panel.innerHTML = '';
-        items.forEach(it=>{
-          const t = document.createElement('a');
-          t.href = it.link || '#';
-          t.target = '_blank';
-          t.rel = 'noopener';
-          t.className = 'submenu-thumb';
-          const img = document.createElement('img');
-          img.alt = it.name || '';
-          img.src = it.thumb || '';
-          img.loading = 'lazy';
-          t.appendChild(img);
-          const st = document.createElement('div');
-          st.className = 'stitle';
-          st.textContent = it.name || '';
-          t.appendChild(st);
-          panel.appendChild(t);
+          score += Math.max(0, 10 - (nameWords.length || 0));
+          p.__score = score;
+          return p;
         });
 
-        // clear previous active/persistent
-        document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active','persistent'));
-        foundEl.classList.add('active');
-        if(persistent) foundEl.classList.add('persistent');
-
-        panel.classList.add('show');
-        panel.setAttribute('data-parent-menu', menuName);
-        panel.setAttribute('aria-hidden','false');
-
-        if(persistent){
-          panel.setAttribute('data-persistent','true');
-          persistentCategory = menuName;
-        } else {
-          panel.setAttribute('data-persistent','false');
-        }
-
-        // mark matching mobile button active and highlight hotspot(s)
-        document.querySelectorAll('.mobile-menu-btn').forEach(b => {
-          if(normalizeStr(b.textContent) === normalizeStr(menuName)) b.classList.add('active'); else b.classList.remove('active');
+        matchesList.sort(function (a, b) {
+          if ((b.__score || 0) !== (a.__score || 0)) return (b.__score || 0) - (a.__score || 0);
+          var na = (a.name || '').toString().toLowerCase(), nb = (b.name || '').toString().toLowerCase();
+          if (na < nb) return -1;
+          if (na > nb) return 1;
+          return 0;
         });
-        highlightHotspotForMenu(menuName, true);
-      }, 220);
-
-      return true;
-    }
-
-    function highlightHotspotForMenu(menuName, on=true){
-      document.querySelectorAll('.hotspot').forEach(h => {
-        if(normalizeStr(h.getAttribute('aria-label')) === normalizeStr(menuName)){
-          if(on) h.classList.add('highlight'); else h.classList.remove('highlight');
-        }
-      });
-    }
-
-    /* hide submenu when clicking outside - respect persistence if search still matches */
-    document.addEventListener('click', (e)=>{
-      const isPersistent = submenuPanel.getAttribute('data-persistent') === 'true';
-      if(isPersistent){
-        const q = (searchInput && searchInput.value) ? searchInput.value.trim() : '';
-        const best = findBestCategoryForQuery(q);
-        if(best && submenuPanel.getAttribute('data-parent-menu') === best) return;
-      }
-      if(!submenuPanel.contains(e.target)) {
-        hideSubmenuShared();
-      }
-    });
-
-    /* hide on scroll/resize */
-    let hideTimer = null;
-    window.addEventListener('scroll', ()=>{ clearTimeout(hideTimer); hideTimer = setTimeout(()=>{ hideSubmenuShared(); }, 160); }, {passive:true});
-    window.addEventListener('resize', ()=>{ hideSubmenuShared(); });
-
-    if(submenuPanel){
-      submenuPanel.addEventListener('mouseleave', ()=>{ setTimeout(()=>{ const hovered = Array.from(document.querySelectorAll(':hover')); const anyMenuHover = hovered.some(h => h.classList && h.classList.contains('overlay-menu-item')); if(!hovered.includes(submenuPanel) && !anyMenuHover) hideSubmenuShared(); }, 80); });
-      submenuPanel.addEventListener('mouseenter', ()=>{ /* keep open */ });
-    }
-
-    /* ---------- build both images UI ---------- */
-    function buildAll(){
-      createHotspotsFor(wrap1, categories, 1);
-      createMenuFor(wrap1, categories, 1, mobileBar1);
-      createHotspotsFor(wrap2, categories2, 2);
-      createMenuFor(wrap2, categories2, 2, mobileBar2);
-    }
-
-    buildAll();
-    window.addEventListener('resize', ()=>{ setTimeout(()=>{ createMenuFor(wrap1, categories, 1, mobileBar1); createMenuFor(wrap2, categories2, 2, mobileBar2); }, 120); });
-
-    /* ---------- KEYWORD INDEX (includes manualKeywords) ---------- */
-    let keywordsStore = {}; // { "Kategória neve": ["token1","token2", ...], ... }
-
-    function buildKeywordIndex(){
-      keywordsStore = {};
-      const allCats = categories.concat(categories2);
-      allCats.forEach(c=>{
-        const key = c.name;
-        const set = new Set();
-        // category name tokens
-        normalizeStr(key).split(/\s+/).forEach(t => { if(t && t.length>0) set.add(t); });
-        set.add(normalizeStr(key));
-        // submenu items
-        const items = submenuStore[key] || [];
-        items.forEach(it=>{
-          const nm = it.name || '';
-          normalizeStr(nm).split(/\s+/).forEach(t => { if(t && t.length>0) set.add(t); });
-          set.add(normalizeStr(nm));
-        });
-        // manual keywords (higher priority)
-        const mks = manualKeywords[key] || [];
-        mks.forEach(mk=>{
-          const tokens = normalizeStr(mk).split(/\s+/);
-          tokens.forEach(t => { if(t && t.length>0) set.add(t); });
-          set.add(normalizeStr(mk));
-        });
-        keywordsStore[key] = Array.from(set).slice(0,1000);
-      });
-    }
-
-    buildKeywordIndex();
-
-    /* ---------- FUZZY helpers (Levenshtein) ---------- */
-    function levenshtein(a,b){
-      a = a || ''; b = b || '';
-      if(a === b) return 0;
-      const an = a.length, bn = b.length;
-      if(an === 0) return bn;
-      if(bn === 0) return an;
-      const v0 = new Array(bn + 1);
-      const v1 = new Array(bn + 1);
-      for(let j=0;j<=bn;j++) v0[j]=j;
-      for(let i=0;i<an;i++){
-        v1[0]=i+1;
-        const ai = a.charAt(i);
-        for(let j=0;j<bn;j++){
-          const cost = ai === b.charAt(j) ? 0 : 1;
-          v1[j+1] = Math.min(v1[j]+1, v0[j+1]+1, v0[j]+cost);
-        }
-        for(let j=0;j<=bn;j++) v0[j]=v1[j];
-      }
-      return v1[bn];
-    }
-
-    function fuzzyScore(q, token){
-      if(!q || !token) return 0;
-      if(q === token) return 100;
-      if(token.startsWith(q)) return 80;
-      if(token.includes(q)) return 50;
-      const dist = levenshtein(q, token);
-      const maxLen = Math.max(q.length, token.length);
-      if(maxLen === 0) return 0;
-      const ratio = dist / maxLen;
-      const base = Math.max(0, Math.round((1 - ratio) * 40));
-      return base;
-    }
-
-    /* ---------- SEARCH MATCHING & MENU ACTIVATION (fuzzy) ---------- */
-    let searchTimeout = null;
-    function clearSearchHighlights(){
-      document.querySelectorAll('.overlay-menu-item.active').forEach(el => el.classList.remove('active','persistent'));
-      document.querySelectorAll('.mobile-menu-btn.active').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.hotspot.highlight').forEach(h => h.classList.remove('highlight'));
-    }
-
-    function highlightMenuByName(menuName, {persistent=false} = {}){
-      if(!menuName){ hideSubmenuShared(); return false; }
-      return openSubmenuByName(menuName, {persistent});
-    }
-
-    function findBestCategoryForQuery(q){
-      if(!q || q.length < 3) return null;
-      const nq = normalizeStr(q);
-      const allCats = Object.keys(keywordsStore || {});
-      let best = null; let bestScore = -1;
-      // first: prefer categories whose name matches/prefix
-      allCats.forEach(cat=>{
-        const ncat = normalizeStr(cat);
-        if(ncat === nq){ best = cat; bestScore = 200; }
-        else if(ncat.startsWith(nq) && 150 > bestScore){ best = cat; bestScore = 150; }
-      });
-      if(bestScore >= 150) return best;
-      // otherwise evaluate tokens with fuzzyScore
-      allCats.forEach(cat=>{
-        const kws = keywordsStore[cat] || [];
-        let top = 0;
-        for(let i=0;i<kws.length;i++){
-          const tok = kws[i];
-          const sc = fuzzyScore(nq, tok);
-          if(sc > top) top = sc;
-          if(top >= 100) break;
-        }
-        const catBonus = normalizeStr(cat).includes(nq) ? 8 : 0;
-        const total = top + catBonus;
-        if(total > bestScore){
-          bestScore = total;
-          best = cat;
-        }
-      });
-      if(bestScore >= 18) return best;
-      return null;
-    }
-
-    // debounce input to avoid excessive DOM events
-    searchInput.addEventListener('input', (ev)=>{
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(()=>{
-        const val = searchInput.value || '';
-        const q = val.trim();
-        if(q.length < 3){
-          searchFeedback.textContent = q.length === 0 ? '' : 'Írj legalább 3 karaktert a találathoz.';
-          persistentCategory = null;
-          submenuPanel.setAttribute('data-persistent','false');
-          hideSubmenuShared();
-          clearSearchHighlights();
-          return;
-        }
-        buildKeywordIndex(); // ensure index current
-        const best = findBestCategoryForQuery(q);
-        if(best){
-          searchFeedback.textContent = 'Találat: ' + best;
-          // Set persistent activation for this search result
-          persistentCategory = best;
-          submenuPanel.setAttribute('data-persistent','true');
-          const ok = highlightMenuByName(best, {persistent:true});
-          if(!ok) searchFeedback.textContent = 'Talált kategória: ' + best;
-        } else {
-          searchFeedback.textContent = 'Nincs találat.';
-          persistentCategory = null;
-          submenuPanel.setAttribute('data-persistent','false');
-          hideSubmenuShared();
-          clearSearchHighlights();
-        }
-      }, 120);
-    });
-
-    // Escape clears; Enter opens matched category link
-    searchInput.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Escape'){
-        searchInput.value = '';
-        searchFeedback.textContent = '';
-        persistentCategory = null;
-        submenuPanel.setAttribute('data-persistent','false');
-        hideSubmenuShared(true);
-        clearSearchHighlights();
-        searchInput.blur();
-      }
-      if(ev.key === 'Enter'){
-        ev.preventDefault();
-        const q = searchInput.value || '';
-        const best = findBestCategoryForQuery(q);
-        if(best){
-          const allCats = categories.concat(categories2);
-          const catObj = allCats.find(c => normalizeStr(c.name) === normalizeStr(best));
-          if(catObj && catObj.link){
-            window.open(catObj.link, '_blank', 'noopener');
-          } else {
-            searchFeedback.textContent = 'Nincs elérhető oldal a kategóriához.';
-          }
-        }
-      }
-    });
-
-    /* ---------- Editor: populate menu select and rows ---------- */
-    function openEditor(){
-      const menuNames = [...new Set(categories.map(c=>c.name).concat(categories2.map(c=>c.name)))].sort();
-      menuSelect.innerHTML = '';
-      menuNames.forEach(n=>{
-        const opt = document.createElement('option'); opt.value = n; opt.textContent = n; menuSelect.appendChild(opt);
-      });
-      if(!menuSelect.value && menuSelect.options.length) menuSelect.selectedIndex = 0;
-      populateEditorRows(menuSelect.value);
-      modalBackdrop.style.display = 'flex';
-      populateKeywordsBox(menuSelect.value);
-    }
-
-    function populateKeywordsBox(menuName){
-      const arr = manualKeywords[menuName] || [];
-      keywordsBox.value = arr.join(', ');
-    }
-
-    menuSelect.addEventListener('change', ()=>{
-      populateEditorRows(menuSelect.value);
-      populateKeywordsBox(menuSelect.value);
-    });
-
-    function populateEditorRows(menuName){
-      submenuRows.innerHTML = '';
-      const items = submenuStore[menuName] ? submenuStore[menuName].slice() : [];
-      if(!items.length){
-        const p = document.createElement('div'); p.style.color='#666'; p.textContent = 'Nincs almenü erre a menüpontra. Adj hozzá elemeket.'; submenuRows.appendChild(p);
-      }
-      items.forEach((it, i)=>{
-        const row = makeSubRow(menuName, i, it);
-        submenuRows.appendChild(row);
-      });
-    }
-    function makeSubRow(menuName, index, item){
-      const row = document.createElement('div');
-      row.className = 'submenu-item-row';
-      const inpThumb = document.createElement('input'); inpThumb.type='text'; inpThumb.value = item.thumb||''; inpThumb.placeholder='Thumb URL'; inpThumb.className='thumb-input';
-      const inpName = document.createElement('input'); inpName.type='text'; inpName.value = item.name || ''; inpName.placeholder='Név';
-      const inpLink = document.createElement('input'); inpLink.type='text'; inpLink.value = item.link||''; inpLink.placeholder='Link (URL)';
-      inpLink.style.width = '100%';
-      const delBtn = document.createElement('button'); delBtn.textContent = 'Töröl'; delBtn.style.background='#e55'; delBtn.style.color='#fff'; delBtn.style.border='none'; delBtn.style.padding='6px 8px'; delBtn.style.borderRadius='6px'; delBtn.style.cursor='pointer';
-      delBtn.addEventListener('click', ()=>{
-        const arr = submenuStore[menuName] || [];
-        arr.splice(index,1);
-        submenuStore[menuName] = arr;
-        populateEditorRows(menuName);
-        saveAllToLocalStorage();
-        buildAll();
-        buildKeywordIndex();
-      });
-      inpName.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].name = inpName.value; buildKeywordIndex(); });
-      inpLink.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].link = inpLink.value; });
-      inpThumb.addEventListener('input', ()=> { submenuStore[menuName] = submenuStore[menuName] || []; submenuStore[menuName][index] = submenuStore[menuName][index] || {}; submenuStore[menuName][index].thumb = inpThumb.value; });
-      row.appendChild(inpThumb); row.appendChild(inpName); row.appendChild(inpLink); row.appendChild(delBtn);
-      return row;
-    }
-
-    addSubBtn.addEventListener('click', ()=>{
-      const menuName = menuSelect.value;
-      if(!menuName) return alert('Válassz egy menüpontot először.');
-      submenuStore[menuName] = submenuStore[menuName] || [];
-      submenuStore[menuName].push({name:'Új elem', link:'', thumb:''});
-      populateEditorRows(menuName);
-      saveAllToLocalStorage();
-      buildAll();
-      buildKeywordIndex();
-    });
-
-    saveSubBtn.addEventListener('click', ()=>{
-      const menuName = menuSelect.value;
-      if(menuName){
-        const raw = keywordsBox.value || '';
-        const arr = raw.split(/[,\n]+/).map(s => s.trim()).filter(s => s.length>0);
-        manualKeywords[menuName] = arr;
-      }
-      saveAllToLocalStorage();
-      populateEditorRows(menuSelect.value);
-      buildAll();
-      buildKeywordIndex();
-      alert('Almenük és kulcsszavak elmentve localStorage-be.');
-    });
-
-    closeModalBtn.addEventListener('click', ()=>{ modalBackdrop.style.display='none'; });
-
-    exportSubBtn.addEventListener('click', ()=>{
-      const payload = JSON.stringify({submenuStore, manualKeywords}, null, 2);
-      const blob = new Blob([payload], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'submenu_and_keywords_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-
-    function saveAllToLocalStorage(){
-      try{
-        const payload = { categories, categories2, submenuStore, manualKeywords };
-        localStorage.setItem(LS_KEY, JSON.stringify(payload));
-        console.log('Saved to LS');
-      }catch(e){ console.warn('save err', e) }
-    }
-
-    /* expose for debugging */
-    window.kepesKereso = { categories, categories2, submenuStore, manualKeywords, saveAllToLocalStorage, buildKeywordIndex, keywordsStore };
-
-    // show edit controls always (already visible via CSS). Hook up buttons:
-    const editBtn = document.getElementById('toggleEditBtn');
-    const openEditorBtn = document.getElementById('openSubEditorBtn');
-    if(editBtn){
-      let editMode = false;
-      editBtn.addEventListener('click', ()=>{
-        editMode = !editMode;
-        editBtn.textContent = 'Edit mode: ' + (editMode ? 'ON' : 'OFF');
-        document.querySelectorAll('.hotspot').forEach(h => h.style.outline = editMode ? '2px dashed rgba(0,0,0,0.06)' : 'none');
-      });
-    }
-    if(openEditorBtn) openEditorBtn.addEventListener('click', openEditor);
-
-    // keyboard shortcut to open editor
-    document.addEventListener('keydown', (e)=>{
-      if(e.ctrlKey && e.key.toLowerCase() === 'e'){
-        openEditor();
-      }
-    });
-
-    /* ---------- IntersectionObserver logic for "scroll hint" ---------- */
-    (function setupHintVisibility(){
-      if(!fixedHint) return;
-      if (window.innerWidth <= 880) { fixedHint.classList.remove('show'); return; }
-      const SHOW_THRESHOLD_IMAGE1 = 0.15;
-      const HIDE_IF_IMAGE2_VISIBLE = 0.05;
-      if('IntersectionObserver' in window){
-        const targets = { img1: document.getElementById('imageWrap1'), img2: document.getElementById('imageWrap2') };
-        let r1 = 0, r2 = 0;
-        const obs = new IntersectionObserver((entries)=>{
-          entries.forEach(en=>{
-            if(en.target === targets.img1) r1 = en.intersectionRatio;
-            if(en.target === targets.img2) r2 = en.intersectionRatio;
-          });
-          if(r1 > SHOW_THRESHOLD_IMAGE1 && r2 < HIDE_IF_IMAGE2_VISIBLE){
-            fixedHint.classList.add('show');
-            fixedHint.setAttribute('aria-hidden','false');
-          } else {
-            fixedHint.classList.remove('show');
-            fixedHint.setAttribute('aria-hidden','true');
-          }
-        }, { root: null, threshold: [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.25, 0.5] });
-
-        if(targets.img1) obs.observe(targets.img1);
-        if(targets.img2) obs.observe(targets.img2);
       } else {
-        const check = ()=>{
-          const rect1 = document.getElementById('imageWrap1').getBoundingClientRect();
-          const rect2 = document.getElementById('imageWrap2').getBoundingClientRect();
-          const visible1 = (rect1.bottom > 100 && rect1.top < window.innerHeight - 100);
-          const visible2 = (rect2.bottom > 100 && rect2.top < window.innerHeight - 100);
-          if(visible1 && !visible2) { fixedHint.classList.add('show'); fixedHint.setAttribute('aria-hidden','false'); } else { fixedHint.classList.remove('show'); fixedHint.setAttribute('aria-hidden','true'); }
-        };
-        check();
-        window.addEventListener('scroll', check, {passive:true});
-        window.addEventListener('resize', check);
+        matchesList.sort(function (a, b) {
+          if (sortVal === 'price_asc' || sortVal === 'price_desc' || sortVal === 'price_asc' || sortVal === 'price_desc') {
+            var na = Number(a.price) || 0, nb = Number(b.price) || 0;
+            if (na === nb) return 0;
+            return (sortVal.indexOf('asc') !== -1) ? (na - nb) : (nb - na);
+          }
+          if (sortVal === 'name_asc' || sortVal === 'name_desc') {
+            var na = (a.name || '').toString().toLowerCase(), nb = (b.name || '').toString().toLowerCase();
+            if (na < nb) return sortVal === 'name_asc' ? -1 : 1;
+            if (na > nb) return sortVal === 'name_asc' ? 1 : -1;
+            return 0;
+          }
+          return 0;
+        });
       }
+
+      var beforeSlice = matchesList.length;
+      matchesList = matchesList.slice(0, GLOBAL_MAX_RESULTS);
+
+      if (debugEl) debugEl.textContent += '';
+
+      renderProductsList(matchesList);
+    }
+
+    /* ---------- Event wiring ---------- */
+    (function wireEvents() {
+      var qInput = document.getElementById('q');
+      var timer = null;
+      if (qInput) {
+        qInput.addEventListener('input', function (e) {
+          if (!document.getElementById('prodBtn').classList.contains('active')) return;
+          clearTimeout(timer);
+          timer = setTimeout(function () { renderForQuery(e.target.value); }, 120);
+        });
+      }
+      var sortSelect = document.getElementById('sortSelect');
+      if (sortSelect) sortSelect.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
+      var imgOnlyCb = document.getElementById('imgOnly');
+      if (imgOnlyCb) imgOnlyCb.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
+
+      // also support alternative IDs (compat)
+      var altSort = document.getElementById('sort');
+      if (altSort) altSort.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
+      var altImg = document.getElementById('onlyWithImage');
+      if (altImg) altImg.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
     })();
 
-    /* ---------- final initializations ---------- */
-    buildAll();
-    buildKeywordIndex();
+    /* ---------- Auto-init when external JSON loaded ---------- */
+    (function autoInit() {
+      function finishInit() {
+        try {
+          if (window.__EMBEDDED_PRODUCTS && Array.isArray(window.__EMBEDDED_PRODUCTS)) {
+            PRODUCTS = window.__EMBEDDED_PRODUCTS.slice();
+          } else {
+            var raw = (document.getElementById('products-data') || { textContent: '' }).textContent || '';
+            if (raw && raw.trim().length > 10) {
+              try { PRODUCTS = JSON.parse(raw); } catch (e) { console.error('AUTO-INIT parse error', e); }
+            }
+          }
+          if (PRODUCTS && PRODUCTS.length > 0) {
+            preprocessProducts();
+            // enable search input
+            var qEl = document.getElementById('q');
+            if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
+            console.log('AUTO-INIT: PRODUCTS=', PRODUCTS.length);
+          }
+        } catch (e) { console.error('AUTO-INIT error', e); }
+      }
 
+      document.addEventListener('productsDataReady', function () { finishInit(); }, { once: true });
+      // fallback attempt after short delay
+      setTimeout(finishInit, 1500);
+    })();
   </script>
+
+  <!-- small navigation wiring -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      try {
+        var prodBtn = document.getElementById('prodBtn');
+        var catBtn = document.getElementById('catBtn');
+        function setActive(isProd) { if (isProd) { prodBtn.classList.add('active'); catBtn.classList.remove('active'); } else { prodBtn.classList.remove('active'); catBtn.classList.add('active'); } }
+        setActive(true);
+        if (prodBtn) prodBtn.addEventListener('click', function (e) { e.preventDefault(); setActive(true); });
+        if (catBtn) catBtn.addEventListener('click', function (e) { e.preventDefault(); window.location.href = 'kepes_kereso_site.html'; });
+      } catch (e) { console.error(e) }
+    });
+  </script>
+
+  <!-- ---------- Per-card Pointer sync script for glow (from modified JS snippet) ---------- -->
+  <script>
+    function attachCardPointer() {
+      const cards = Array.from(document.querySelectorAll('.card[data-glow]'));
+      if (!cards.length) return;
+
+      cards.forEach(card => {
+        if (card._glowPointerAttached) return;
+        card._glowPointerAttached = true;
+
+        // We'll track a single handler reference for attach/detach
+        let onMove = (ev) => {
+          const rect = card.getBoundingClientRect();
+          const x = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
+          const y = Math.max(0, Math.min(rect.height, ev.clientY - rect.top));
+          card.style.setProperty('--x', x.toFixed(2));
+          card.style.setProperty('--xp', (x / rect.width).toFixed(3));
+          card.style.setProperty('--y', y.toFixed(2));
+          card.style.setProperty('--yp', (y / rect.height).toFixed(3));
+        };
+
+        const onEnter = (e) => {
+          document.addEventListener('pointermove', onMove, { passive: true });
+          onMove(e);
+          card.classList.add('glow-active');
+        };
+
+        const onLeave = (e) => {
+          document.removeEventListener('pointermove', onMove);
+          card.classList.remove('glow-active');
+        };
+
+        const onPointerDown = (e) => {
+          document.addEventListener('pointermove', onMove, { passive: true });
+          onMove(e);
+        };
+        const onPointerUp = (e) => {
+          document.removeEventListener('pointermove', onMove);
+        };
+
+        card.addEventListener('pointerenter', onEnter);
+        card.addEventListener('pointerleave', onLeave);
+        card.addEventListener('pointerdown', onPointerDown, { passive: true });
+        document.addEventListener('pointerup', onPointerUp, { passive: true });
+
+        card.addEventListener('focus', (e) => {
+          const rect = card.getBoundingClientRect();
+          const cx = rect.width / 2, cy = rect.height / 2;
+          card.style.setProperty('--x', cx.toFixed(2));
+          card.style.setProperty('--xp', (cx / rect.width).toFixed(3));
+          card.style.setProperty('--y', cy.toFixed(2));
+          card.style.setProperty('--yp', (cy / rect.height).toFixed(3));
+        });
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      attachCardPointer();
+    });
+
+    // Wrap existing renderProductsList so newly rendered cards reattach pointers
+    if (typeof window.renderProductsList === 'function') {
+      const _orig = window.renderProductsList.bind(window);
+      window.renderProductsList = function (list) {
+        _orig(list);
+        setTimeout(attachCardPointer, 40);
+      };
+    } else {
+      window.attachCardPointer = attachCardPointer;
+    }
+  </script>
+  <footer style="font-size:13px;color:#666;padding:16px;text-align:center">
+    © 2025 MagicR Minden jog fenntartva.
+  </footer>
+
+
 </body>
+
 </html>
