@@ -518,6 +518,23 @@
       --saturation: 140;
       --lightness: 60;
     }
+    /* MOBIL: tiltjuk a glow vizuált és a touch interferenciát */
+    @media (max-width: 800px) {
+      [data-glow] {
+        touch-action: auto !important;        /* engedjük az érintéses görgetést */
+        background-image: none !important;    /* eltávolítjuk a spot-ot */
+        background-color: transparent !important;
+        border: none !important;
+        background-attachment: scroll !important;
+      }
+      [data-glow]::before,
+      [data-glow]::after,
+      [data-glow] [data-glow],
+      [data-glow] > [data-glow] {
+        display: none !important;             /* elrejti a pseudo / blur rétegeket */
+      }
+    }
+
   </style>
 
   <script src="products_with_status_min.js"></script>
