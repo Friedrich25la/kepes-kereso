@@ -702,7 +702,7 @@
           if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
         } else {
           var dbg = document.getElementById('debug');
-          if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'Nincsenek beágyazott termékek — a külső JSON tölthető be.'; }
+          if (dbg) { dbg.style.display = 'block'; dbg.textContent = ''; }
         }
       } catch (e) {
         console.error('JSON parse error', e);
