@@ -1,0 +1,7 @@
+{
+  "name": "trinexus-netlify-functions",
+  "version": "1.0.0",
+  "dependencies": {
+    "aws-sdk": "^2.1400.0"
+  }
+}
