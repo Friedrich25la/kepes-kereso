@@ -536,6 +536,72 @@
     }
 
   </style>
+  <script>
+    // Állítsd be ide a Netlify site-od pontos domainjét (például: aquamarine-cactus-d0f609):
+    window.API_BASE = 'https://aquamarine-cactus-d0f609.netlify.app/.netlify/functions/search';
+    // Alternatíva (ha a frontend ugyanazon a Netlify site-on van): window.API_BASE = window.API_BASE || '/.netlify/functions/search';
+  </script>
+
+  <!-- ===== Mixed Content javító: minden http://... img src-ot https://-re cserél automatikusan ===== -->
+  <script>
+    (function () {
+      if (typeof window === 'undefined') return;
+
+      try {
+        var imgProto = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+        if (imgProto && imgProto.set) {
+          var originalSetter = imgProto.set;
+          Object.defineProperty(HTMLImageElement.prototype, 'src', {
+            set: function (val) {
+              try {
+                if (typeof val === 'string' && /^http:\/\//i.test(val)) {
+                  val = val.replace(/^http:\/\//i, 'https://');
+                }
+              } catch (e) {}
+              return originalSetter.call(this, val);
+            },
+            get: imgProto.get,
+            configurable: true,
+            enumerable: true
+          });
+        } else {
+          var _setAttribute = Element.prototype.setAttribute;
+          Element.prototype.setAttribute = function (name, value) {
+            try {
+              if (name === 'src' && typeof value === 'string' && /^http:\/\//i.test(value)) {
+                value = value.replace(/^http:\/\//i, 'https://');
+              }
+            } catch (e) {}
+            return _setAttribute.call(this, name, value);
+          };
+        }
+      } catch (e) {
+        console.warn('img src patch failed', e && e.toString && e.toString());
+      }
+
+      window.__fixExistingImgSrc = function () {
+        try {
+          document.querySelectorAll('img').forEach(function (img) {
+            try {
+              if (img.getAttribute && /^http:\/\//i.test(img.getAttribute('src') || '')) {
+                img.setAttribute('src', (img.getAttribute('src') || '').replace(/^http:\/\//i, 'https://'));
+              } else if (img.src && /^http:\/\//i.test(img.src)) {
+                img.src = img.src.replace(/^http:\/\//i, 'https://');
+              }
+            } catch (e) {}
+          });
+        } catch (e) {}
+      };
+
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(window.__fixExistingImgSrc, 50);
+      } else {
+        document.addEventListener('DOMContentLoaded', function () {
+          setTimeout(window.__fixExistingImgSrc, 50);
+        }, { once: true });
+      }
+    })();
+  </script>
 
   
 </head>
