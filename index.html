@@ -653,48 +653,23 @@
   <script id="products-data" type="application/json"></script>
 
   <script>
-    (function () {
-      try {
-        var placeholder = document.getElementById('products-data');
-        if (!placeholder) {
-          placeholder = document.createElement('script');
-          placeholder.id = 'products-data';
-          placeholder.type = 'application/json';
-          document.body.insertBefore(placeholder, document.body.firstChild);
-        }
-
-        if (window.__EMBEDDED_PRODUCTS && Array.isArray(window.__EMBEDDED_PRODUCTS)) {
-          try { placeholder.textContent = JSON.stringify(window.__EMBEDDED_PRODUCTS); } catch (e) { placeholder.innerText = JSON.stringify(window.__EMBEDDED_PRODUCTS); }
-          document.dispatchEvent(new Event('productsDataReady'));
-        } else {
-          fetch('products_with_status_min.json').then(function (r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.text();
-          }).then(function (txt) {
-            try {
-              PRODUCTS = JSON.parse(txt);
-            } catch (e) {
-              console.error('JSON parse error from fetch', e);
-              PRODUCTS = [];
-            }
-            if (PRODUCTS && PRODUCTS.length > 0) preprocessProducts();
-            document.dispatchEvent(new Event('productsDataReady'));
-
-            // ha a placeholder létezik, ürítsd ki / távolítsd el
-            if (placeholder && placeholder.parentNode) {
-              placeholder.parentNode.removeChild(placeholder);
-            }
-          }).catch(function (e) {
-            console.error('Failed to fetch products JSON', e);
-            var results = document.getElementById('results');
-            if (results) results.innerHTML = '<div class="no-results">Hiba a termékadatok betöltésekor.</div>';
-          });
-        }
-      } catch (err) {
-        console.error('early init error', err);
-      }
-    })();
+  (function initProductsNoFallback(){
+    if (window.API_BASE && window.API_BASE.length) {
+      window.USE_API = true;
+      var qEl = document.getElementById('q');
+      if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
+      var results = document.getElementById('results');
+      if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
+      return;
+    }
+    // Ha ide jutsz, nincs API beállítva: jelezz hibát a debug mezőben
+    try {
+      var dbg = document.getElementById('debug');
+      if (dbg) dbg.style.display = 'block', dbg.textContent = 'Nincs elérhető termékforrás (API nincs beállítva).';
+    } catch (e){}
+  })();
   </script>
+
 
   <!--  ======= -->
   <script>
