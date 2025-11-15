@@ -1,60 +1,91 @@
-// Netlify Function — Local JSON Search (no AWS required)
-// Reads products_with_status_min.json bundled with the build
+// netlify/functions/search.js
+const fs = require('fs');
+const path = require('path');
 
-const fs = require("fs");
-const path = require("path");
+let CACHE = null;
+let CACHE_TS = 0;
+const CACHE_TTL = 1000 * 60 * 5; // 5 perc cache
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 500; // ne engedj túl nagy lekérést egyszerre
+
+function normalize(s = '') {
+  try {
+    let t = s.toString().toLowerCase();
+    // egyszerű diakritika-eltávolítás
+    t = t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
+    return t;
+  } catch (e) { return (s||'').toString().toLowerCase(); }
+}
 
 exports.handler = async (event) => {
-  const q = (event.queryStringParameters?.q || "").trim().toLowerCase();
-
-  if (!q || q.length < 3) {
-    return {
-      statusCode: 400,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ error: "Minimum 3 characters required." }),
-    };
-  }
-
   try {
-    // Locate the JSON file relative to the function folder
-    const filePath = path.join(__dirname, "../../products_with_status_min.json");
+    const qRaw = (event.queryStringParameters?.q || '').trim();
+    const page = Math.max(1, Number(event.queryStringParameters?.page) || 1);
+    let limit = Math.max(1, Number(event.queryStringParameters?.limit) || DEFAULT_LIMIT);
+    if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
-    // Read and parse JSON
-    const jsonText = fs.readFileSync(filePath, "utf-8");
-    const data = JSON.parse(jsonText);
+    if (!qRaw || qRaw.length < 1) {
+      return {
+        statusCode: 400,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Query param "q" required (min length 1).' }),
+      };
+    }
 
-    // Simple text search (case-insensitive, match in name or sku)
-    const results = data.filter((item) => {
-      const name = (item.name || "").toLowerCase();
-      const sku = (item.sku || "").toLowerCase();
-      return name.includes(q) || sku.includes(q);
-    });
+    // load & cache the JSON bundled in functions/_assets
+    if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
+      const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      CACHE = JSON.parse(raw);
+      CACHE_TS = Date.now();
+    }
+    const data = CACHE || [];
 
-    // Limit results
-    const limited = results.slice(0, 50);
+    const qnorm = normalize(qRaw);
+    const tokens = qnorm.split(/\s+/).filter(Boolean);
+
+    // filter: minden token szerepeljen a name vagy sku mezőben (AND)
+    const matches = [];
+    for (let i = 0; i < data.length; i++) {
+      const p = data[i];
+      const hay = normalize((p.name || '') + ' ' + (p.sku || ''));
+      let ok = true;
+      for (let t of tokens) {
+        if (!hay.includes(t)) { ok = false; break; }
+      }
+      if (ok) matches.push(p);
+    }
+
+    const total = matches.length;
+
+    // sort: lehetőség (relevancia vagy név) - itt alapból marad a találati sorrend
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const pageResults = matches.slice(start, end).map(p => ({
+      id: p.id, name: p.name, sku: p.sku, price: p.price, thumb: p.thumb, url: p.url
+    }));
 
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        count: limited.length,
-        results: limited,
-      }),
+        q: qRaw,
+        page,
+        limit,
+        total_count: total,
+        results: pageResults
+      })
     };
+
   } catch (err) {
+    console.error('search error', err);
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ error: err.message }),
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: err.message || String(err) })
     };
   }
 };
