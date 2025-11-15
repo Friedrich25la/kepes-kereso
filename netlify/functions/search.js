@@ -1,10 +1,11 @@
 // netlify/functions/search.js
-const fs = require('fs');
-const path = require('path');
 
-let CACHE = null;
-let CACHE_TS = 0;
-const CACHE_TTL = 1000 * 60 * 5; // 5 perc cache
+// 1. Az fs és path modulok importálása már nem szükséges.
+
+// 2. Az adatbázis azonnali betöltése a require() segítségével.
+// Ez biztosítja, hogy a Netlify beépítse a JSON-t a függvény csomagjába.
+const CACHE = require('./_assets/products_with_status_min.json');
+
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500; // ne engedj túl nagy lekérést egyszerre
 
@@ -32,13 +33,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // load & cache the JSON bundled in functions/_assets
-    if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
-      const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      CACHE = JSON.parse(raw);
-      CACHE_TS = Date.now();
-    }
+    // A cache beolvasás (fs.readFileSync) már nem szükséges,
+    // mivel a CACHE az induláskor már betöltődött.
     const data = CACHE || [];
 
     const qnorm = normalize(qRaw);
