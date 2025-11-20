@@ -2,3 +2,7 @@
   publish = "."
   command = ""
   functions = "netlify/functions"
+
+# EZT A RÉSZT KELL HOZZÁADNOD:
+[functions]
+  included_files = ["netlify/functions/_assets/*.json"]
