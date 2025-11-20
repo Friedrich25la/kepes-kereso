@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Termékkereső — Trinexus (külső JSON)</title>
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <script>window.MIN_TOKEN_LEN = window.MIN_TOKEN_LEN || 3;</script>
   <!-- FORCE: use Netlify function for searches (must be BEFORE any script that could fetch the JSON) -->
   <script>window.API_BASE = 'https://aquamarine-cactus-d0f609.netlify.app/.netlify/functions/search';</script>
@@ -545,66 +546,7 @@
     // Alternatíva (ha a frontend ugyanazon a Netlify site-on van): window.API_BASE = window.API_BASE || '/.netlify/functions/search';
   </script>
 
-  <!-- ===== Mixed Content javító: minden http://... img src-ot https://-re cserél automatikusan ===== -->
-  <script>
-    (function () {
-      if (typeof window === 'undefined') return;
-
-      try {
-        var imgProto = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-        if (imgProto && imgProto.set) {
-          var originalSetter = imgProto.set;
-          Object.defineProperty(HTMLImageElement.prototype, 'src', {
-            set: function (val) {
-              try {
-                if (typeof val === 'string' && /^http:\/\//i.test(val)) {
-                  val = val.replace(/^http:\/\//i, 'https://');
-                }
-              } catch (e) {}
-              return originalSetter.call(this, val);
-            },
-            get: imgProto.get,
-            configurable: true,
-            enumerable: true
-          });
-        } else {
-          var _setAttribute = Element.prototype.setAttribute;
-          Element.prototype.setAttribute = function (name, value) {
-            try {
-              if (name === 'src' && typeof value === 'string' && /^http:\/\//i.test(value)) {
-                value = value.replace(/^http:\/\//i, 'https://');
-              }
-            } catch (e) {}
-            return _setAttribute.call(this, name, value);
-          };
-        }
-      } catch (e) {
-        console.warn('img src patch failed', e && e.toString && e.toString());
-      }
-
-      window.__fixExistingImgSrc = function () {
-        try {
-          document.querySelectorAll('img').forEach(function (img) {
-            try {
-              if (img.getAttribute && /^http:\/\//i.test(img.getAttribute('src') || '')) {
-                img.setAttribute('src', (img.getAttribute('src') || '').replace(/^http:\/\//i, 'https://'));
-              } else if (img.src && /^http:\/\//i.test(img.src)) {
-                img.src = img.src.replace(/^http:\/\//i, 'https://');
-              }
-            } catch (e) {}
-          });
-        } catch (e) {}
-      };
-
-      if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(window.__fixExistingImgSrc, 50);
-      } else {
-        document.addEventListener('DOMContentLoaded', function () {
-          setTimeout(window.__fixExistingImgSrc, 50);
-        }, { once: true });
-      }
-    })();
-  </script>
+  
 
   
 </head>
@@ -881,122 +823,214 @@
       }
     }
 
-    /* ---------- Render for query (core) ---------- */
-    function renderForQuery(q) {
-      var results = document.getElementById('results');
-      var debugEl = document.getElementById('debug');
-      if (debugEl) debugEl.style.display = 'block';
-      if (debugEl) debugEl.textContent = '';
+    /* ---------- ÁLLAPOTKEZELÉS ---------- */
+      let currentState = {
+        query: '',
+        page: 1,
+        isLoading: false,
+        hasMore: true
+      };
 
-      if (!q || q.trim().length < MIN_TOKEN_LEN) {
-        results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
-        return;
+      /* ---------- API HÍVÁS ---------- */
+      async function fetchProducts(query, page) {
+        // 50-esével kérjük le, így gyors marad
+        const limit = 50;
+        const params = new URLSearchParams({ q: query, page: page, limit: limit });
+
+        const response = await fetch(`${window.API_BASE}?${params.toString()}`);
+        if (!response.ok) throw new Error('Hálózati hiba');
+        return await response.json();
       }
-      var trimmed = q.trim();
 
-      // get matches using old matcher
-      var matchesList = PRODUCTS.filter(function (p) {
-        return matches(p, trimmed);
-      });
+      /* ---------- KERESÉS INDÍTÁSA (Enter vagy gépelés) ---------- */
+      async function renderForQuery(q) {
+        const resultsEl = document.getElementById('results');
+        const debugEl = document.getElementById('debug');
 
-      // exclude status == 0 explicitly
-      matchesList = matchesList.filter(function (p) {
-        if (p.__status === 0) return false;
-        if (typeof p.status !== 'undefined' && (p.status === 0 || p.status === '0')) return false;
-        return true;
-      });
+        if (!q || q.trim().length < MIN_TOKEN_LEN) {
+          resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>';
+          removeLoadMoreButton();
+          return;
+        }
 
-      // img-only filter (applied to matched items)
-      var imgOnlyChecked = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
-      var altImgOnly = document.getElementById('onlyWithImage') && document.getElementById('onlyWithImage').checked;
-      if (imgOnlyChecked || altImgOnly) {
-        matchesList = matchesList.filter(function (p) {
-          var imgs = splitImageList(p.img || '');
-          return imgs.length > 0;
+        // Új keresésnél reseteljük az állapotot
+        currentState.query = q.trim();
+        currentState.page = 1;
+        currentState.hasMore = true;
+
+        resultsEl.innerHTML = '<div class="loading">Keresés...</div>';
+        removeLoadMoreButton();
+
+        try {
+          const data = await fetchProducts(currentState.query, currentState.page);
+
+          // Debug infó
+          if (debugEl) {
+            debugEl.style.display = 'block';
+            debugEl.textContent = `Összes találat: ${data.total_count}`;
+          }
+
+          // Ha nincs találat
+          if (data.results.length === 0) {
+            resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>';
+            return;
+          }
+
+          // Első oldal renderelése (törli a "Keresés..." szöveget)
+          resultsEl.innerHTML = '';
+
+          // Mivel a backend most már küldi az "img"-t, itt működni fog a renderProductsList
+          // De figyeljünk a kliens oldali rendezésre, ha szükséges (opcionális)
+          // (A renderProductsList "append"-eli a sorokat, ezért itt egy wrapperbe tesszük)
+
+          // Egyszerűsítés: rendereljük ki az első adagot
+          appendResults(data.results);
+
+          // Ha van még találat (összes > jelenlegi lista vége)
+          if (data.total_count > (currentState.page * data.limit)) {
+            createLoadMoreButton();
+          }
+
+        } catch (err) {
+          console.error(err);
+          resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>';
+        }
+      }
+
+      /* ---------- TÖBB BETÖLTÉSE (Load More) ---------- */
+      async function loadMore() {
+        if (currentState.isLoading || !currentState.hasMore) return;
+
+        const btn = document.getElementById('loadMoreBtn');
+        if (btn) btn.textContent = 'Betöltés...';
+        currentState.isLoading = true;
+
+        try {
+          currentState.page++;
+          const data = await fetchProducts(currentState.query, currentState.page);
+
+          appendResults(data.results);
+
+          if (data.total_count <= (currentState.page * data.limit)) {
+            currentState.hasMore = false;
+            removeLoadMoreButton();
+          } else {
+            if (btn) btn.textContent = 'További találatok betöltése';
+          }
+        } catch (err) {
+          console.error(err);
+          if (btn) btn.textContent = 'Hiba a betöltéskor (próbáld újra)';
+        } finally {
+          currentState.isLoading = false;
+        }
+      }
+
+      /* ---------- SEGÉDFÜGGVÉNYEK ---------- */
+
+      // Ez a meglévő renderProductsList-et hívja, de okosabban
+      function appendResults(list) {
+        // Kliens oldali szűrés (pl. csak képpel), ha be van pipálva
+        const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
+        let filtered = list;
+        if (imgOnly) {
+          filtered = list.filter(p => p.img && p.img.length > 0);
+        }
+
+        // Mivel a renderProductsList felülírja a results tartalmát, 
+        // nekünk appendelni kell. Ehhez trükközünk kicsit, vagy átírjuk a render-t.
+        // A legegyszerűbb, ha a meglévő "row" div-be fűzzük be, vagy újat csinálunk.
+
+        const resultsEl = document.getElementById('results');
+        let row = resultsEl.querySelector('.row');
+        if (!row) {
+          row = document.createElement('div');
+          row.className = 'row';
+          resultsEl.appendChild(row);
+        }
+
+        // Itt újrahasznosítjuk a meglévő kártya-generáló logikát a renderProductsList-ből,
+        // de mivel az törli a tartalmat, jobb ha manuálisan generáljuk a kártyákat ide.
+        // (Vagy módosítjuk a renderProductsList-et, hogy ne töröljön).
+
+        // MÓDOSÍTÁS: Ideiglenesen használjuk a fenti HTML struktúrát generáló kódot:
+        list.forEach(p => {
+          // Ez a kód gyakorlatilag ugyanaz, mint a te eredeti renderProductsList függvényed magja
+          const a = document.createElement('a');
+          a.className = 'card';
+          a.href = p.url || '#';
+          a.target = '_blank';
+          a.setAttribute('data-glow', '');
+
+          // Glow inner
+          const innerGlow = document.createElement('div');
+          innerGlow.setAttribute('data-glow', '');
+          a.appendChild(innerGlow);
+
+          const overlay = document.createElement('div');
+          overlay.className = 'overlay';
+
+          const img = document.createElement('img');
+          img.loading = 'lazy';
+          // Képkezelés (most már jön az API-ból a p.img!)
+          const imgs = (p.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
+          img.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+          overlay.appendChild(img);
+
+          const nameBar = document.createElement('div');
+          nameBar.className = 'name-bar';
+          nameBar.textContent = p.name || '-';
+          overlay.appendChild(nameBar);
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.innerHTML = `<span class="sku">${p.sku || ''}</span><span class="price">${p.price ? Math.round(p.price).toLocaleString('hu-HU') + ' Ft' : ''}</span>`;
+
+          a.appendChild(overlay);
+          a.appendChild(meta);
+
+          row.appendChild(a);
         });
+
+        // Glow effekt újraaktiválása az új elemeken
+        if (window.attachCardPointer) window.attachCardPointer();
       }
 
-      if (debugEl) debugEl.textContent = 'Találatok száma: ' + matchesList.length;
+      function createLoadMoreButton() {
+        removeLoadMoreButton(); // Biztos ami biztos
+        const btnContainer = document.createElement('div');
+        btnContainer.id = 'loadMoreContainer';
+        btnContainer.style.textAlign = 'center';
+        btnContainer.style.padding = '20px';
 
-      // Sorting
-      var sortVal = (document.getElementById('sortSelect') && document.getElementById('sortSelect').value) || (document.getElementById('sort') && document.getElementById('sort').value) || 'relevance';
-      if (sortVal === 'relevance') {
-        matchesList = matchesList.map(function (p) {
-          var score = 0;
-          var name = p.__norm_name || (p.name || '').toString().toLowerCase();
-          var sku = p.__norm_sku || (p.sku || '').toString().toLowerCase();
-          var nameWords = p.__name_words || name.split(/\s+/).filter(Boolean);
-          var tokens = trimmed.toString().toLowerCase().split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
+        const btn = document.createElement('button');
+        btn.id = 'loadMoreBtn';
+        btn.textContent = 'További találatok betöltése';
+        btn.style.padding = '10px 20px';
+        btn.style.fontSize = '16px';
+        btn.style.cursor = 'pointer';
+        btn.onclick = loadMore;
 
-          tokens.forEach(function (tk) {
-            if (tk.length < MIN_TOKEN_LEN) return;
-            for (var w = 0; w < nameWords.length; w++) {
-              if (nameWords[w] === tk) { score += 50; }
-              else if (nameWords[w].indexOf(tk) === 0) { score += 30; }
-              else if (nameWords[w].indexOf(tk) !== -1) { score += 15; }
-            }
-            if (sku && sku.indexOf(tk.replace(/[^a-z0-9]+/g, '')) !== -1) score += 20;
+        btnContainer.appendChild(btn);
+        document.getElementById('results').parentNode.insertBefore(btnContainer, document.getElementById('results').nextSibling);
+      }
+
+      function removeLoadMoreButton() {
+        const el = document.getElementById('loadMoreContainer');
+        if (el) el.remove();
+      }
+
+      /* ---------- EVENT LISTENERS ---------- */
+      (function wireEvents() {
+        var qInput = document.getElementById('q');
+        var timer = null;
+        if (qInput) {
+          qInput.addEventListener('input', function (e) {
+            clearTimeout(timer);
+            timer = setTimeout(function () { renderForQuery(e.target.value); }, 500);
           });
-
-          score += Math.max(0, 10 - (nameWords.length || 0));
-          p.__score = score;
-          return p;
-        });
-
-        matchesList.sort(function (a, b) {
-          if ((b.__score || 0) !== (a.__score || 0)) return (b.__score || 0) - (a.__score || 0);
-          var na = (a.name || '').toString().toLowerCase(), nb = (b.name || '').toString().toLowerCase();
-          if (na < nb) return -1;
-          if (na > nb) return 1;
-          return 0;
-        });
-      } else {
-        matchesList.sort(function (a, b) {
-          if (sortVal === 'price_asc' || sortVal === 'price_desc' || sortVal === 'price_asc' || sortVal === 'price_desc') {
-            var na = Number(a.price) || 0, nb = Number(b.price) || 0;
-            if (na === nb) return 0;
-            return (sortVal.indexOf('asc') !== -1) ? (na - nb) : (nb - na);
-          }
-          if (sortVal === 'name_asc' || sortVal === 'name_desc') {
-            var na = (a.name || '').toString().toLowerCase(), nb = (b.name || '').toString().toLowerCase();
-            if (na < nb) return sortVal === 'name_asc' ? -1 : 1;
-            if (na > nb) return sortVal === 'name_asc' ? 1 : -1;
-            return 0;
-          }
-          return 0;
-        });
-      }
-
-      var beforeSlice = matchesList.length;
-      matchesList = matchesList.slice(0, GLOBAL_MAX_RESULTS);
-
-      if (debugEl) debugEl.textContent += '';
-
-      renderProductsList(matchesList);
-    }
-
-    /* ---------- Event wiring ---------- */
-    (function wireEvents() {
-      var qInput = document.getElementById('q');
-      var timer = null;
-      if (qInput) {
-        qInput.addEventListener('input', function (e) {
-          if (!document.getElementById('prodBtn').classList.contains('active')) return;
-          clearTimeout(timer);
-          timer = setTimeout(function () { renderForQuery(e.target.value); }, 120);
-        });
-      }
-      var sortSelect = document.getElementById('sortSelect');
-      if (sortSelect) sortSelect.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
-      var imgOnlyCb = document.getElementById('imgOnly');
-      if (imgOnlyCb) imgOnlyCb.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
-
-      // also support alternative IDs (compat)
-      var altSort = document.getElementById('sort');
-      if (altSort) altSort.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
-      var altImg = document.getElementById('onlyWithImage');
-      if (altImg) altImg.addEventListener('change', function () { renderForQuery((qInput && qInput.value) || ''); });
-    })();
+        }
+      })();
 
     /* ---------- Auto-init when external JSON loaded ---------- */
     (function autoInit() {
