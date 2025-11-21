@@ -1053,17 +1053,67 @@
         if (el) el.remove();
       }
 
-      /* ---------- EVENT LISTENERS ---------- */
-      (function wireEvents() {
-        var qInput = document.getElementById('q');
-        var timer = null;
-        if (qInput) {
-          qInput.addEventListener('input', function (e) {
-            clearTimeout(timer);
-            timer = setTimeout(function () { renderForQuery(e.target.value); }, 500);
+      /* ---------- ESEMÉNYKEZELŐK BEKÖTÉSE (wireEvents) ---------- */
+    (function wireEvents() {
+      var qInput = document.getElementById('q');
+      var timer = null;
+      const DEBOUNCE_DELAY = 500; // Fél másodperc várakozás gépelés után
+
+      // 1. Keresőmező figyelése
+      if (qInput) {
+        qInput.addEventListener('input', function (e) {
+          // Ellenőrizzük, hogy a Termékkereső fül aktív-e (az eredeti logika szerint)
+          var prodBtn = document.getElementById('prodBtn');
+          if (prodBtn && !prodBtn.classList.contains('active')) return;
+          
+          // Töröljük az előző időzítőt (ha gyorsan gépel a felhasználó)
+          clearTimeout(timer);
+          
+          // Indítjuk az újat
+          timer = setTimeout(function () { 
+              renderForQuery(e.target.value); 
+          }, DEBOUNCE_DELAY);
+        });
+      }
+
+      // 2. Rendezés legördülő menü figyelése
+      var sortSelect = document.getElementById('sortSelect');
+      if (sortSelect) {
+        sortSelect.addEventListener('change', function () { 
+            // Csak akkor frissítünk, ha van érvényes keresés
+            if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
+                renderForQuery(qInput.value);
+            }
+        });
+      }
+
+      // 3. "Csak képpel" jelölőnégyzet figyelése
+      var imgOnlyCb = document.getElementById('imgOnly');
+      if (imgOnlyCb) {
+        imgOnlyCb.addEventListener('change', function () { 
+            // Azonnal újraszűrjük a találatokat
+            if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
+                renderForQuery(qInput.value); 
+            }
+        });
+      }
+
+      // 4. Kompatibilitás (Régi ID-k támogatása, biztos ami biztos)
+      var altSort = document.getElementById('sort');
+      if (altSort) {
+          altSort.addEventListener('change', function () { 
+              if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value); 
           });
-        }
-      })();
+      }
+      
+      var altImg = document.getElementById('onlyWithImage');
+      if (altImg) {
+          altImg.addEventListener('change', function () { 
+              if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value); 
+          });
+      }
+      
+    })();
 
     /* ---------- Auto-init when external JSON loaded ---------- */
     (function autoInit() {
