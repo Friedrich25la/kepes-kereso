@@ -842,60 +842,93 @@
         return await response.json();
       }
 
-      /* ---------- KERESÉS INDÍTÁSA (Enter vagy gépelés) ---------- */
-      async function renderForQuery(q) {
+      /* ---------- KERESÉS INDÍTÁSA (Rendezéssel + Képszűréssel) ---------- */
+    async function renderForQuery(q) {
         const resultsEl = document.getElementById('results');
         const debugEl = document.getElementById('debug');
-
+        
+        // 1. Validálás
         if (!q || q.trim().length < MIN_TOKEN_LEN) {
-          resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>';
-          removeLoadMoreButton();
-          return;
+            resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>';
+            removeLoadMoreButton();
+            return;
         }
 
-        // Új keresésnél reseteljük az állapotot
+        // 2. Állapot reset (csak ha ez egy teljesen új keresés, nem lapozás)
+        // Megjegyzés: Ezt a függvényt hívja a gépelés, tehát ez mindig új keresés.
         currentState.query = q.trim();
         currentState.page = 1;
         currentState.hasMore = true;
-
+        
         resultsEl.innerHTML = '<div class="loading">Keresés...</div>';
         removeLoadMoreButton();
 
         try {
-          const data = await fetchProducts(currentState.query, currentState.page);
+            // 3. Adatok letöltése a szerverről
+            const data = await fetchProducts(currentState.query, currentState.page);
+            
+            if (debugEl) {
+                debugEl.style.display = 'block';
+                debugEl.textContent = `Összes találat: ${data.total_count}`;
+            }
 
-          // Debug infó
-          if (debugEl) {
-            debugEl.style.display = 'block';
-            debugEl.textContent = `Összes találat: ${data.total_count}`;
-          }
+            if (data.results.length === 0) {
+                resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>';
+                return;
+            }
 
-          // Ha nincs találat
-          if (data.results.length === 0) {
-            resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>';
-            return;
-          }
+            // 4. ELŐKÉSZÍTÉS (Töröljük az előző tartalmat)
+            resultsEl.innerHTML = ''; 
+            let list = data.results;
 
-          // Első oldal renderelése (törli a "Keresés..." szöveget)
-          resultsEl.innerHTML = '';
+            // ---------------------------------------------------------
+            // A) SZŰRÉS: Csak képpel rendelkező termékek (EZ HIÁNYZOTT)
+            // ---------------------------------------------------------
+            const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
+            if (imgOnly) {
+                // Csak azokat hagyjuk meg, ahol az 'img' mező létezik és nem üres
+                list = list.filter(p => p.img && p.img.length > 0);
+            }
 
-          // Mivel a backend most már küldi az "img"-t, itt működni fog a renderProductsList
-          // De figyeljünk a kliens oldali rendezésre, ha szükséges (opcionális)
-          // (A renderProductsList "append"-eli a sorokat, ezért itt egy wrapperbe tesszük)
+            // Ha a szűrés után elfogyott minden elem az oldalról
+            if (list.length === 0 && data.total_count > 0) {
+                resultsEl.innerHTML = '<div class="no-results">Ezen az oldalon nincsenek képpel rendelkező termékek. Próbáljon lapozni.</div>';
+            }
 
-          // Egyszerűsítés: rendereljük ki az első adagot
-          appendResults(data.results);
+            // ---------------------------------------------------------
+            // B) RENDEZÉS: A felhasználó választása szerint
+            // ---------------------------------------------------------
+            const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'relevance';
+            
+            if (sortVal !== 'relevance') {
+                list.sort((a, b) => {
+                    if (sortVal.includes('price')) {
+                        const na = Number(a.price) || 0;
+                        const nb = Number(b.price) || 0;
+                        return sortVal === 'price_asc' ? (na - nb) : (nb - na);
+                    }
+                    if (sortVal.includes('name')) {
+                        const na = (a.name || '').toLowerCase();
+                        const nb = (b.name || '').toLowerCase();
+                        return sortVal === 'name_asc' ? na.localeCompare(nb) : nb.localeCompare(na);
+                    }
+                    return 0;
+                });
+            }
 
-          // Ha van még találat (összes > jelenlegi lista vége)
-          if (data.total_count > (currentState.page * data.limit)) {
-            createLoadMoreButton();
-          }
+            // 5. MEGJELENÍTÉS
+            appendResults(list);
+
+            // Gomb kezelése: Ha van még több adat a szerveren, kirakjuk a gombot
+            if (data.total_count > (currentState.page * data.limit)) {
+                createLoadMoreButton();
+            }
 
         } catch (err) {
-          console.error(err);
-          resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>';
+            console.error(err);
+            resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>';
         }
-      }
+    }
 
       /* ---------- TÖBB BETÖLTÉSE (Load More) ---------- */
       async function loadMore() {
