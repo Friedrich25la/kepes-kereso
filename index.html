@@ -831,75 +831,87 @@
         hasMore: true
       };
 
-      /* ---------- API HÍVÁS ---------- */
-      async function fetchProducts(query, page) {
-        // 50-esével kérjük le, így gyors marad
-        const limit = 50;
+      /* ---------- API HÍVÁS (Javított: egyedi limit kezelése) ---------- */
+    async function fetchProducts(query, page, customLimit) {
+        // Ha nincs megadva egyedi limit, marad a szabvány 50
+        const limit = customLimit || 50; 
         const params = new URLSearchParams({ q: query, page: page, limit: limit });
-
+        
         const response = await fetch(`${window.API_BASE}?${params.toString()}`);
         if (!response.ok) throw new Error('Hálózati hiba');
         return await response.json();
-      }
+    }
 
-      /* ---------- KERESÉS INDÍTÁSA (Rendezéssel + Képszűréssel) ---------- */
-    async function renderForQuery(q) {
+   /* ---------- KERESÉS INDÍTÁSA (Okos rendezéssel) ---------- */
+    async function renderForQuery(q, preserveCount = false) {
         const resultsEl = document.getElementById('results');
         const debugEl = document.getElementById('debug');
         
-        // 1. Validálás
         if (!q || q.trim().length < MIN_TOKEN_LEN) {
             resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>';
             removeLoadMoreButton();
             return;
         }
 
-        // 2. Állapot reset (csak ha ez egy teljesen új keresés, nem lapozás)
-        // Megjegyzés: Ezt a függvényt hívja a gépelés, tehát ez mindig új keresés.
-        currentState.query = q.trim();
-        currentState.page = 1;
-        currentState.hasMore = true;
+        // LOGIKA: 
+        // Ha "preserveCount" igaz (pl. rendezés váltáskor), akkor NEM reseteljük az oldalt 1-re,
+        // hanem lekérjük az eddigi összes adatot egyben (page=1, limit=jelenlegi_összes).
         
-        resultsEl.innerHTML = '<div class="loading">Keresés...</div>';
-        removeLoadMoreButton();
+        let fetchPage = 1;
+        let fetchLimit = 50;
+
+        if (preserveCount) {
+            // Megtartjuk a jelenlegi állapotot, de újratöltjük az adatokat a szerverről az új rendezéshez
+            currentState.query = q.trim();
+            // A trükk: Page 1-et kérünk, de akkora limittel, amennyi oldalunk eddig volt
+            fetchLimit = currentState.page * 50; 
+        } else {
+            // Ez egy teljesen új keresés (gépelés), mindent nullázunk
+            currentState.query = q.trim();
+            currentState.page = 1;
+            currentState.hasMore = true;
+            fetchLimit = 50;
+        }
+        
+        if (!preserveCount) {
+             resultsEl.innerHTML = '<div class="loading">Keresés...</div>';
+             removeLoadMoreButton();
+        } else {
+             // Ha csak rendezünk, jelezzük finomabban, hogy dolgozunk
+             resultsEl.style.opacity = '0.5';
+        }
 
         try {
-            // 3. Adatok letöltése a szerverről
-            const data = await fetchProducts(currentState.query, currentState.page);
+            // Itt használjuk az új paramétereket
+            const data = await fetchProducts(currentState.query, fetchPage, fetchLimit);
             
             if (debugEl) {
                 debugEl.style.display = 'block';
-                debugEl.textContent = `Összes találat: ${data.total_count}`;
+                debugEl.textContent = `Összes találat: ${data.total_count} (Betöltve: ${data.results.length})`;
             }
+
+            resultsEl.style.opacity = '1'; // Visszaállítjuk az átlátszóságot
 
             if (data.results.length === 0) {
                 resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>';
                 return;
             }
 
-            // 4. ELŐKÉSZÍTÉS (Töröljük az előző tartalmat)
+            // Töröljük a tartalmat, mert újrarendezve rajzoljuk ki az egészet
             resultsEl.innerHTML = ''; 
             let list = data.results;
 
-            // ---------------------------------------------------------
-            // A) SZŰRÉS: Csak képpel rendelkező termékek (EZ HIÁNYZOTT)
-            // ---------------------------------------------------------
+            // --- A) SZŰRÉS (Csak képpel) ---
             const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
             if (imgOnly) {
-                // Csak azokat hagyjuk meg, ahol az 'img' mező létezik és nem üres
                 list = list.filter(p => p.img && p.img.length > 0);
             }
-
-            // Ha a szűrés után elfogyott minden elem az oldalról
             if (list.length === 0 && data.total_count > 0) {
-                resultsEl.innerHTML = '<div class="no-results">Ezen az oldalon nincsenek képpel rendelkező termékek. Próbáljon lapozni.</div>';
+                resultsEl.innerHTML = '<div class="no-results">A betöltött elemek között nincs képpel rendelkező.</div>';
             }
 
-            // ---------------------------------------------------------
-            // B) RENDEZÉS: A felhasználó választása szerint
-            // ---------------------------------------------------------
+            // --- B) RENDEZÉS ---
             const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'relevance';
-            
             if (sortVal !== 'relevance') {
                 list.sort((a, b) => {
                     if (sortVal.includes('price')) {
@@ -916,17 +928,21 @@
                 });
             }
 
-            // 5. MEGJELENÍTÉS
+            // Megjelenítés
             appendResults(list);
 
-            // Gomb kezelése: Ha van még több adat a szerveren, kirakjuk a gombot
-            if (data.total_count > (currentState.page * data.limit)) {
+            // Gomb kezelése
+            // Fontos: A currentState.page * 50 a mérvadó, hogy hol tartunk
+            if (data.total_count > (currentState.page * 50)) {
                 createLoadMoreButton();
+            } else {
+                removeLoadMoreButton(); // Ha elértük a végét a rendezéssel, tűnjön el a gomb
             }
 
         } catch (err) {
             console.error(err);
             resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>';
+            resultsEl.style.opacity = '1';
         }
     }
 
@@ -1080,9 +1096,9 @@
       var sortSelect = document.getElementById('sortSelect');
       if (sortSelect) {
         sortSelect.addEventListener('change', function () { 
-            // Csak akkor frissítünk, ha van érvényes keresés
             if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
-                renderForQuery(qInput.value);
+                // ITT A VÁLTOZÁS: true-t adunk át második paraméternek!
+                renderForQuery(qInput.value, true);
             }
         });
       }
@@ -1091,13 +1107,12 @@
       var imgOnlyCb = document.getElementById('imgOnly');
       if (imgOnlyCb) {
         imgOnlyCb.addEventListener('change', function () { 
-            // Azonnal újraszűrjük a találatokat
             if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
-                renderForQuery(qInput.value); 
+                // ITT IS: true-t adunk át, hogy ne ugorjon vissza az elejére
+                renderForQuery(qInput.value, true); 
             }
         });
       }
-
       // 4. Kompatibilitás (Régi ID-k támogatása, biztos ami biztos)
       var altSort = document.getElementById('sort');
       if (altSort) {
