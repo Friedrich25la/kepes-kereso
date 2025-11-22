@@ -41,9 +41,10 @@
       padding: 18px;
     }
 
-    
+
     header {
-      background: #9b9b9b; /* fehér sáv */
+      background: #9b9b9b;
+      /* fehér sáv */
       color: #000;
       padding: 0;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -56,11 +57,11 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      overflow: hidden; 
+      overflow: hidden;
       padding: 5px 5px;
     }
 
-    
+
     .text {
       font-weight: 900;
       font-size: 2vw;
@@ -70,28 +71,28 @@
       -webkit-background-clip: text;
       overflow: clip;
       background-color: #fefcef;
-      
+
       padding: 6px 18px;
-      z-index: 1; 
+      z-index: 1;
       white-space: nowrap;
     }
 
-    
+
     .text::before,
     .text::after {
       content: '';
       position: absolute;
-      
+
       z-index: -1;
 
-      
+
       background-color: #199c9c;
 
       width: 175%;
       top: 50%;
       left: 50%;
       aspect-ratio: 1;
-      
+
       transform: translate(-50%, 0) rotate(0deg);
 
       border-top-left-radius: 60% 80%;
@@ -100,13 +101,13 @@
       border-bottom-right-radius: 50% 80%;
 
       mix-blend-mode: multiply;
-      
+
       animation: rot 10s linear infinite;
       pointer-events: none;
       opacity: 0.95;
     }
 
-    
+
     .text::after {
       animation-delay: -5s;
       animation-duration: 8s;
@@ -114,14 +115,14 @@
 
     @keyframes rot {
       to {
-        
+
         transform: translate(-50%, 0) rotate(360deg);
       }
     }
 
-    
 
-    
+
+
     .toggle {
       display: flex;
       border: 1px solid #e6e6e6;
@@ -216,8 +217,10 @@
       text-decoration: none;
       color: inherit;
       transition: transform .14s ease, box-shadow .14s ease;
-      position: relative; /* needed for absolute glow child */
-      isolation: isolate; /* keep blending contained */
+      position: relative;
+      /* needed for absolute glow child */
+      isolation: isolate;
+      /* keep blending contained */
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -228,7 +231,8 @@
 
     .card .overlay {
       position: relative;
-      z-index: 2; /* ensure overlay content is above glow visuals */
+      z-index: 2;
+      /* ensure overlay content is above glow visuals */
     }
 
     .card img {
@@ -296,48 +300,54 @@
       color: #0066cc;
     }
 
-    
+
     .site-header {
       width: 100%;
-      background: #8a8989;           /* a szürke sáv színe (állítható) */
-      position: relative;            /* a logo abszolút pozícionálásához */
-      padding: 8px 0;                /* függőleges padding: sáv magassága */
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      background: #8a8989;
+      /* a szürke sáv színe (állítható) */
+      position: relative;
+      /* a logo abszolút pozícionálásához */
+      padding: 8px 0;
+      /* függőleges padding: sáv magassága */
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
       overflow: visible;
     }
 
-    
+
     .logo-link {
       position: absolute;
-      left: 12px;                    
+      left: 12px;
       top: 50%;
       transform: translateY(-50%);
       display: inline-block;
-      z-index: 5;                    
+      z-index: 5;
       text-decoration: none;
     }
 
-    
+
     .logo {
       height: 44px;
       width: auto;
       display: block;
     }
 
-    
+
     .header-wrap {
-      max-width: var(--max-width, 1200px); /* vagy a te meglévő --max-width változód */
-      margin: 0 auto;               /* középre hozza a tartalmat */
+      max-width: var(--max-width, 1200px);
+      /* vagy a te meglévő --max-width változód */
+      margin: 0 auto;
+      /* középre hozza a tartalmat */
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0 56px;              /* oldalpaddings: biztosít helyet a logó mellett, ne fedje le a szöveget */
+      padding: 0 56px;
+      /* oldalpaddings: biztosít helyet a logó mellett, ne fedje le a szöveget */
       /* ha a logó igazán balra van (left:0), növeld az oldalpaddings-et szükség szerint */
       position: relative;
       z-index: 2;
     }
 
-    
+
     .text {
       font-weight: 900;
       font-size: 2vw;
@@ -346,9 +356,9 @@
       background-clip: text;
       -webkit-background-clip: text;
       overflow: clip;
-      background-color: transparent;  
+      background-color: transparent;
       padding: 6px 18px;
-      z-index: 3;                      
+      z-index: 3;
       white-space: nowrap;
     }
 
@@ -383,9 +393,11 @@
       .logo {
         height: 20px;
       }
+
       .header-wrap {
         padding: 0 12px;
       }
+
       .text {
         font-size: 5.5vw;
         white-space: normal;
@@ -395,7 +407,7 @@
 
 
 
-    
+
     :root {
       /* variables for the glow effect - do not conflict with existing --card-width etc */
       --glow-backdrop: hsl(0 0% 60% / 0.12);
@@ -410,12 +422,8 @@
       --border-size: calc(var(--border, 2) * 1px);
       --spotlight-size: calc(var(--size, 150) * 1px);
       --hue: calc(var(--base, 190) + (var(--xp, 0) * var(--spread, 0)));
-      background-image: radial-gradient(
-        var(--spotlight-size) var(--spotlight-size) at
-        calc(var(--x, 0) * 1px)
-        calc(var(--y, 0) * 1px),
-        hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 70) * 1%) / var(--bg-spot-opacity, 0.1)), transparent
-      );
+      background-image: radial-gradient(var(--spotlight-size) var(--spotlight-size) at calc(var(--x, 0) * 1px) calc(var(--y, 0) * 1px),
+          hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 70) * 1%) / var(--bg-spot-opacity, 0.1)), transparent);
       background-color: var(--glow-backdrop, transparent);
       background-size: calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)));
       background-position: 50% 50%;
@@ -448,23 +456,15 @@
     }
 
     [data-glow]::before {
-      background-image: radial-gradient(
-        calc(var(--spotlight-size) * 0.75) calc(var(--spotlight-size) * 0.75) at
-        calc(var(--x, 0) * 1px)
-        calc(var(--y, 0) * 1px),
-        hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 50) * 1%) / var(--border-spot-opacity, 1)), transparent 100%
-      );
+      background-image: radial-gradient(calc(var(--spotlight-size) * 0.75) calc(var(--spotlight-size) * 0.75) at calc(var(--x, 0) * 1px) calc(var(--y, 0) * 1px),
+          hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(var(--lightness, 50) * 1%) / var(--border-spot-opacity, 1)), transparent 100%);
       filter: brightness(2);
       z-index: 0;
     }
 
     [data-glow]::after {
-      background-image: radial-gradient(
-        calc(var(--spotlight-size) * 0.5) calc(var(--spotlight-size) * 0.5) at
-        calc(var(--x, 0) * 1px)
-        calc(var(--y, 0) * 1px),
-        hsl(var(--hue,210) calc(var(--saturation,100) * 1%) calc(92 * 1%) / var(--border-light-opacity, 0.85)), transparent 100%
-      );
+      background-image: radial-gradient(calc(var(--spotlight-size) * 0.5) calc(var(--spotlight-size) * 0.5) at calc(var(--x, 0) * 1px) calc(var(--y, 0) * 1px),
+          hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(92 * 1%) / var(--border-light-opacity, 0.85)), transparent 100%);
     }
 
 
@@ -478,17 +478,20 @@
       z-index: 0;
       pointer-events: none;
     }
-    [data-glow] > [data-glow] {
+
+    [data-glow]>[data-glow] {
       border-radius: calc(var(--radius) * 1px);
       border-width: calc(var(--border-size) * 20);
       filter: blur(calc(var(--border-size) * 10));
       background: none;
       pointer-events: none;
     }
-    [data-glow] > [data-glow]::before {
+
+    [data-glow]>[data-glow]::before {
       inset: -10px;
       border-width: 10px;
     }
+
     [data-glow] [data-glow] {
       border: none;
     }
@@ -499,46 +502,150 @@
     }
 
     /* small safety: ensure internal overlay content sits above glow visuals */
-    .card > .overlay,
-    .card > .meta {
+    .card>.overlay,
+    .card>.meta {
       position: relative;
       z-index: 2;
     }
 
     /* tweak highlight strength for light background */
     @media (prefers-color-scheme: light) {
-      [data-glow] { --bg-spot-opacity: 0.06; --border-spot-opacity: 0.8; --border-light-opacity: 0.6; }
+      [data-glow] {
+        --bg-spot-opacity: 0.06;
+        --border-spot-opacity: 0.8;
+        --border-light-opacity: 0.6;
+      }
     }
 
     /* End glow CSS */
 
     /* -------------------- Strong preset overrides (fehér háttérre) -------------------- */
     :root {
-      --bg-spot-opacity: 0.9;       /* háttér folt intenzitása */
-      --border-spot-opacity: 1.5;      /* kontúr színes folt erőssége */
-      --border-light-opacity: 0.35;     /* fehér szikra intenzitása */
-      --size: 90;                   /* spot méret (px) — kisebb = élesebb) */
-      --border: 9;                   /* keret vastagság */
+      --bg-spot-opacity: 0.9;
+      /* háttér folt intenzitása */
+      --border-spot-opacity: 1.5;
+      /* kontúr színes folt erőssége */
+      --border-light-opacity: 0.35;
+      /* fehér szikra intenzitása */
+      --size: 90;
+      /* spot méret (px) — kisebb = élesebb) */
+      --border: 9;
+      /* keret vastagság */
       --saturation: 140;
       --lightness: 60;
     }
-    
+
     @media (max-width: 800px) {
       [data-glow] {
-        touch-action: auto !important;        /* engedjük az érintéses görgetést */
-        background-image: none !important;    /* eltávolítjuk a spot-ot */
+        touch-action: auto !important;
+        /* engedjük az érintéses görgetést */
+        background-image: none !important;
+        /* eltávolítjuk a spot-ot */
         background-color: transparent !important;
         border: none !important;
         background-attachment: scroll !important;
       }
+
       [data-glow]::before,
       [data-glow]::after,
       [data-glow] [data-glow],
-      [data-glow] > [data-glow] {
-        display: none !important;             /* elrejti a pseudo / blur rétegeket */
+      [data-glow]>[data-glow] {
+        display: none !important;
+        /* elrejti a pseudo / blur rétegeket */
       }
     }
 
+    /* ---------- FANCY GOMB STÍLUSOK (JAVÍTOTT ANIMÁCIÓ) ---------- */
+    .fancy-btn-container {
+      display: flex;
+      justify-content: center;
+      padding: 40px 0;
+      width: 100%;
+    }
+
+    .fancy-btn {
+      --size: 18px; /* Betűméret */
+      font-size: var(--size);
+      font-family: inherit;
+      appearance: none;
+      background: transparent;
+      padding: 1em 2em;
+      border-radius: 100px;
+      border: 1px solid #ccc;
+      color: #333; /* Alap szövegszín */
+      position: relative;
+      overflow: hidden;
+      transition: color .40s ease;
+      cursor: pointer;
+      font-weight: 600;
+      z-index: 1;
+    }
+
+    .fancy-btn:hover {
+      color: #000; /* Szövegszín hoverkor */
+      border-color: #333;
+    }
+
+    .fancy-btn .btn-content {
+      pointer-events: none;
+      position: relative;
+      z-index: 3;
+    }
+
+    .fancy-btn .btn-cells {
+      position: absolute;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr); /* 10 oszlop */
+      grid-auto-rows: 1fr;
+      overflow: hidden;
+    }
+
+    .fancy-btn .btn-cells span {
+      width: 100%;
+      height: 100%;
+      display: block;
+      position: relative;
+    }
+
+    /* EZ AZ A RÉSZ, AMIT HIÁNYOLTÁL: */
+    .fancy-btn .btn-cells span:before {
+      content: "";
+      display: block;
+      position: absolute;
+      
+      /* Fix méret, ahogy az eredetiben volt */
+      width: 50px;
+      height: 50px;
+      
+      /* Középre igazítjuk a cellában, hogy onnan induljon a robbanás */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      
+      /* A te színed (zöldeskék) használata */
+      background: var(--accent);
+      /* Ha támogatja a böngésző, jöhet a színátmenet is */
+      background-image: linear-gradient(to right, var(--accent), #fff);
+      
+      transition: transform .4s ease;
+      border-radius: 100px;
+      opacity: 0.8;
+    }
+
+    /* A HATALMASRA NÖVÉS (Scale 12) */
+    .fancy-btn .btn-cells span:hover:before {
+      transform: translate(-50%, -50%) scale(12);
+    }
+
+    /* Szomszédos elemek trükkje */
+    .fancy-btn .btn-cells span:hover ~ span:not(:hover) {
+      pointer-events: none;
+    }
   </style>
   <script>
     // Állítsd be ide a Netlify site-od pontos domainjét (például: aquamarine-cactus-d0f609):
@@ -546,9 +653,9 @@
     // Alternatíva (ha a frontend ugyanazon a Netlify site-on van): window.API_BASE = window.API_BASE || '/.netlify/functions/search';
   </script>
 
-  
 
-  
+
+
 </head>
 
 <body>
@@ -556,7 +663,7 @@
     <a href="https://www.trinexus.hu" target="_blank" class="logo-link" aria-label="Trinexus főoldal">
       <img src="logo2.png" alt="Trinexus Aqua" class="logo">
     </a>
-  
+
     <div class="header-wrap">
       <div class="text">Trinexus Aqua képes termékkereső</div>
     </div>
@@ -596,21 +703,21 @@
   <script id="products-data" type="application/json"></script>
 
   <script>
-  (function initProductsNoFallback(){
-    if (window.API_BASE && window.API_BASE.length) {
-      window.USE_API = true;
-      var qEl = document.getElementById('q');
-      if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
-      var results = document.getElementById('results');
-      if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
-      return;
-    }
-    // Ha ide jutsz, nincs API beállítva: jelezz hibát a debug mezőben
-    try {
-      var dbg = document.getElementById('debug');
-      if (dbg) dbg.style.display = 'block', dbg.textContent = 'Nincs elérhető termékforrás (API nincs beállítva).';
-    } catch (e){}
-  })();
+    (function initProductsNoFallback() {
+      if (window.API_BASE && window.API_BASE.length) {
+        window.USE_API = true;
+        var qEl = document.getElementById('q');
+        if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
+        var results = document.getElementById('results');
+        if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
+        return;
+      }
+      // Ha ide jutsz, nincs API beállítva: jelezz hibát a debug mezőben
+      try {
+        var dbg = document.getElementById('debug');
+        if (dbg) dbg.style.display = 'block', dbg.textContent = 'Nincs elérhető termékforrás (API nincs beállítva).';
+      } catch (e) { }
+    })();
   </script>
 
 
@@ -698,36 +805,36 @@
 
     /* ---------- Matching logic (exact old algorithm) ---------- */
     function matches(product, q) {
-        if (!q) return false;
-        var nq = q.toString().trim();
-        if (nq.length < MIN_TOKEN_LEN) return false;
+      if (!q) return false;
+      var nq = q.toString().trim();
+      if (nq.length < MIN_TOKEN_LEN) return false;
 
-        // egyszerű normalizálás
-        try {
-          nq = stripDiacriticsSimple(nq);
-          nq = nq.normalize ? nq.normalize('NFD').replace(/[̀-ͯ]/g, '') : nq;
-        } catch (e) { }
-        nq = nq.toLowerCase();
+      // egyszerű normalizálás
+      try {
+        nq = stripDiacriticsSimple(nq);
+        nq = nq.normalize ? nq.normalize('NFD').replace(/[̀-ͯ]/g, '') : nq;
+      } catch (e) { }
+      nq = nq.toLowerCase();
 
-        // felhasználó által beírt szavak
-        var tokens = nq.split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
-        if (tokens.length === 0) return false;
+      // felhasználó által beírt szavak
+      var tokens = nq.split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
+      if (tokens.length === 0) return false;
 
-        // termék adatok normalizálva
-        var name = product.__norm_name || ((product.name || '').toString().toLowerCase());
-        var sku = product.__norm_sku || (product.sku || '').toString().toLowerCase();
+      // termék adatok normalizálva
+      var name = product.__norm_name || ((product.name || '').toString().toLowerCase());
+      var sku = product.__norm_sku || (product.sku || '').toString().toLowerCase();
 
-        // minden tokennek szerepelnie kell legalább a névben vagy cikkszámban
-        var allFound = tokens.every(function (tk) {
-          if (tk.length < MIN_TOKEN_LEN) return false;
-          return (
-            name.indexOf(tk) !== -1 ||
-            sku.indexOf(tk.replace(/[^a-z0-9]+/g, '')) !== -1
-          );
-        });
+      // minden tokennek szerepelnie kell legalább a névben vagy cikkszámban
+      var allFound = tokens.every(function (tk) {
+        if (tk.length < MIN_TOKEN_LEN) return false;
+        return (
+          name.indexOf(tk) !== -1 ||
+          sku.indexOf(tk.replace(/[^a-z0-9]+/g, '')) !== -1
+        );
+      });
 
-        return allFound;
-      }
+      return allFound;
+    }
 
 
     /* ---------- Utilities ---------- */
@@ -824,25 +931,25 @@
     }
 
     /* ---------- ÁLLAPOTKEZELÉS ---------- */
-      let currentState = {
-        query: '',
-        page: 1,
-        isLoading: false,
-        hasMore: true
-      };
+    let currentState = {
+      query: '',
+      page: 1,
+      isLoading: false,
+      hasMore: true
+    };
 
-      /* ---------- API HÍVÁS (Javított: egyedi limit kezelése) ---------- */
+    /* ---------- API HÍVÁS (Javított: egyedi limit kezelése) ---------- */
     async function fetchProducts(query, page, customLimit) {
-        // Ha nincs megadva egyedi limit, marad a szabvány 50
-        const limit = customLimit || 50; 
-        const params = new URLSearchParams({ q: query, page: page, limit: limit });
-        
-        const response = await fetch(`${window.API_BASE}?${params.toString()}`);
-        if (!response.ok) throw new Error('Hálózati hiba');
-        return await response.json();
+      // Ha nincs megadva egyedi limit, marad a szabvány 50
+      const limit = customLimit || 50;
+      const params = new URLSearchParams({ q: query, page: page, limit: limit });
+
+      const response = await fetch(`${window.API_BASE}?${params.toString()}`);
+      if (!response.ok) throw new Error('Hálózati hiba');
+      return await response.json();
     }
 
-   /* ---------- KERESÉS INDÍTÁSA (Okos rendezéssel) ---------- */
+    /* ---------- KERESÉS INDÍTÁSA (Javított számlálóval) ---------- */
     async function renderForQuery(q, preserveCount = false) {
         const resultsEl = document.getElementById('results');
         const debugEl = document.getElementById('debug');
@@ -850,23 +957,18 @@
         if (!q || q.trim().length < MIN_TOKEN_LEN) {
             resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>';
             removeLoadMoreButton();
+            if (debugEl) debugEl.style.display = 'none';
             return;
         }
 
-        // LOGIKA: 
-        // Ha "preserveCount" igaz (pl. rendezés váltáskor), akkor NEM reseteljük az oldalt 1-re,
-        // hanem lekérjük az eddigi összes adatot egyben (page=1, limit=jelenlegi_összes).
-        
+        // Állapot kezelés
         let fetchPage = 1;
         let fetchLimit = 50;
 
         if (preserveCount) {
-            // Megtartjuk a jelenlegi állapotot, de újratöltjük az adatokat a szerverről az új rendezéshez
             currentState.query = q.trim();
-            // A trükk: Page 1-et kérünk, de akkora limittel, amennyi oldalunk eddig volt
             fetchLimit = currentState.page * 50; 
         } else {
-            // Ez egy teljesen új keresés (gépelés), mindent nullázunk
             currentState.query = q.trim();
             currentState.page = 1;
             currentState.hasMore = true;
@@ -877,31 +979,31 @@
              resultsEl.innerHTML = '<div class="loading">Keresés...</div>';
              removeLoadMoreButton();
         } else {
-             // Ha csak rendezünk, jelezzük finomabban, hogy dolgozunk
              resultsEl.style.opacity = '0.5';
         }
 
         try {
-            // Itt használjuk az új paramétereket
             const data = await fetchProducts(currentState.query, fetchPage, fetchLimit);
             
+            // --- HIBAJAVÍTÁS: A SZÁMLÁLÓ ---
+            // Most már pontosan annyit írunk ki, amennyi a DOM-ban lesz
             if (debugEl) {
                 debugEl.style.display = 'block';
-                debugEl.textContent = `Összes találat: ${data.total_count} (Betöltve: ${data.results.length})`;
+                const displayedCount = Math.min(data.total_count, currentState.page * 50);
+                debugEl.textContent = `Összes találat: ${data.total_count} (Betöltve: ${displayedCount})`;
             }
 
-            resultsEl.style.opacity = '1'; // Visszaállítjuk az átlátszóságot
+            resultsEl.style.opacity = '1';
 
             if (data.results.length === 0) {
                 resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>';
                 return;
             }
 
-            // Töröljük a tartalmat, mert újrarendezve rajzoljuk ki az egészet
             resultsEl.innerHTML = ''; 
             let list = data.results;
 
-            // --- A) SZŰRÉS (Csak képpel) ---
+            // Szűrés
             const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
             if (imgOnly) {
                 list = list.filter(p => p.img && p.img.length > 0);
@@ -910,7 +1012,7 @@
                 resultsEl.innerHTML = '<div class="no-results">A betöltött elemek között nincs képpel rendelkező.</div>';
             }
 
-            // --- B) RENDEZÉS ---
+            // Rendezés
             const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'relevance';
             if (sortVal !== 'relevance') {
                 list.sort((a, b) => {
@@ -928,15 +1030,12 @@
                 });
             }
 
-            // Megjelenítés
             appendResults(list);
 
-            // Gomb kezelése
-            // Fontos: A currentState.page * 50 a mérvadó, hogy hol tartunk
             if (data.total_count > (currentState.page * 50)) {
                 createLoadMoreButton();
             } else {
-                removeLoadMoreButton(); // Ha elértük a végét a rendezéssel, tűnjön el a gomb
+                removeLoadMoreButton();
             }
 
         } catch (err) {
@@ -946,130 +1045,158 @@
         }
     }
 
-      /* ---------- TÖBB BETÖLTÉSE (Load More) ---------- */
-      async function loadMore() {
+    /* ---------- TÖBB BETÖLTÉSE (JAVÍTOTT FANCY GOMB VERZIÓ) ---------- */
+    async function loadMore() {
         if (currentState.isLoading || !currentState.hasMore) return;
-
-        const btn = document.getElementById('loadMoreBtn');
-        if (btn) btn.textContent = 'Betöltés...';
+        
+        // FONTOS: Most már nem a gomb szövegét, hanem a benne lévő .btn-content-et írjuk át
+        const btnContent = document.querySelector('.fancy-btn .btn-content');
+        if(btnContent) btnContent.textContent = 'Betöltés...';
+        
         currentState.isLoading = true;
 
         try {
-          currentState.page++;
-          const data = await fetchProducts(currentState.query, currentState.page);
+            currentState.page++;
+            // Itt hívjuk meg a fetch-et az új oldalszámmal
+            const data = await fetchProducts(currentState.query, currentState.page);
+            
+            // Számláló frissítése
+            const debugEl = document.getElementById('debug');
+            if (debugEl) {
+                 const displayedCount = Math.min(data.total_count, currentState.page * 50);
+                 debugEl.textContent = `Összes találat: ${data.total_count} (Betöltve: ${displayedCount})`;
+            }
 
-          appendResults(data.results);
+            appendResults(data.results);
 
-          if (data.total_count <= (currentState.page * data.limit)) {
-            currentState.hasMore = false;
-            removeLoadMoreButton();
-          } else {
-            if (btn) btn.textContent = 'További találatok betöltése';
-          }
+            if (data.total_count <= (currentState.page * data.limit)) {
+                currentState.hasMore = false;
+                removeLoadMoreButton();
+            } else {
+                if(btnContent) btnContent.textContent = 'További találatok';
+            }
         } catch (err) {
-          console.error(err);
-          if (btn) btn.textContent = 'Hiba a betöltéskor (próbáld újra)';
+            console.error(err);
+            if(btnContent) btnContent.textContent = 'Hiba (próbáld újra)';
         } finally {
-          currentState.isLoading = false;
+            currentState.isLoading = false;
         }
-      }
+    }
 
-      /* ---------- SEGÉDFÜGGVÉNYEK ---------- */
-
-      // Ez a meglévő renderProductsList-et hívja, de okosabban
-      function appendResults(list) {
-        // Kliens oldali szűrés (pl. csak képpel), ha be van pipálva
-        const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
-        let filtered = list;
-        if (imgOnly) {
-          filtered = list.filter(p => p.img && p.img.length > 0);
-        }
-
-        // Mivel a renderProductsList felülírja a results tartalmát, 
-        // nekünk appendelni kell. Ehhez trükközünk kicsit, vagy átírjuk a render-t.
-        // A legegyszerűbb, ha a meglévő "row" div-be fűzzük be, vagy újat csinálunk.
-
-        const resultsEl = document.getElementById('results');
-        let row = resultsEl.querySelector('.row');
-        if (!row) {
-          row = document.createElement('div');
-          row.className = 'row';
-          resultsEl.appendChild(row);
-        }
-
-        // Itt újrahasznosítjuk a meglévő kártya-generáló logikát a renderProductsList-ből,
-        // de mivel az törli a tartalmat, jobb ha manuálisan generáljuk a kártyákat ide.
-        // (Vagy módosítjuk a renderProductsList-et, hogy ne töröljön).
-
-        // MÓDOSÍTÁS: Ideiglenesen használjuk a fenti HTML struktúrát generáló kódot:
-        list.forEach(p => {
-          // Ez a kód gyakorlatilag ugyanaz, mint a te eredeti renderProductsList függvényed magja
-          const a = document.createElement('a');
-          a.className = 'card';
-          a.href = p.url || '#';
-          a.target = '_blank';
-          a.setAttribute('data-glow', '');
-
-          // Glow inner
-          const innerGlow = document.createElement('div');
-          innerGlow.setAttribute('data-glow', '');
-          a.appendChild(innerGlow);
-
-          const overlay = document.createElement('div');
-          overlay.className = 'overlay';
-
-          const img = document.createElement('img');
-          img.loading = 'lazy';
-          // Képkezelés (most már jön az API-ból a p.img!)
-          const imgs = (p.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
-          img.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-
-          overlay.appendChild(img);
-
-          const nameBar = document.createElement('div');
-          nameBar.className = 'name-bar';
-          nameBar.textContent = p.name || '-';
-          overlay.appendChild(nameBar);
-
-          const meta = document.createElement('div');
-          meta.className = 'meta';
-          meta.innerHTML = `<span class="sku">${p.sku || ''}</span><span class="price">${p.price ? Math.round(p.price).toLocaleString('hu-HU') + ' Ft' : ''}</span>`;
-
-          a.appendChild(overlay);
-          a.appendChild(meta);
-
-          row.appendChild(a);
-        });
-
-        // Glow effekt újraaktiválása az új elemeken
-        if (window.attachCardPointer) window.attachCardPointer();
-      }
-
-      function createLoadMoreButton() {
-        removeLoadMoreButton(); // Biztos ami biztos
+    /* ---------- ÚJ FANCY GOMB LÉTREHOZÁSA ---------- */
+    function createLoadMoreButton() {
+        removeLoadMoreButton(); // Előző törlése, ha volt
+        
         const btnContainer = document.createElement('div');
         btnContainer.id = 'loadMoreContainer';
-        btnContainer.style.textAlign = 'center';
-        btnContainer.style.padding = '20px';
-
+        btnContainer.className = 'fancy-btn-container'; // Középre igazító konténer
+        
         const btn = document.createElement('button');
         btn.id = 'loadMoreBtn';
-        btn.textContent = 'További találatok betöltése';
-        btn.style.padding = '10px 20px';
-        btn.style.fontSize = '16px';
-        btn.style.cursor = 'pointer';
+        btn.className = 'fancy-btn'; // A CSS erre a class-ra harap!
         btn.onclick = loadMore;
 
+        // 1. A rácsok (spanok) generálása az effekthez
+        const cellsDiv = document.createElement('div');
+        cellsDiv.className = 'btn-cells';
+        // 20 db span létrehozása a hover effekthez
+        for (let i = 0; i < 20; i++) {
+            cellsDiv.appendChild(document.createElement('span'));
+        }
+
+        // 2. A szöveg külön rétegen
+        const contentSpan = document.createElement('span');
+        contentSpan.className = 'btn-content';
+        contentSpan.textContent = 'További találatok';
+
+        // Összerakás
+        btn.appendChild(cellsDiv);
+        btn.appendChild(contentSpan);
+        
         btnContainer.appendChild(btn);
+        
+        // Beillesztés a results után
         document.getElementById('results').parentNode.insertBefore(btnContainer, document.getElementById('results').nextSibling);
+    }
+    /* ---------- SEGÉDFÜGGVÉNYEK ---------- */
+
+    // Ez a meglévő renderProductsList-et hívja, de okosabban
+    function appendResults(list) {
+      // Kliens oldali szűrés (pl. csak képpel), ha be van pipálva
+      const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
+      let filtered = list;
+      if (imgOnly) {
+        filtered = list.filter(p => p.img && p.img.length > 0);
       }
 
-      function removeLoadMoreButton() {
-        const el = document.getElementById('loadMoreContainer');
-        if (el) el.remove();
+      // Mivel a renderProductsList felülírja a results tartalmát, 
+      // nekünk appendelni kell. Ehhez trükközünk kicsit, vagy átírjuk a render-t.
+      // A legegyszerűbb, ha a meglévő "row" div-be fűzzük be, vagy újat csinálunk.
+
+      const resultsEl = document.getElementById('results');
+      let row = resultsEl.querySelector('.row');
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'row';
+        resultsEl.appendChild(row);
       }
 
-      /* ---------- ESEMÉNYKEZELŐK BEKÖTÉSE (wireEvents) ---------- */
+      // Itt újrahasznosítjuk a meglévő kártya-generáló logikát a renderProductsList-ből,
+      // de mivel az törli a tartalmat, jobb ha manuálisan generáljuk a kártyákat ide.
+      // (Vagy módosítjuk a renderProductsList-et, hogy ne töröljön).
+
+      // MÓDOSÍTÁS: Ideiglenesen használjuk a fenti HTML struktúrát generáló kódot:
+      list.forEach(p => {
+        // Ez a kód gyakorlatilag ugyanaz, mint a te eredeti renderProductsList függvényed magja
+        const a = document.createElement('a');
+        a.className = 'card';
+        a.href = p.url || '#';
+        a.target = '_blank';
+        a.setAttribute('data-glow', '');
+
+        // Glow inner
+        const innerGlow = document.createElement('div');
+        innerGlow.setAttribute('data-glow', '');
+        a.appendChild(innerGlow);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay';
+
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        // Képkezelés (most már jön az API-ból a p.img!)
+        const imgs = (p.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
+        img.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+        overlay.appendChild(img);
+
+        const nameBar = document.createElement('div');
+        nameBar.className = 'name-bar';
+        nameBar.textContent = p.name || '-';
+        overlay.appendChild(nameBar);
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.innerHTML = `<span class="sku">${p.sku || ''}</span><span class="price">${p.price ? Math.round(p.price).toLocaleString('hu-HU') + ' Ft' : ''}</span>`;
+
+        a.appendChild(overlay);
+        a.appendChild(meta);
+
+        row.appendChild(a);
+      });
+
+      // Glow effekt újraaktiválása az új elemeken
+      if (window.attachCardPointer) window.attachCardPointer();
+    }
+
+    
+
+    function removeLoadMoreButton() {
+      const el = document.getElementById('loadMoreContainer');
+      if (el) el.remove();
+    }
+
+    /* ---------- ESEMÉNYKEZELŐK BEKÖTÉSE (wireEvents) ---------- */
     (function wireEvents() {
       var qInput = document.getElementById('q');
       var timer = null;
@@ -1081,13 +1208,13 @@
           // Ellenőrizzük, hogy a Termékkereső fül aktív-e (az eredeti logika szerint)
           var prodBtn = document.getElementById('prodBtn');
           if (prodBtn && !prodBtn.classList.contains('active')) return;
-          
+
           // Töröljük az előző időzítőt (ha gyorsan gépel a felhasználó)
           clearTimeout(timer);
-          
+
           // Indítjuk az újat
-          timer = setTimeout(function () { 
-              renderForQuery(e.target.value); 
+          timer = setTimeout(function () {
+            renderForQuery(e.target.value);
           }, DEBOUNCE_DELAY);
         });
       }
@@ -1095,39 +1222,39 @@
       // 2. Rendezés legördülő menü figyelése
       var sortSelect = document.getElementById('sortSelect');
       if (sortSelect) {
-        sortSelect.addEventListener('change', function () { 
-            if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
-                // ITT A VÁLTOZÁS: true-t adunk át második paraméternek!
-                renderForQuery(qInput.value, true);
-            }
+        sortSelect.addEventListener('change', function () {
+          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
+            // ITT A VÁLTOZÁS: true-t adunk át második paraméternek!
+            renderForQuery(qInput.value, true);
+          }
         });
       }
 
       // 3. "Csak képpel" jelölőnégyzet figyelése
       var imgOnlyCb = document.getElementById('imgOnly');
       if (imgOnlyCb) {
-        imgOnlyCb.addEventListener('change', function () { 
-            if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
-                // ITT IS: true-t adunk át, hogy ne ugorjon vissza az elejére
-                renderForQuery(qInput.value, true); 
-            }
+        imgOnlyCb.addEventListener('change', function () {
+          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
+            // ITT IS: true-t adunk át, hogy ne ugorjon vissza az elejére
+            renderForQuery(qInput.value, true);
+          }
         });
       }
       // 4. Kompatibilitás (Régi ID-k támogatása, biztos ami biztos)
       var altSort = document.getElementById('sort');
       if (altSort) {
-          altSort.addEventListener('change', function () { 
-              if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value); 
-          });
+        altSort.addEventListener('change', function () {
+          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value);
+        });
       }
-      
+
       var altImg = document.getElementById('onlyWithImage');
       if (altImg) {
-          altImg.addEventListener('change', function () { 
-              if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value); 
-          });
+        altImg.addEventListener('change', function () {
+          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value);
+        });
       }
-      
+
     })();
 
     /* ---------- Auto-init when external JSON loaded ---------- */
