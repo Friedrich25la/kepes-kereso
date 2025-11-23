@@ -1120,18 +1120,16 @@
     }
     /* ---------- SEGÉDFÜGGVÉNYEK ---------- */
 
-    // Ez a meglévő renderProductsList-et hívja, de okosabban
+    /* ---------- SEGÉDFÜGGVÉNYEK (Javított szűréssel) ---------- */
     function appendResults(list) {
-      // Kliens oldali szűrés (pl. csak képpel), ha be van pipálva
+      // 1. Kliens oldali szűrés ellenőrzése
       const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
+      
+      // 2. A tényleges szűrés elvégzése
       let filtered = list;
       if (imgOnly) {
         filtered = list.filter(p => p.img && p.img.length > 0);
       }
-
-      // Mivel a renderProductsList felülírja a results tartalmát, 
-      // nekünk appendelni kell. Ehhez trükközünk kicsit, vagy átírjuk a render-t.
-      // A legegyszerűbb, ha a meglévő "row" div-be fűzzük be, vagy újat csinálunk.
 
       const resultsEl = document.getElementById('results');
       let row = resultsEl.querySelector('.row');
@@ -1141,13 +1139,8 @@
         resultsEl.appendChild(row);
       }
 
-      // Itt újrahasznosítjuk a meglévő kártya-generáló logikát a renderProductsList-ből,
-      // de mivel az törli a tartalmat, jobb ha manuálisan generáljuk a kártyákat ide.
-      // (Vagy módosítjuk a renderProductsList-et, hogy ne töröljön).
-
-      // MÓDOSÍTÁS: Ideiglenesen használjuk a fenti HTML struktúrát generáló kódot:
-      list.forEach(p => {
-        // Ez a kód gyakorlatilag ugyanaz, mint a te eredeti renderProductsList függvényed magja
+      // 3. HIBAJAVÍTÁS: Itt a 'filtered' tömbön megyünk végig, nem a 'list'-en!
+      filtered.forEach(p => {
         const a = document.createElement('a');
         a.className = 'card';
         a.href = p.url || '#';
@@ -1164,9 +1157,14 @@
 
         const img = document.createElement('img');
         img.loading = 'lazy';
-        // Képkezelés (most már jön az API-ból a p.img!)
+        // Képkezelés
         const imgs = (p.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
         img.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+        
+        // Hibakezelés a kép betöltéséhez
+        img.onerror = function() {
+            this.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+        };
 
         overlay.appendChild(img);
 
