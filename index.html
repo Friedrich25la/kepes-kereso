@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Termékkereső 8.1 — Trinexus (Category Debug & Card Links)</title>
+  <title>Termékkereső 8.3 — Trinexus (Content & Logic Merged)</title>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -409,7 +409,7 @@
       background: var(--accent) !important;
     }
 
-    /* AMAZON GRID STYLES - JAVÍTOTT (LINK KEZELÉS) */
+    /* AMAZON GRID STYLES - JAVÍTOTT (LINK KEZELÉS + SORTÖRÉS FIX) */
     .amz-grid-container {
       display: flex;
       gap: 20px;
@@ -419,7 +419,6 @@
       width: 100%;
     }
 
-    /* A KÁRTYA MAGA NEM LINK (DIV) */
     .amz-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -454,10 +453,8 @@
       display: flex;
       flex-direction: column;
       gap: 5px;
-      /* Az item maga nem link, de a tartalma igen */
     }
 
-    /* A KÉP LINK */
     .amz-item a {
       display: block;
       text-decoration: none;
@@ -482,11 +479,11 @@
       font-size: 12px;
       color: var(--muted);
       /* JAVÍTÁS: Sortörés engedélyezése */
-      white-space: normal;       /* Engedi a több sort */
-      line-height: 1.3;          /* Szebb sorköz */
-      text-align: center;        /* Középre igazítás (opcionális, de szebb) */
-      display: block;            /* Hogy biztosan új blokk legyen */
-      margin-top: 4px;           /* Kis hely a kép alatt */
+      white-space: normal;
+      line-height: 1.3;
+      text-align: center;
+      display: block;
+      margin-top: 4px;
       transition: color 0.2s;
       cursor: pointer;
     }
@@ -496,7 +493,6 @@
       color: var(--accent);
     }
 
-    /* LÁBLÉC LINK */
     a.amz-footer {
       font-size: 13px;
       color: var(--accent);
@@ -1500,12 +1496,13 @@
         </div>
         <a href="https://www.trinexus.hu/ajandektargy" class="amz-footer" target="_blank">További ajándéktárgyak</a>
       </div>
-
+    
       <div class="amz-card">
         <div class="amz-header">Csónakok</div>
         <div class="amz-grid-inner">
           <div class="amz-item">
-            <a href="https://aquamarine-cactus-d0f609.netlify.app/?q=gumicsonak&minprice=299900&maxprice=499900" target="_blank">
+            <a href="https://aquamarine-cactus-d0f609.netlify.app/?q=gumicsonak&minprice=299900&maxprice=499900"
+              target="_blank">
               <img src="https://www.trinexus.hu/img/17496/842270/515x515,r/842270.webp?time=1681499434" alt="Fánk">
             </a>
             <span>Gumicsónakok 500.000,- alatt</span>
@@ -1517,7 +1514,8 @@
             <span>Caytan alu csónakok</span>
           </div>
           <div class="amz-item">
-            <a href="https://aquamarine-cactus-d0f609.netlify.app/?q=latrex&minprice=400000&maxprice=1000000" target="_blank">
+            <a href="https://aquamarine-cactus-d0f609.netlify.app/?q=latrex&minprice=400000&maxprice=1000000"
+              target="_blank">
               <img src="https://www.trinexus.hu/img/17496/000700/572x572,r/000700.webp?time=1682356094" alt="Wakeboard">
             </a>
             <span>Latrex csónakok 1.000.000,- alatt</span>
@@ -1531,7 +1529,7 @@
         </div>
         <a href="https://www.trinexus.hu/Vizi_sport" class="amz-footer" target="_blank">Összes csónak</a>
       </div>
-
+    
       <div class="amz-card">
         <div class="amz-header">Jó vételek</div>
         <div class="amz-grid-inner">
@@ -1549,7 +1547,8 @@
           </div>
           <div class="amz-item">
             <a href="https://www.trinexus.hu/Garmin-Striker-Plus-9sv-Worldwide-w-GT52" target="_blank">
-              <img src="https://www.trinexus.hu/img/17496/GG010-02554-01/500x500/GG010-02554-01.webp?time=1743516669" alt="Audio">
+              <img src="https://www.trinexus.hu/img/17496/GG010-02554-01/500x500/GG010-02554-01.webp?time=1743516669"
+                alt="Audio">
             </a>
             <span>Garmin Striker Vivid 9 SV</span>
           </div>
@@ -1562,7 +1561,7 @@
         </div>
         <a href="https://www.trinexus.hu/akcios-termekek" class="amz-footer" target="_blank">További akciós termékek</a>
       </div>
-
+    
       <div class="amz-card">
         <div class="amz-header">Haswing motorok</div>
         <div class="amz-grid-inner">
@@ -1574,7 +1573,8 @@
           </div>
           <div class="amz-item">
             <a href="https://www.trinexus.hu/Haswing-Cayman-B55-Helmsman-GPS-12V-Gen-1-6" target="_blank">
-              <img src="https://www.trinexus.hu/img/17496/50736-137-W/1000x1000/50736-137-W.webp?time=1756236799" alt="Tisztító">
+              <img src="https://www.trinexus.hu/img/17496/50736-137-W/1000x1000/50736-137-W.webp?time=1756236799"
+                alt="Tisztító">
             </a>
             <span>Haswing Cayman B55 Helmsman GPS</span>
           </div>
@@ -1586,12 +1586,14 @@
           </div>
           <div class="amz-item">
             <a href="https://www.trinexus.hu/spd/50719-100/Haswing-Protruar-5-0-160-lbs-24V" target="_blank">
-              <img src="https://www.trinexus.hu/img/17496/50719-100_altpic_2/50719-100.webp?time=1715699581" alt="Alkatrész">
+              <img src="https://www.trinexus.hu/img/17496/50719-100_altpic_2/50719-100.webp?time=1715699581"
+                alt="Alkatrész">
             </a>
             <span>Protruar 5.0</span>
           </div>
         </div>
-        <a href="https://www.trinexus.hu/Karbantartas" class="amz-footer" target="_blank">További Haswing motorok</a>
+        <a href="https://www.trinexus.hu/elektromos-csonakmotor-haswing" class="amz-footer" target="_blank">További Haswing
+          motorok</a>
       </div>
     </div>
 
@@ -1620,6 +1622,8 @@
     let priceRange = { min: 0, max: 100000, currentMin: 0, currentMax: 0 };
     let sliderInstance = null;
     let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null };
+    // ÚJ: Jelezzük, hogy ez az első betöltés-e (URL kezeléshez)
+    let isFirstLoad = true;
 
     /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS IFRAME-BEN IS ---------- */
     function getUrlParams() {
@@ -1635,26 +1639,54 @@
       return params;
     }
 
-    /* ---------- SEGÉDFÜGGVÉNY: KATEGÓRIA TISZTÍTÁS (GOLYÓÁLLÓ VERZIÓ) ---------- */
-    function getLeafCategory(rawCategory) {
-      // 1. Ha null vagy undefined, viszlát
-      if (!rawCategory) return "Egyéb";
+    /* ---------- ÚJ: BÖNGÉSZŐ ELŐZMÉNYEK FRISSÍTÉSE (HISTORY API) ---------- */
+    function updateBrowserHistory(query, min, max) {
+      // Ha nincs keresőszó, nem teszünk be semmit az URL-be
+      if (!query) return;
 
-      // 2. Ha tömb (Array), akkor vegyük az utolsó elemét
+      const url = new URL(window.location);
+      url.searchParams.set('q', query);
+
+      if (min > 0) url.searchParams.set('minprice', min);
+      else url.searchParams.delete('minprice');
+
+      if (max > 0) url.searchParams.set('maxprice', max);
+      else url.searchParams.delete('maxprice');
+
+      // Ez a parancs frissíti a címsort anélkül, hogy újratöltené az oldalt
+      // Így a "Vissza" gomb is működni fog!
+      window.history.pushState({ q: query, min: min, max: max }, '', url);
+    }
+
+    /* ---------- VISSZA GOMB KEZELÉSE ---------- */
+    window.addEventListener('popstate', (event) => {
+      // Ha a felhasználó megnyomja a Vissza gombot, olvassuk ki az URL-t
+      const params = getUrlParams();
+      const q = params.get('q');
+
+      if (q) {
+        document.getElementById('q').value = q;
+        // Jelezzük a renderForQuery-nek, hogy ez történeti visszalépés (ne írja felül a history-t újra)
+        renderForQuery(q, true, true);
+      } else {
+        // Ha nincs query, lehet, hogy a főoldalra léptünk vissza -> reset
+        location.reload();
+      }
+    });
+
+    /* ---------- SEGÉDFÜGGVÉNY: KATEGÓRIA TISZTÍTÁS ---------- */
+    function getLeafCategory(rawCategory) {
+      if (!rawCategory) return "Egyéb";
       if (Array.isArray(rawCategory)) {
         if (rawCategory.length === 0) return "Egyéb";
         return rawCategory[rawCategory.length - 1];
       }
-
-      // 3. Ha string, akkor splitelünk
       if (typeof rawCategory === 'string') {
         const parts = rawCategory.split('|');
         const cleanParts = parts.filter(p => p && p.trim().length > 0);
         if (cleanParts.length === 0) return "Egyéb";
         return cleanParts[cleanParts.length - 1].trim();
       }
-
-      // 4. Ha bármi más (pl. objektum), akkor nem tudunk mit kezdeni vele
       return "Egyéb";
     }
 
@@ -1805,12 +1837,8 @@
       menuList.innerHTML = '';
       const categories = {};
 
-      // DEBUG: Ezt nézd meg a konzolban (F12)
       if (products && products.length > 0) {
-        console.log("TERMÉK ADAT PÉLDA:", products[0]); // Így látjuk a szerkezetet
-
         products.forEach(p => {
-          // A javított getLeafCategory bármit kezel
           const leaf = getLeafCategory(p.category);
           if (leaf && leaf !== "Egyéb") {
             categories[leaf] = (categories[leaf] || 0) + 1;
@@ -1818,7 +1846,6 @@
         });
       }
 
-      // "Összes" opció
       const allLi = document.createElement('li');
       allLi.innerHTML = `<h3>Összes termék</h3>`;
       if (currentState.categoryFilter === null) {
@@ -1833,7 +1860,6 @@
       });
       menuList.appendChild(allLi);
 
-      // Kategóriák felsorolása
       const keys = Object.keys(categories);
       keys.sort().forEach(catName => {
         const li = document.createElement('li');
@@ -1861,7 +1887,6 @@
         if (btn) btn.setAttribute('aria-expanded', false);
       });
     }
-
 
     /* ---------- ACTION MENU LOGIC ---------- */
     (function initMenus() {
@@ -1930,45 +1955,63 @@
       });
     }
 
+    /* ---------- JAVÍTOTT SLIDER LOGIKA (BERAGADÁS ELLEN) ---------- */
     function updateSliderBounds(products) {
       if (!products || products.length === 0) return;
-
+      
+      // 1. Megkeressük a tényleges legolcsóbb és legdrágább terméket a találatokban
       const prices = products.map(p => parseFloat(p.price)).filter(p => !isNaN(p));
       if (prices.length === 0) return;
-
-      const absMin = Math.floor(Math.min(...prices));
+      
+      const absMin = Math.floor(Math.min(...prices)); 
       const absMax = Math.ceil(Math.max(...prices));
-
-      priceRange.min = absMin;
+      
+      // Beállítjuk a csúszka technikai határait
+      priceRange.min = absMin; 
       priceRange.max = absMax;
 
-      if (sliderInstance) {
-        sliderInstance.$set({ min: absMin, max: absMax });
+      if (sliderInstance) { 
+          sliderInstance.$set({ min: absMin, max: absMax });
 
-        const urlParams = getUrlParams();
-        const urlMin = urlParams.get('minprice');
-        const urlMax = urlParams.get('maxprice');
+          let nextMin = priceRange.currentMin;
+          let nextMax = priceRange.currentMax;
 
-        let newHandleMin = priceRange.currentMin;
-        let newHandleMax = priceRange.currentMax;
+          if (isFirstLoad) {
+              // CSAK első betöltéskor nézzük az URL-t
+              const urlParams = getUrlParams();
+              const urlMin = urlParams.get('minprice');
+              const urlMax = urlParams.get('maxprice');
 
-        if (urlMin) newHandleMin = Number(urlMin);
-        else if (newHandleMin < absMin) newHandleMin = absMin;
+              if (urlMin) nextMin = Number(urlMin);
+              else if (nextMin < absMin) nextMin = absMin; 
 
-        if (urlMax) newHandleMax = Number(urlMax);
-        else if (newHandleMax === 0 || (!urlMax && newHandleMax < absMax)) {
-          newHandleMax = absMax;
-        }
+              if (urlMax) nextMax = Number(urlMax);
+              else if (nextMax === 0 || (!urlMax && nextMax < absMax)) {
+                  nextMax = absMax;
+              }
+          } else {
+             // Kézi keresésnél: Ha a határok nullák (reset volt), vagy érvénytelenek,
+             // akkor nyissuk ki a csúszkát teljesen a találatokra.
+             if (nextMax === 0 || (nextMin === 0 && nextMax === 0)) {
+                 nextMin = absMin;
+                 nextMax = absMax;
+             }
+          }
 
-        if (newHandleMin < absMin) newHandleMin = absMin;
-        if (newHandleMax > absMax) newHandleMax = absMax;
+          // Biztonsági korrekció (ne lógjon ki a csúszka)
+          if (nextMin < absMin) nextMin = absMin;
+          if (nextMax > absMax) nextMax = absMax;
 
-        priceRange.currentMin = newHandleMin;
-        priceRange.currentMax = newHandleMax;
-
-        sliderInstance.$set({ values: [newHandleMin, newHandleMax] });
-        updatePriceLabels(newHandleMin, newHandleMax, absMin, absMax);
+          // Értékek mentése és csúszka frissítése
+          priceRange.currentMin = nextMin;
+          priceRange.currentMax = nextMax;
+          
+          sliderInstance.$set({ values: [nextMin, nextMax] });
+          updatePriceLabels(nextMin, nextMax, absMin, absMax); 
       }
+      
+      // Innentől kezdve már biztosan nem első betöltés
+      isFirstLoad = false;
     }
 
     /* ---------- API & RENDER ---------- */
@@ -1981,11 +2024,9 @@
 
     function filterAndRender() {
       const filtered = productsPool.filter(p => {
-        // 1. Ár
         const price = parseFloat(p.price); if (isNaN(price)) return false;
         if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) return false;
 
-        // 2. Kategória
         if (currentState.categoryFilter) {
           const leaf = getLeafCategory(p.category);
           if (leaf !== currentState.categoryFilter) return false;
@@ -2048,17 +2089,24 @@
       if (window.attachCardPointer) window.attachCardPointer();
     }
 
-    async function renderForQuery(q, isManualSearch = false) {
+    async function renderForQuery(q, isManualSearch = false, isHistoryNav = false) {
       const resultsEl = document.getElementById('results'); const countEl = document.getElementById('results-count');
       if (!q || q.trim().length < MIN_TOKEN_LEN) { resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>'; if (countEl) countEl.style.display = 'none'; removeLoadMoreButton(); return; }
 
       currentState.query = q.trim(); currentState.page = 1; productsPool = [];
-
+      
       if (isManualSearch) {
-        priceRange.currentMin = 0;
-        priceRange.currentMax = 0;
-        currentState.categoryFilter = null;
-        document.getElementById('category-toggle').textContent = "Kategória: Összes";
+          // ITT A JAVÍTÁS:
+          priceRange.currentMin = 0;
+          priceRange.currentMax = 0; 
+          currentState.categoryFilter = null;
+          document.getElementById('category-toggle').textContent = "Kategória: Összes";
+          
+          // Kényszerítjük, hogy ne vegye figyelembe a régi URL paramétereket
+          isFirstLoad = false; 
+          
+          // Azonnal töröljük a "beragadt" paramétereket a böngésző címsorából
+          updateBrowserHistory(currentState.query, 0, 0); 
       }
 
       resultsEl.innerHTML = '<div class="loading">Keresés...</div>'; if (countEl) countEl.style.display = 'none';
@@ -2073,7 +2121,15 @@
         if (data.total_count > 500) { currentState.hasMore = true; } else { currentState.hasMore = false; }
         if (productsPool.length === 0) { resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>'; return; }
         resultsEl.innerHTML = '';
-        updateSliderBounds(productsPool); filterAndRender();
+
+        // JAVÍTÁS: Update Slider után frissítjük az URL-t is, ha nem a vissza gombot nyomtuk
+        updateSliderBounds(productsPool);
+        filterAndRender();
+
+        if (isManualSearch && !isHistoryNav) {
+          updateBrowserHistory(currentState.query, priceRange.currentMin, priceRange.currentMax);
+        }
+
       } catch (err) { console.error(err); resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>'; }
     }
 
@@ -2152,6 +2208,7 @@
               values: [priceRange.currentMin, priceRange.currentMax]
             });
           }
+          // Első betöltéskor NOT manual search (false)
           renderForQuery(queryParam, false);
         }, 500);
       }
