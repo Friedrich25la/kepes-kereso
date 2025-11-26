@@ -4,22 +4,74 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Termékkereső — Trinexus (külső JSON)</title>
+  <title>Termékkereső 7.6 — Trinexus (Final Logic)</title>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&family=Jersey+10&family=Asap:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
   <script>window.MIN_TOKEN_LEN = window.MIN_TOKEN_LEN || 3;</script>
-  <!-- FORCE: use Netlify function for searches (must be BEFORE any script that could fetch the JSON) -->
   <script>window.API_BASE = 'https://aquamarine-cactus-d0f609.netlify.app/.netlify/functions/search';</script>
 
   <style>
+    /* =========================================
+       0. FONTOK
+       ========================================= */
+    @font-face {
+      font-family: 'Gentona';
+      src: url('Gentona-Bold.otf') format('opentype'),
+        url('Gentona-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    @font-face {
+      font-family: 'Gentona';
+      src: url('Gentona-Light.otf') format('opentype'),
+        url('Gentona-Light.ttf') format('truetype');
+      font-weight: 300;
+      font-style: normal;
+    }
+
+    /* =========================================
+       1. ALAP STÍLUSOK
+       ========================================= */
     :root {
       --accent: #33CCBE;
       --bg: #ffffffe9;
       --muted: #666;
+      --text-main: #111;
+      --card-bg: #fff;
+      --card-border: #eee;
+      --header-bg: #9b9b9b;
+
       --thumb: 150px;
       --gap: 12px;
       --overlay-height: 38px;
       --max-width: 1200px;
       --card-width: 180px;
+      --sidebar-width: 320px;
+      --accent-dark: #28a398;
+
+      --glow-backdrop: hsl(0 0% 60% / 0.12);
+      --border: 9;
+      --backup-border: var(--glow-backdrop);
+      --radius: 12px;
+    }
+
+    body:has(.switcher__input[value="dark"]:checked) {
+      --bg: #3a3a3a;
+      --text-main: #e1e1e1;
+      --muted: #aaa;
+      --card-bg: #2a2a2c;
+      --card-border: #444;
+      --header-bg: #2e2d2d;
+      --accent: #33CCBE;
+      --accent-dark: #28a398;
+      --glow-backdrop: rgba(255, 255, 255, 0.05);
     }
 
     * {
@@ -30,9 +82,10 @@
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial;
       margin: 0;
       background: var(--bg);
-      color: #111;
+      color: var(--text-main);
+      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      transition: background 0.4s ease, color 0.4s ease;
     }
 
     .container {
@@ -41,278 +94,26 @@
       padding: 18px;
     }
 
-
-    header {
-      background: #9b9b9b;
-      /* fehér sáv */
-      color: #000;
-      padding: 0;
+    /* HEADER */
+    .site-header {
+      width: 100%;
+      background: var(--header-bg);
+      position: relative;
+      padding: 12px 0;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      z-index: 100;
+      transition: background 0.4s ease;
     }
 
     .header-wrap {
       max-width: var(--max-width);
       margin: 0 auto;
       display: flex;
-      align-items: center;
       justify-content: center;
-      position: relative;
-      overflow: hidden;
-      padding: 5px 5px;
-    }
-
-
-    .text {
-      font-weight: 900;
-      font-size: 2vw;
-      color: #f8f7f7;
-      position: relative;
-      background-clip: text;
-      -webkit-background-clip: text;
-      overflow: clip;
-      background-color: #fefcef;
-
-      padding: 6px 18px;
-      z-index: 1;
-      white-space: nowrap;
-    }
-
-
-    .text::before,
-    .text::after {
-      content: '';
-      position: absolute;
-
-      z-index: -1;
-
-
-      background-color: #199c9c;
-
-      width: 175%;
-      top: 50%;
-      left: 50%;
-      aspect-ratio: 1;
-
-      transform: translate(-50%, 0) rotate(0deg);
-
-      border-top-left-radius: 60% 80%;
-      border-top-right-radius: 50% 80%;
-      border-bottom-left-radius: 50% 80%;
-      border-bottom-right-radius: 50% 80%;
-
-      mix-blend-mode: multiply;
-
-      animation: rot 10s linear infinite;
-      pointer-events: none;
-      opacity: 0.95;
-    }
-
-
-    .text::after {
-      animation-delay: -5s;
-      animation-duration: 8s;
-    }
-
-    @keyframes rot {
-      to {
-
-        transform: translate(-50%, 0) rotate(360deg);
-      }
-    }
-
-
-
-
-    .toggle {
-      display: flex;
-      border: 1px solid #e6e6e6;
-      border-radius: 10px;
-      overflow: hidden;
-      width: 420px;
-      margin: 18px auto 18px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-    }
-
-    .toggle button {
-      flex: 1;
-      padding: 12px 14px;
-      border: 0;
-      background: transparent;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .toggle button.active {
-      background: #111;
-      color: #fff;
-    }
-
-    /* Search / controls */
-    .search-row {
-      display: flex;
-      gap: 12px;
       align-items: center;
-      margin-bottom: 12px;
-      justify-content: center;
-    }
-
-    .search-row input.search {
-      min-width: 320px;
-    }
-
-    .search-row .controls {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .search-row label {
-      font-size: 13px;
-      color: #333;
-    }
-
-    .search-row select,
-    input[type=checkbox] {
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid #e6e6e6;
-    }
-
-    .search-row input[type=checkbox] {
-      width: auto;
-    }
-
-    .search-row input.search {
-      flex: 1;
-      padding: 12px 14px;
-      border: 1px solid #e6e6e6;
-      border-radius: 8px;
-      font-size: 16px;
-      outline: none;
-    }
-
-    /* Results */
-    .results {
-      display: flex;
-      flex-direction: column;
-      gap: var(--gap);
-      min-height: 120px;
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    /* Modified .card so the glow effect can layer correctly */
-    .card {
-      width: var(--card-width);
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      transition: transform .14s ease, box-shadow .14s ease;
+      padding: 5px 56px;
       position: relative;
-      /* needed for absolute glow child */
-      isolation: isolate;
-      /* keep blending contained */
-      -webkit-tap-highlight-color: transparent;
     }
-
-    .card:hover {
-      transform: scale(1.02);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-    }
-
-    .card .overlay {
-      position: relative;
-      z-index: 2;
-      /* ensure overlay content is above glow visuals */
-    }
-
-    .card img {
-      width: 100%;
-      height: var(--thumb);
-      object-fit: cover;
-      display: block;
-      background: #f6f6f6;
-    }
-
-    .name-bar {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: var(--overlay-height);
-      display: flex;
-      align-items: center;
-      padding: 6px 8px;
-      background: rgba(0, 0, 0, 0.45);
-      color: #fff;
-      font-size: 12px;
-      backdrop-filter: blur(2px);
-      z-index: 3;
-    }
-
-    .meta {
-      padding: 8px 10px;
-      border-top: 1px solid #f4f4f4;
-      font-size: 13px;
-      background: #fff;
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      z-index: 2;
-    }
-
-    .meta .sku {
-      opacity: 0.8;
-    }
-
-    .meta .price {
-      font-weight: 700;
-    }
-
-    .no-results {
-      padding: 28px;
-      text-align: center;
-      color: #666;
-    }
-
-    .debug {
-      margin-top: 12px;
-      padding: 10px;
-      background: #f3f3f3;
-      border-radius: 6px;
-      font-size: 13px;
-      color: #333;
-      white-space: pre-wrap;
-    }
-
-    .loading {
-      padding: 10px;
-      font-weight: 600;
-      color: #0066cc;
-    }
-
-
-    .site-header {
-      width: 100%;
-      background: #8a8989;
-      /* a szürke sáv színe (állítható) */
-      position: relative;
-      /* a logo abszolút pozícionálásához */
-      padding: 8px 0;
-      /* függőleges padding: sáv magassága */
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-      overflow: visible;
-    }
-
 
     .logo-link {
       position: absolute;
@@ -324,100 +125,413 @@
       text-decoration: none;
     }
 
-
     .logo {
       height: 44px;
       width: auto;
       display: block;
     }
 
-
-    .header-wrap {
-      max-width: var(--max-width, 1200px);
-      /* vagy a te meglévő --max-width változód */
-      margin: 0 auto;
-      /* középre hozza a tartalmat */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 0 56px;
-      /* oldalpaddings: biztosít helyet a logó mellett, ne fedje le a szöveget */
-      /* ha a logó igazán balra van (left:0), növeld az oldalpaddings-et szükség szerint */
-      position: relative;
-      z-index: 2;
-    }
-
-
     .text {
-      font-weight: 900;
-      font-size: 2vw;
+      font-family: 'Gentona', sans-serif;
+      font-size: 2.2vw;
       color: #f8f7f7;
       position: relative;
-      background-clip: text;
-      -webkit-background-clip: text;
-      overflow: clip;
-      background-color: transparent;
-      padding: 6px 18px;
       z-index: 3;
       white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    /* Responsive tweaks */
-    @media (max-width:480px) {
-      :root {
-        --thumb: 120px;
-      }
+    .brand-main {
+      font-weight: 700;
+      margin-right: 6px;
+    }
 
-      .container {
-        padding: 12px;
-      }
+    .brand-sub {
+      font-weight: 300;
+      opacity: 0.9;
+    }
 
-      .toggle {
-        width: 100%;
-      }
-
-      .card {
-        width: 100%;
-      }
-
+    @media (max-width: 480px) {
       .text {
-        font-size: 5.2vw;
+        font-size: 5vw;
+        margin: 0 30px;
       }
     }
 
-    @media (min-width:900px) {
-      /* at wide view ensure card width is as set, more columns fit automatically */
+    /* KERESŐ SÁV */
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 25px;
+      justify-content: center;
     }
 
-    @media (max-width:480px) {
-      .logo {
-        height: 20px;
-      }
+    .search-row input.search {
+      flex: 1;
+      min-width: 320px;
+      padding: 12px 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+      background: var(--card-bg);
+      color: var(--text-main);
+    }
 
-      .header-wrap {
-        padding: 0 12px;
-      }
+    .controls-row {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      background: var(--card-bg);
+      padding: 10px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      position: relative;
+      z-index: 50;
+    }
 
-      .text {
-        font-size: 5.5vw;
-        white-space: normal;
-        text-align: center;
-      }
+    .controls-row input[type=checkbox] {
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: var(--bg);
+    }
+
+    /* DROPDOWN */
+    .field.menu {
+      font-family: Asap, system-ui, sans-serif;
+      position: relative;
+      flex: 1;
+      min-width: 160px;
+      max-width: 260px;
+    }
+
+    .field.menu .control {
+      position: relative;
+    }
+
+    .field.menu button {
+      font-size: 14px;
+      text-align: start;
+      border-radius: var(--radius);
+      padding: 8px 14px;
+      padding-inline-end: 30px;
+      width: 100%;
+      transition: all 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      cursor: pointer;
+      position: relative;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .field.menu button::after {
+      content: '';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      width: 10px;
+      height: 6px;
+      background-color: var(--muted);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      transform: translateY(-50%);
+      transition: transform 0.3s;
+    }
+
+    .field.menu.open button::after {
+      transform: translateY(-50%) rotate(180deg);
+    }
+
+    .field.menu button:hover {
+      border-color: var(--accent);
+    }
+
+    .field.menu menu {
+      background: var(--card-bg);
+      padding: 6px;
+      margin: 0;
+      border-radius: calc(var(--radius) * 1.2);
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      position: absolute;
+      top: calc(100% + 8px);
+      width: 100%;
+      min-width: 220px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--card-border);
+      z-index: 9999;
+      opacity: 0;
+      scale: 1 0.9;
+      transition: opacity 0.2s, scale 0.2s;
+      list-style: none;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .field.menu.open menu {
+      display: flex;
+      opacity: 1;
+      scale: 1 1;
+    }
+
+    .field.menu menu li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .field.menu menu li svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .field.menu menu li>* {
+      margin: 0;
+    }
+
+    .field.menu menu li h3 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    .field.menu menu li:hover,
+    .field.menu menu li:focus {
+      background: rgba(51, 204, 190, 0.1);
+    }
+
+    .field.menu menu li.selected {
+      background: rgba(51, 204, 190, 0.15);
+    }
+
+    /* SLIDER */
+    #slider-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 240px;
+      flex: 0 0 240px;
+      position: relative;
+      height: 40px;
+      padding: 0 10px;
+      margin-top: 5px;
+    }
+
+    #slider {
+      flex: 1;
+      position: relative;
+      --range-slider: #e0e0e0;
+      --range-handle: var(--accent);
+      --range-handle-inactive: #999;
+      --range-handle-focus: var(--accent-dark);
+      --range-range: var(--accent);
+      --range-pip: var(--muted);
+    }
+
+    body:has(.switcher__input[value="dark"]:checked) #slider {
+      --range-slider: #444;
+    }
+
+    .price-label {
+      font-family: "Jersey 10", monospace;
+      font-size: 1.1em;
+      color: var(--text-main);
+      position: absolute;
+      top: -14px;
+      pointer-events: none;
+      transition: transform 0.2s ease, left 0.2s;
+      white-space: nowrap;
+      font-weight: normal;
+      transform: translateX(-50%);
+    }
+
+    #price-min {
+      translate: calc((var(--slider-length) * (var(--pos) / 100) * 1px)) 0;
+    }
+
+    #price-max {
+      translate: calc((var(--slider-length) * (var(--pos) / 100) * 1px)) 0;
+    }
+
+    .rangeSlider {
+      height: 4px !important;
+      border-radius: 2px !important;
+      margin: 0 !important;
+    }
+
+    .rangeHandle {
+      transform: none !important;
+      border-radius: 50% !important;
+      width: 16px !important;
+      height: 16px !important;
+      top: -6px !important;
+      background: var(--accent) !important;
+      border: none !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .rangeHandle::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      border-radius: 50% 50% 0 50%;
+      transform: rotate(-45deg);
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    .rangeBar {
+      height: 4px !important;
+      background: var(--accent) !important;
+    }
+
+    /* AMAZON GRID STYLES */
+    .amz-grid-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 30px 0;
+      width: 100%;
+    }
+
+    .amz-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 20px;
+      flex: 1;
+      min-width: 260px;
+      max-width: 350px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .amz-header {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: var(--text-main);
+    }
+
+    .amz-grid-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      flex: 1;
+      margin-bottom: 15px;
+    }
+
+    .amz-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+    }
+
+    .amz-item img {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      border-radius: 4px;
+      background: #f0f0f0;
+    }
+
+    .amz-item span {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .amz-footer {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .amz-footer:hover {
+      text-decoration: underline;
+      color: var(--accent-dark);
     }
 
 
-
-
-    :root {
-      /* variables for the glow effect - do not conflict with existing --card-width etc */
-      --glow-backdrop: hsl(0 0% 60% / 0.12);
-      --radius: 14;
-      --border: 3;
-      --backup-border: var(--glow-backdrop);
-      --size: 200;
+    /* RESULTS */
+    .results-meta {
+      text-align: right;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      margin-right: 8px;
+      font-weight: 500;
     }
 
-    /* We scope the heavy selectors to cards that have data-glow attribute */
+    .results {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      min-height: 120px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: flex-start;
+    }
+
+    /* CARD STYLES */
+    .card {
+      width: var(--card-width);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: visible;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: transform .14s ease, box-shadow .14s ease;
+      position: relative;
+      isolation: isolate;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+      z-index: 10;
+    }
+
     [data-glow] {
       --border-size: calc(var(--border, 2) * 1px);
       --spotlight-size: calc(var(--size, 150) * 1px);
@@ -431,9 +545,8 @@
       border: var(--border-size) solid var(--backup-border);
       position: relative;
       touch-action: none;
-      border-radius: calc(var(--radius) * 1px);
+      border-radius: 12px;
       z-index: 1;
-      overflow: visible;
     }
 
     [data-glow]::before,
@@ -443,14 +556,14 @@
       position: absolute;
       inset: calc(var(--border-size) * -1);
       border: var(--border-size) solid transparent;
-      border-radius: calc(var(--radius) * 1px);
+
+      border-radius: calc(12px + var(--border-size));
+
       background-attachment: fixed;
       background-size: calc(100% + (2 * var(--border-size))) calc(100% + (2 * var(--border-size)));
       background-repeat: no-repeat;
       background-position: 50% 50%;
-      mask:
-        linear-gradient(transparent, transparent),
-        linear-gradient(white, white);
+      mask: linear-gradient(transparent, transparent), linear-gradient(white, white);
       mask-clip: padding-box, border-box;
       mask-composite: intersect;
     }
@@ -467,95 +580,101 @@
           hsl(var(--hue, 210) calc(var(--saturation, 100) * 1%) calc(92 * 1%) / var(--border-light-opacity, 0.85)), transparent 100%);
     }
 
-
-    /* nested glow element (empty element used for blur/outer glow layer) */
-    [data-glow] [data-glow] {
+    .card-bg {
       position: absolute;
       inset: 0;
-      will-change: filter;
-      opacity: var(--outer, 1);
-      border-radius: calc(var(--radius) * 1px);
+      background: var(--card-bg);
+      border-radius: 12px;
       z-index: 0;
-      pointer-events: none;
     }
 
-    [data-glow]>[data-glow] {
-      border-radius: calc(var(--radius) * 1px);
-      border-width: calc(var(--border-size) * 20);
-      filter: blur(calc(var(--border-size) * 10));
-      background: none;
-      pointer-events: none;
+    .card img {
+      width: 100%;
+      height: var(--thumb);
+      object-fit: cover;
+      display: block;
+      background: #f6f6f6;
+      border-radius: 12px 12px 0 0;
     }
 
-    [data-glow]>[data-glow]::before {
-      inset: -10px;
-      border-width: 10px;
-    }
-
-    [data-glow] [data-glow] {
-      border: none;
-    }
-
-    [data-glow] :is(a, button) {
-      border-radius: calc(var(--radius) * 1px);
-      border: var(--border-size) solid transparent;
-    }
-
-    /* small safety: ensure internal overlay content sits above glow visuals */
     .card>.overlay,
     .card>.meta {
       position: relative;
       z-index: 2;
     }
 
-    /* tweak highlight strength for light background */
-    @media (prefers-color-scheme: light) {
-      [data-glow] {
-        --bg-spot-opacity: 0.06;
-        --border-spot-opacity: 0.8;
-        --border-light-opacity: 0.6;
-      }
+    .overlay {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* End glow CSS */
-
-    /* -------------------- Strong preset overrides (fehér háttérre) -------------------- */
-    :root {
-      --bg-spot-opacity: 0.9;
-      /* háttér folt intenzitása */
-      --border-spot-opacity: 1.5;
-      /* kontúr színes folt erőssége */
-      --border-light-opacity: 0.35;
-      /* fehér szikra intenzitása */
-      --size: 90;
-      /* spot méret (px) — kisebb = élesebb) */
-      --border: 9;
-      /* keret vastagság */
-      --saturation: 140;
-      --lightness: 60;
+    .name-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--overlay-height);
+      display: flex;
+      align-items: center;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 12px;
+      backdrop-filter: blur(2px);
     }
 
-    @media (max-width: 800px) {
-      [data-glow] {
-        touch-action: auto !important;
-        /* engedjük az érintéses görgetést */
-        background-image: none !important;
-        /* eltávolítjuk a spot-ot */
-        background-color: transparent !important;
-        border: none !important;
-        background-attachment: scroll !important;
-      }
-
-      [data-glow]::before,
-      [data-glow]::after,
-      [data-glow] [data-glow],
-      [data-glow]>[data-glow] {
-        display: none !important;
-        /* elrejti a pseudo / blur rétegeket */
-      }
+    .meta {
+      padding: 8px 10px;
+      border-top: 1px solid #f4f4f4;
+      font-size: 13px;
+      background: var(--card-bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      border-radius: 0 0 12px 12px;
     }
 
-    /* ---------- FANCY GOMB STÍLUSOK (JAVÍTOTT ANIMÁCIÓ) ---------- */
+    .meta .price {
+      font-weight: 700;
+    }
+
+    /* UI ELEMENTS */
+    .fav-icon {
+      position: absolute;
+      top: 8px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+      z-index: 20;
+      right: 8px;
+      color: #ccc;
+    }
+
+    .fav-icon:hover {
+      transform: scale(1.15);
+      background: #fff;
+    }
+
+    .fav-icon.active {
+      color: #FFD700;
+    }
+
+    .fav-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* FANCY GOMB */
     .fancy-btn-container {
       display: flex;
       justify-content: center;
@@ -564,7 +683,7 @@
     }
 
     .fancy-btn {
-      --size: 18px; /* Betűméret */
+      --size: 18px;
       font-size: var(--size);
       font-family: inherit;
       appearance: none;
@@ -572,7 +691,7 @@
       padding: 1em 2em;
       border-radius: 100px;
       border: 1px solid #ccc;
-      color: #333; /* Alap szövegszín */
+      color: var(--text-main);
       position: relative;
       overflow: hidden;
       transition: color .40s ease;
@@ -582,7 +701,7 @@
     }
 
     .fancy-btn:hover {
-      color: #000; /* Szövegszín hoverkor */
+      color: #000;
       border-color: #333;
     }
 
@@ -600,7 +719,7 @@
       top: 0;
       left: 0;
       display: grid;
-      grid-template-columns: repeat(10, 1fr); /* 10 oszlop */
+      grid-template-columns: repeat(10, 1fr);
       grid-auto-rows: 1fr;
       overflow: hidden;
     }
@@ -612,767 +731,1306 @@
       position: relative;
     }
 
-    /* EZ AZ A RÉSZ, AMIT HIÁNYOLTÁL: */
     .fancy-btn .btn-cells span:before {
       content: "";
       display: block;
       position: absolute;
-      
-      /* Fix méret, ahogy az eredetiben volt */
       width: 50px;
       height: 50px;
-      
-      /* Középre igazítjuk a cellában, hogy onnan induljon a robbanás */
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0);
-      
-      /* A te színed (zöldeskék) használata */
       background: var(--accent);
-      /* Ha támogatja a böngésző, jöhet a színátmenet is */
       background-image: linear-gradient(to right, var(--accent), #fff);
-      
       transition: transform .4s ease;
       border-radius: 100px;
       opacity: 0.8;
     }
 
-    /* A HATALMASRA NÖVÉS (Scale 12) */
     .fancy-btn .btn-cells span:hover:before {
       transform: translate(-50%, -50%) scale(12);
     }
 
-    /* Szomszédos elemek trükkje */
-    .fancy-btn .btn-cells span:hover ~ span:not(:hover) {
+    /* SIDEBAR */
+    #fav-sidebar {
+      position: fixed;
+      top: 0;
+      right: -320px;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: var(--card-bg);
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      transition: right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      color: var(--text-main);
+    }
+
+    #fav-sidebar.open {
+      right: 0;
+    }
+
+    .sidebar-tabs {
+      display: flex;
+      background: var(--bg);
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .sidebar-tab.active {
+      color: var(--text-main);
+      border-bottom-color: var(--accent);
+      background: var(--card-bg);
+    }
+
+    .close-sidebar-abs {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      background: none;
+      border: none;
+    }
+
+    .sidebar-content-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .sidebar-pane {
+      display: none;
+      padding: 10px;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-pane.active {
+      display: flex;
+    }
+
+    /* History Styles */
+    .history-section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin: 15px 0 5px;
+      font-weight: bold;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 4px;
+    }
+
+    .history-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      font-size: 13px;
+      margin: 0 5px 5px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .history-tag:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .fav-item {
+      display: flex;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 8px;
+      border-radius: 4px;
+      align-items: center;
+      position: relative;
+      transition: transform 0.2s;
+    }
+
+    .fav-item:hover {
+      transform: translateX(-2px);
+      border-color: var(--accent);
+    }
+
+    .fav-item img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid #eee;
+    }
+
+    .fav-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .fav-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .fav-price {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: bold;
+    }
+
+    .remove-fav {
+      color: #999;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .remove-fav:hover {
+      color: #ff4444;
+    }
+
+    .sidebar-footer {
+      padding: 15px;
+      border-top: 1px solid var(--card-border);
+      background: var(--bg);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .sidebar-btn:hover {
+      background: var(--accent-dark);
+    }
+
+    .clear-btn {
+      background: transparent;
+      color: #d9534f;
+      border: 1px solid #d9534f;
+      font-size: 12px;
+      padding: 8px;
+    }
+
+    .clear-btn:hover {
+      background: #d9534f;
+      color: #fff;
+    }
+
+    /* LEBEGŐ GOMB (KEDVENCEK) */
+    #fav-trigger {
+      position: fixed;
+      top: 130px;
+      right: 0;
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 15px 10px 12px;
+      border-radius: 20px 0 0 20px;
+      box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      transition: right 0.3s;
+
+      /* LERÖVIDÍTÉS + MINIMUM SZÉLESSÉG */
+      width: auto;
+      min-width: 140px;
+      justify-content: flex-start;
+    }
+
+    #fav-trigger:hover {
+      padding-right: 20px;
+    }
+
+    body.sidebar-open #fav-trigger {
+      right: -100px;
+    }
+
+    #fav-count {
+      background: #fff;
+      color: var(--accent);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: bold;
+      margin-left: auto;
+    }
+
+    /* KATEGÓRIA GOMB */
+    #cat-trigger {
+      position: fixed;
+      top: 185px;
+      right: 0;
+      background: #777;
+      color: #fff;
+      padding: 10px 15px 10px 12px;
+      border-radius: 20px 0 0 20px;
+      box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 899;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      transition: right 0.3s;
+
+      /* LERÖVIDÍTÉS + MINIMUM SZÉLESSÉG */
+      width: auto;
+      min-width: 140px;
+      justify-content: flex-start;
+    }
+
+    #cat-trigger:hover {
+      padding-right: 20px;
+    }
+
+    body.sidebar-open #cat-trigger {
+      right: -100px;
+    }
+
+    .mobile-star {
+      display: none;
+    }
+
+    /* SWITCHER */
+    .switcher {
+      position: absolute;
+      right: -140px;
+      top: 50%;
+      transform: translateY(-50%) scale(0.35);
+      transform-origin: right center;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 154px;
+      height: 70px;
+      box-sizing: border-box;
+      padding: 8px 12px 10px;
+      border: none;
+      border-radius: 99em;
+      background-color: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .switcher__legend,
+    .switcher__input,
+    .switcher__filter {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .switcher__option {
+      --c: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 16px;
+      width: 68px;
+      height: 100%;
+      box-sizing: border-box;
+      border-radius: 99em;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    .switcher__option:hover .switcher__icon {
+      transform: scale(1.2);
+    }
+
+    .switcher__icon {
+      width: 24px;
+      height: 24px;
+      fill: var(--text-main);
+      transition: transform 0.2s;
+    }
+
+    .switcher::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      display: block;
+      width: 68px;
+      height: calc(100% - 10px);
+      border-radius: 99em;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 1;
+      transition: transform 0.4s cubic-bezier(1, 0.0, 0.4, 1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .switcher:has(input[value="light"]:checked)::after {
+      transform: translateX(0);
+    }
+
+    .switcher:has(input[value="dark"]:checked)::after {
+      transform: translateX(76px);
+    }
+
+    /* ANIMÁCIÓ */
+    .flying-img {
+      position: fixed;
+      z-index: 9999;
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 50%;
       pointer-events: none;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      top: 0;
+      left: 0;
+    }
+
+    .fly-container {
+      position: fixed;
+      z-index: 9999;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      transition: transform 0.8s ease-in;
+    }
+
+    .fly-inner {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      border: 2px solid var(--accent);
+      transition: transform 0.8s ease-out;
+    }
+
+    .fly-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    @media (max-width: 480px) {
+      .header-wrap {
+        padding: 0 10px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .logo {
+        height: 20px;
+      }
+
+      .text {
+        font-size: 5vw;
+        margin: 0 30px;
+      }
+
+      .switcher {
+        transform: translateY(-50%) scale(0.4) !important;
+        right: -5px !important;
+        top: 50%;
+        width: 154px;
+      }
+
+      .container {
+        padding-right: 12px;
+      }
+
+      #fav-sidebar {
+        width: 100%;
+        right: -100%;
+      }
+
+      #fav-trigger {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        padding: 0;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        min-width: 0;
+        /* Mobilon ne legyen limit */
+      }
+
+      #cat-trigger {
+        top: auto;
+        bottom: 90px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        padding: 0;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        min-width: 0;
+      }
+
+      #fav-trigger .label-text,
+      #cat-trigger .label-text {
+        display: none;
+      }
+
+      .mobile-star {
+        display: block;
+        fill: #fff;
+        width: 24px;
+        height: 24px;
+      }
+
+      #fav-count {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        border: 2px solid var(--accent);
+        width: 20px;
+        height: 20px;
+        font-size: 11px;
+      }
+
+      .toggle {
+        width: 100%;
+      }
+
+      .search-row input.search {
+        min-width: 100%;
+      }
+
+      .card {
+        width: 100%;
+      }
+
+      .controls-row {
+        flex-direction: column;
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .field.menu {
+        min-width: 100%;
+        max-width: 100%;
+      }
+
+      #slider-wrapper {
+        width: 100%;
+        max-width: 100%;
+        margin-top: 15px;
+        flex: 1;
+      }
+
+      /* Amazon grid mobile */
+      .amz-card {
+        max-width: 100%;
+      }
     }
   </style>
-  <script>
-    // Állítsd be ide a Netlify site-od pontos domainjét (például: aquamarine-cactus-d0f609):
-    window.API_BASE = 'https://aquamarine-cactus-d0f609.netlify.app/.netlify/functions/search';
-    // Alternatíva (ha a frontend ugyanazon a Netlify site-on van): window.API_BASE = window.API_BASE || '/.netlify/functions/search';
-  </script>
-
-
-
-
 </head>
 
 <body>
+
   <header class="site-header">
     <a href="https://www.trinexus.hu" target="_blank" class="logo-link" aria-label="Trinexus főoldal">
       <img src="logo2.png" alt="Trinexus Aqua" class="logo">
     </a>
-
     <div class="header-wrap">
-      <div class="text">Trinexus Aqua képes termékkereső</div>
+      <div class="text">
+        <span class="brand-main">Trinexus Aqua</span>
+        <span class="brand-sub">termékkereső</span>
+      </div>
+      <form class="switcher">
+        <fieldset class="switcher__legend">Theme Switcher</fieldset>
+        <label class="switcher__option">
+          <input type="radio" class="switcher__input" name="theme" value="light" c-option="1" checked>
+          <div class="switcher__icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="12"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </div>
+        </label>
+        <label class="switcher__option">
+          <input type="radio" class="switcher__input" name="theme" value="dark" c-option="2">
+          <div class="switcher__icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </div>
+        </label>
+        <span class="switcher__filter"></span>
+      </form>
     </div>
   </header>
 
+  <div id="fav-trigger" onclick="toggleSidebar()">
+    <span class="label-text">Kedvencek</span>
+    <svg class="mobile-star" viewBox="0 0 24 24">
+      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </svg>
+    <div id="fav-count">0</div>
+  </div>
+
+  <div id="cat-trigger" onclick="window.location.href='kepes_kereso_site.html'">
+    <span class="label-text">Kategóriakereső</span>
+    <svg class="mobile-star" viewBox="0 0 24 24">
+      <path d="M10 3H3v7h7V3zm11 0h-7v7h7V3zm0 11h-7v7h7v-7zm-11 0H3v7h7v-7z" />
+    </svg>
+  </div>
+
+  <aside id="fav-sidebar">
+    <button class="close-sidebar-abs" onclick="toggleSidebar()">&times;</button>
+    <div class="sidebar-tabs">
+      <div class="sidebar-tab active" onclick="switchTab('fav')">Kedvencek</div>
+      <div class="sidebar-tab" onclick="switchTab('history')">Előzmények</div>
+    </div>
+    <div class="sidebar-content-wrapper">
+      <div id="fav-pane" class="sidebar-pane active">
+        <div style="font-size:16px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+          <span style="color:#FFD700;">★</span> Kedvenc termékek
+        </div>
+        <div id="fav-list"></div>
+        <div class="sidebar-footer" style="background:none; border:none; padding:0; margin-top:20px;">
+          <button class="sidebar-btn" onclick="openAllFavorites()">Összes megnyitása</button>
+          <button class="sidebar-btn clear-btn" onclick="clearFavorites()">Lista törlése</button>
+        </div>
+      </div>
+      <div id="history-pane" class="sidebar-pane">
+        <div class="history-section-title">Legutóbbi keresések</div>
+        <div id="history-queries"></div>
+        <div class="history-section-title" style="margin-top:25px;">Legutóbb megtekintett</div>
+        <div id="history-products"></div>
+        <div style="margin-top:20px; text-align:center;">
+          <button class="clear-btn" style="border:none;" onclick="clearHistory()">Előzmények törlése</button>
+        </div>
+      </div>
+    </div>
+  </aside>
 
   <div class="container">
-    <div class="toggle" role="tablist" aria-label="Kereső mód">
-      <button id="prodBtn" class="active">Termékkereső</button>
-      <button id="catBtn">Kategóriakereső</button>
-    </div>
 
     <div class="search-row">
       <input id="q" class="search" type="search" placeholder="Írja be a termék nevét vagy cikkszámát..."
         autocomplete="off" disabled />
     </div>
 
-    <div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:12px;">
-      <label for="sortSelect">Rendezés:</label>
-      <select id="sortSelect" aria-label="Rendezés">
-        <option value="relevance">Relevancia</option>
-        <option value="price_asc">Ár: növekvő</option>
-        <option value="price_desc">Ár: csökkenő</option>
-        <option value="name_asc">Név A→Z</option>
-        <option value="name_desc">Név Z→A</option>
-      </select>
-      <label style="margin-left:12px"><input type="checkbox" id="imgOnly"> csak képpel rendelkező termékek</label>
+    <div class="controls-row">
+      <div id="slider-wrapper">
+        <span id="price-min" class="price-label">0 Ft</span>
+        <div id="slider"></div>
+        <span id="price-max" class="price-label">0 Ft</span>
+      </div>
+
+      <div class="field menu" id="category-menu-container">
+        <div class="control">
+          <button id="category-toggle" aria-haspopup="true" aria-expanded="false">Kategória: Összes</button>
+          <menu id="category-menu" role="listbox">
+          </menu>
+        </div>
+      </div>
+
+      <div class="field menu" id="sort-menu-container">
+        <div class="control">
+          <button id="sharing-toggle" aria-haspopup="true" aria-expanded="false">Rendezés: Relevancia</button>
+          <menu id="sharing-menu" role="listbox">
+            <li data-option="relevance" role="option" tabindex="0" class="selected">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                </polygon>
+              </svg>
+              <h3>Relevancia</h3>
+            </li>
+            <li data-option="price_asc" role="option" tabindex="0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+              <h3>Ár: növekvő</h3>
+            </li>
+            <li data-option="price_desc" role="option" tabindex="0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+              </svg>
+              <h3>Ár: csökkenő</h3>
+            </li>
+            <li data-option="name_asc" role="option" tabindex="0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M15 10l5 5 5-5" />
+                <path d="M4 6h16" />
+              </svg>
+              <h3>Név A→Z</h3>
+            </li>
+            <li data-option="name_desc" role="option" tabindex="0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M15 14l5-5 5 5" />
+                <path d="M4 18h16" />
+              </svg>
+              <h3>Név Z→A</h3>
+            </li>
+          </menu>
+        </div>
+        <select id="sortSelect" hidden>
+          <option value="relevance" selected>Relevancia</option>
+          <option value="price_asc">Ár: növekvő</option>
+          <option value="price_desc">Ár: csökkenő</option>
+          <option value="name_asc">Név A→Z</option>
+          <option value="name_desc">Név Z→A</option>
+        </select>
+      </div>
+
+      <label style="white-space:nowrap; display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="imgOnly"> csak képpel
+      </label>
     </div>
 
+    <div class="amz-grid-container">
+      <div class="amz-card">
+        <div class="amz-header">Ajándékötletek</div>
+        <div class="amz-grid-inner">
+          <div class="amz-item"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgA_aO9P7cu_Kg5f5oNJrS_l75VL4HbchI-g&s"
+              alt="Kikötés"><span>Ajándékutalvány</span></div>
+          <div class="amz-item"><img src="https://www.trinexus.hu/img/17496/R124108/1000x1000/R124108.webp?time=1693578662"
+              alt="Horgony"><span>Ajándéktárgyak</span></div>
+          <div class="amz-item"><img src="https://www.trinexus.hu/img/17496/4857/543x543,r/4857.webp?time=1689970093"
+              alt="Kötél"><span>Hajós étkészlet</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Fender"
+              alt="Fender"><span>Fenderek</span></div>
+        </div>
+        <a href="#" class="amz-footer">Továbbiak felfedezése</a>
+      </div>
+      <div class="amz-card">
+        <div class="amz-header">Vízi sport</div>
+        <div class="amz-grid-inner">
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Fánk"
+              alt="Fánk"><span>Fánkok</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Mellény"
+              alt="Mellény"><span>Mellények</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Wakeboard"
+              alt="Wakeboard"><span>Wakeboard</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=SUP" alt="SUP"><span>SUP
+              deszkák</span></div>
+        </div>
+        <a href="#" class="amz-footer">Irány a sport részleg</a>
+      </div>
+      <div class="amz-card">
+        <div class="amz-header">Elektronika</div>
+        <div class="amz-grid-inner">
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Radar"
+              alt="Radar"><span>Halradarok</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=GPS"
+              alt="GPS"><span>Navigáció</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Audio"
+              alt="Audio"><span>Hajóhifi</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Műszer"
+              alt="Műszer"><span>Műszerek</span></div>
+        </div>
+        <a href="#" class="amz-footer">Böngésszen elektronikát</a>
+      </div>
+      <div class="amz-card">
+        <div class="amz-header">Karbantartás</div>
+        <div class="amz-grid-inner">
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Festék"
+              alt="Festék"><span>Festékek</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Tisztító"
+              alt="Tisztító"><span>Tisztítók</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Olaj"
+              alt="Olaj"><span>Motorolajok</span></div>
+          <div class="amz-item"><img src="https://via.placeholder.com/150/eeeeee/808080?text=Alkatrész"
+              alt="Alkatrész"><span>Alkatrészek</span></div>
+        </div>
+        <a href="#" class="amz-footer">Minden a hajó ápolásához</a>
+      </div>
+    </div>
+
+    <div id="results-count" class="results-meta" style="display:none;"></div>
     <div id="results" class="results">
       <div class="loading"></div>
     </div>
-
-    <div id="debug" class="debug" aria-live="polite" style="display:none"></div>
+    <div id="debug" class="debug" style="display:none"></div>
   </div>
 
-  <script id="products-data" type="application/json"></script>
+  <footer style="font-size:13px;color:#666;padding:16px;text-align:center">© 2025 MageSoft. Minden jog fenntartva.
+  </footer>
 
-  <script>
-    (function initProductsNoFallback() {
-      if (window.API_BASE && window.API_BASE.length) {
-        window.USE_API = true;
-        var qEl = document.getElementById('q');
-        if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
-        var results = document.getElementById('results');
-        if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
-        return;
-      }
-      // Ha ide jutsz, nincs API beállítva: jelezz hibát a debug mezőben
-      try {
-        var dbg = document.getElementById('debug');
-        if (dbg) dbg.style.display = 'block', dbg.textContent = 'Nincs elérhető termékforrás (API nincs beállítva).';
-      } catch (e) { }
-    })();
+  <script type="module">
+    import RangeSlider from "https://esm.sh/svelte-range-slider-pips";
+    window.RangeSlider = RangeSlider; 
   </script>
 
-
-  <!--  ======= -->
   <script>
-    /* ---------- Config ---------- */
-    const GLOBAL_MAX_RESULTS = 500; // megjeleníthető találatok felső korlátja
+    /* ---------- GLOBALS & STATE ---------- */
     const MIN_TOKEN_LEN = 3;
+    let favorites = [];
+    let searchHistory = [];
+    let viewHistory = [];
+    let productsPool = [];
+    let priceRange = { min: 0, max: 100000, currentMin: 0, currentMax: 100000 };
+    let sliderInstance = null;
+    let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null };
 
-    /* ---------- Data + preprocessing ---------- */
-    let PRODUCTS = [];
-
-    function stripDiacriticsSimple(s) {
-      if (!s) return '';
-      var map = { 'á': 'a', 'Á': 'A', 'é': 'e', 'É': 'E', 'í': 'i', 'Í': 'I', 'ó': 'o', 'Ó': 'O', 'ö': 'o', 'Ö': 'O', 'ő': 'o', 'Ő': 'O', 'ú': 'u', 'Ú': 'U', 'ü': 'u', 'Ü': 'U', 'ű': 'u', 'Ű': 'U' };
-      return s.replace(/[ÁáÉéÍíÓóÖöŐőÚúÜüŰű]/g, function (ch) { return map[ch] || ch; });
+    /* ---------- SWITCHER ---------- */
+    const switcher = document.querySelector('.switcher');
+    if (switcher) {
+      const radios = switcher.querySelectorAll('input[type="radio"]');
+      const savedTheme = localStorage.getItem('theme_preference');
+      if (savedTheme) {
+        const rad = switcher.querySelector(`input[value="${savedTheme}"]`);
+        if (rad) rad.checked = true;
+      }
+      radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.checked) localStorage.setItem('theme_preference', radio.value);
+        });
+      });
     }
 
-    function preprocessProducts() {
-      for (var i = 0; i < PRODUCTS.length; i++) {
-        var p = PRODUCTS[i];
-        var name = p.name || '';
-        var sku = p.sku || '';
-        try {
-          var n = name.toString();
-          n = stripDiacriticsSimple(n);
-          n = n.normalize ? n.normalize('NFD').replace(/[̀-ͯ]/g, '') : n;
-          p.__norm_name = n.toLowerCase().replace(/[^a-z0-9À-ſ]+/gi, ' ').trim();
-        } catch (e) { p.__norm_name = (name + '').toLowerCase(); }
-        try {
-          var s = sku.toString();
-          s = stripDiacriticsSimple(s);
-          s = s.normalize ? s.normalize('NFD').replace(/[̀-ͯ]/g, '') : s;
-          p.__norm_sku = s.toLowerCase().replace(/[^a-z0-9]+/gi, '').trim();
-        } catch (e) { p.__norm_sku = (sku + '').toLowerCase(); }
-        p.__name_words = (p.__norm_name || '').split(/\s+/).filter(Boolean);
-        p.__status = (typeof p.status !== 'undefined') ? ((p.status === '0' || p.status === 0) ? 0 : Number(p.status) || 1) : null;
+    /* ---------- DATA HANDLING ---------- */
+    try {
+      const favStored = localStorage.getItem('trinexus_favorites');
+      if (favStored) favorites = JSON.parse(favStored);
+      const qStored = localStorage.getItem('trinexus_search_history');
+      if (qStored) searchHistory = JSON.parse(qStored);
+      const vStored = localStorage.getItem('trinexus_view_history');
+      if (vStored) viewHistory = JSON.parse(vStored);
+      document.addEventListener('DOMContentLoaded', updateSidebarUI);
+    } catch (e) { console.error('LS Error', e); }
+
+    function saveFavorites() { localStorage.setItem('trinexus_favorites', JSON.stringify(favorites)); }
+    function saveHistory() {
+      localStorage.setItem('trinexus_search_history', JSON.stringify(searchHistory));
+      localStorage.setItem('trinexus_view_history', JSON.stringify(viewHistory));
+    }
+    function addToSearchHistory(q) {
+      if (!q) return; q = q.trim();
+      searchHistory = searchHistory.filter(item => item !== q);
+      searchHistory.unshift(q); if (searchHistory.length > 5) searchHistory.pop();
+      saveHistory(); updateHistoryUI();
+    }
+    function addToViewHistory(product) {
+      viewHistory = viewHistory.filter(item => item.sku !== product.sku);
+      viewHistory.unshift(product); if (viewHistory.length > 10) viewHistory.pop();
+      saveHistory(); updateHistoryUI();
+    }
+
+    /* ---------- UI ACTIONS ---------- */
+    function toggleSidebar() { document.getElementById('fav-sidebar').classList.toggle('open'); document.body.classList.toggle('sidebar-open'); }
+    window.switchTab = function (tabName) {
+      document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.sidebar-pane').forEach(p => p.classList.remove('active'));
+      if (tabName === 'fav') {
+        document.querySelector('.sidebar-tab:nth-child(1)').classList.add('active');
+        document.getElementById('fav-pane').classList.add('active');
+      } else {
+        document.querySelector('.sidebar-tab:nth-child(2)').classList.add('active');
+        document.getElementById('history-pane').classList.add('active');
+        updateHistoryUI();
+      }
+    };
+    document.addEventListener('click', function (e) {
+      const sb = document.getElementById('fav-sidebar'); const trig = document.getElementById('fav-trigger');
+      if (sb.classList.contains('open') && !sb.contains(e.target) && !trig.contains(e.target)) toggleSidebar();
+    });
+
+    function isFavorite(sku) { return favorites.some(f => f.sku === sku); }
+    function toggleFavorite(product, btnElement, imgElement) {
+      const idx = favorites.findIndex(f => f.sku === product.sku);
+      if (idx > -1) {
+        favorites.splice(idx, 1); btnElement.classList.remove('active'); btnElement.innerHTML = getStarIcon(false);
+      } else {
+        favorites.push(product); btnElement.classList.add('active'); btnElement.innerHTML = getStarIcon(true);
+        if (imgElement) runFlyAnimation(imgElement);
+      }
+      saveFavorites(); updateSidebarUI();
+    }
+    function getStarIcon(isActive) { return `<svg viewBox="0 0 24 24"><path fill="${isActive ? '#FFD700' : 'currentColor'}" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`; }
+
+    function updateSidebarUI() {
+      const listEl = document.getElementById('fav-list'); const countEl = document.getElementById('fav-count');
+      if (listEl && countEl) {
+        countEl.textContent = favorites.length; countEl.style.display = favorites.length > 0 ? 'flex' : 'none';
+        if (favorites.length === 0) listEl.innerHTML = '<div style="text-align:center; color: var(--muted); margin-top:40px; font-size:13px;">Még nincs kedvenc terméked.<br>Kattints a <span style="color:#ccc; font-size:16px;">★</span> ikonra!</div>';
+        else { listEl.innerHTML = ''; favorites.forEach(p => listEl.appendChild(createSideItem(p, true))); }
+      }
+      updateHistoryUI();
+    }
+    function updateHistoryUI() {
+      const qEl = document.getElementById('history-queries');
+      if (qEl) {
+        if (searchHistory.length === 0) qEl.innerHTML = '<div style="font-size:13px; color:var(--muted); font-style:italic;">Nincs előzmény</div>';
+        else {
+          qEl.innerHTML = '';
+          searchHistory.forEach(q => {
+            const tag = document.createElement('span'); tag.className = 'history-tag'; tag.textContent = q;
+            tag.onclick = () => { document.getElementById('q').value = q; renderForQuery(q); toggleSidebar(); };
+            qEl.appendChild(tag);
+          });
+        }
+      }
+      const vEl = document.getElementById('history-products');
+      if (vEl) {
+        if (viewHistory.length === 0) vEl.innerHTML = '<div style="font-size:13px; color:var(--muted); font-style:italic;">Nincs megtekintett termék</div>';
+        else { vEl.innerHTML = ''; viewHistory.forEach(p => vEl.appendChild(createSideItem(p, false))); }
       }
     }
+    function createSideItem(p, isFavList) {
+      const item = document.createElement('div'); item.className = 'fav-item';
+      let imgSrc = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+      if (p.img) { const imgs = p.img.toString().split(/\||,|;|\n/).filter(Boolean); if (imgs.length) imgSrc = imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]; }
+      let html = `<a href="${p.url}" target="_blank" onclick="addToViewHistory({sku:'${p.sku}',name:'${p.name.replace(/'/g, "\\'")}',price:'${p.price}',img:'${p.img}',url:'${p.url}'})"><img src="${imgSrc}" alt=""></a><div class="fav-info"><div class="fav-name">${p.name}</div><div class="fav-price">${p.price ? Math.round(p.price).toLocaleString('hu-HU') + ' Ft' : ''}</div></div>`;
+      if (isFavList) html += `<div class="remove-fav" onclick="removeFavBySku('${p.sku}')">×</div>`;
+      item.innerHTML = html; return item;
+    }
+    window.clearFavorites = function () { if (confirm('Biztosan törölni szeretnéd a kedvenceket?')) { favorites = []; saveFavorites(); updateSidebarUI(); document.querySelectorAll('.card .fav-icon').forEach(b => { b.classList.remove('active'); b.innerHTML = getStarIcon(false) }); } };
+    window.removeFavBySku = function (sku) { const idx = favorites.findIndex(f => f.sku === sku); if (idx > -1) { favorites.splice(idx, 1); saveFavorites(); updateSidebarUI(); } };
+    window.openAllFavorites = function () { if (favorites.length && confirm(favorites.length + " termék megnyitása?")) [...favorites].reverse().forEach((p, i) => { if (p.url) setTimeout(() => window.open(p.url, '_blank'), i * 300); }); };
+    window.clearHistory = function () { if (confirm('Törlöd az előzményeket?')) { searchHistory = []; viewHistory = []; saveHistory(); updateHistoryUI(); } };
 
-    /* ---------- Parse embedded JSON if present in placeholder ---------- */
-    (function parsePlaceholderIfPresent() {
-      try {
-        var rawScript = document.getElementById('products-data');
-        if (rawScript) {
-          var raw = rawScript.textContent || '';
-          if (raw && raw.trim().length > 10) {
-            // Próbáljuk egyszerűen parse-olni először
-            try {
-              PRODUCTS = JSON.parse(raw);
-            } catch (err1) {
-              // Ha valami miatt a sima parse sikertelen (különös escape-ok), próbáljunk egy biztonságosabb string-cserét
-              try {
-                // string-split/join használata biztonságosabb, mintha regex literált hagynánk,
-                // mert néha valami közbeavatkozik és a /.../g felsértődhet a futtatási környezetben
-                var safe = raw.split('\\/').join('/');
-                PRODUCTS = JSON.parse(safe);
-              } catch (err2) {
-                console.error('AUTO-INIT parse error (both attempts):', err2);
-                // tovább dobhatjuk, vagy a debug mezőbe írjuk az üzenetet:
-                var dbg = document.getElementById('debug');
-                if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'AUTO-INIT parse error: ' + (err2 && err2.toString ? err2.toString() : 'ismeretlen'); }
-              }
-            }
+    function runFlyAnimation(sourceImg) {
+      const triggerBtn = document.getElementById('fav-trigger'); if (!triggerBtn) return;
+      const targetRect = triggerBtn.getBoundingClientRect(); const startRect = sourceImg.getBoundingClientRect();
+      const flyContainer = document.createElement('div'); flyContainer.className = 'fly-container';
+      const flyInner = document.createElement('div'); flyInner.className = 'fly-inner';
+      flyInner.appendChild(sourceImg.cloneNode()); flyContainer.appendChild(flyInner); document.body.appendChild(flyContainer);
+      flyContainer.style.transform = `translate(${startRect.left}px, ${startRect.top}px)`;
+      flyContainer.style.width = startRect.width + 'px'; flyContainer.style.height = startRect.height + 'px';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const destX = targetRect.left + (targetRect.width / 2) - 25; const destY = targetRect.top + (targetRect.height / 2) - 25;
+          flyContainer.style.transform = `translate(${destX}px, ${startRect.top}px)`;
+          flyContainer.style.width = '20px'; flyContainer.style.height = '20px'; flyContainer.style.opacity = '0.5';
+          flyInner.style.transform = `translateY(${destY - startRect.top}px)`;
+        });
+      });
+      setTimeout(() => { flyContainer.remove(); triggerBtn.style.transform = 'scale(1.2)'; setTimeout(() => triggerBtn.style.transform = 'scale(1)', 200); }, 800);
+    }
+
+
+    /* ---------- KATEGÓRIA DROPDOWN LOGIKA (VÉGLEGES JAVÍTÁS) ---------- */
+    function updateCategoryDropdown(products) {
+      const menuList = document.getElementById('category-menu');
+      const btn = document.getElementById('category-toggle');
+
+      menuList.innerHTML = '';
+
+      const categories = {};
+
+      // KIZÁRÓLAG a kapott (teljes) listából dolgozunk
+      if (products && products.length > 0) {
+        products.forEach(p => {
+          if (p.category && p.category.trim() !== "") {
+            const parts = p.category.split('|');
+            const leaf = parts[parts.length - 1].trim();
+            if (leaf) categories[leaf] = (categories[leaf] || 0) + 1;
           }
-
-        }
-        if (PRODUCTS && PRODUCTS.length > 0) {
-          preprocessProducts();
-          var debugEl = document.getElementById('debug');
-          if (debugEl) { debugEl.style.display = 'block'; debugEl.textContent = ''; }
-          var qEl = document.getElementById('q');
-          if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
-          var results = document.getElementById('results');
-          if (results && (!results.querySelector('.row'))) results.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert a találatok megjelenítéséhez.</div>';
-        } else {
-          var dbg = document.getElementById('debug');
-          if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'Nincsenek beágyazott termékek — a külső JSON tölthető be.'; }
-        }
-      } catch (e) {
-        console.error('JSON parse error', e);
-        var dbg = document.getElementById('debug'); if (dbg) { dbg.style.display = 'block'; dbg.textContent = 'JSON parse error: ' + (e && e.toString ? e.toString() : 'ismeretlen'); }
+        });
       }
-    })();
 
-    /* ---------- Matching logic (exact old algorithm) ---------- */
-    function matches(product, q) {
-      if (!q) return false;
-      var nq = q.toString().trim();
-      if (nq.length < MIN_TOKEN_LEN) return false;
+      // "Összes" opció
+      const allLi = document.createElement('li');
+      allLi.innerHTML = `<h3>Összes termék</h3>`;
+      if (currentState.categoryFilter === null) {
+        allLi.className = 'selected';
+      }
+      allLi.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentState.categoryFilter = null;
+        btn.textContent = "Kategória: Összes";
+        closeAllMenus();
+        filterAndRender();
+      });
+      menuList.appendChild(allLi);
 
-      // egyszerű normalizálás
-      try {
-        nq = stripDiacriticsSimple(nq);
-        nq = nq.normalize ? nq.normalize('NFD').replace(/[̀-ͯ]/g, '') : nq;
-      } catch (e) { }
-      nq = nq.toLowerCase();
+      // Kategóriák felsorolása
+      const keys = Object.keys(categories);
+      keys.sort().forEach(catName => {
+        const li = document.createElement('li');
+        li.innerHTML = `<h3>${catName} (${categories[catName]})</h3>`;
 
-      // felhasználó által beírt szavak
-      var tokens = nq.split(/\s+/).map(function (t) { return t.trim(); }).filter(Boolean);
-      if (tokens.length === 0) return false;
+        if (currentState.categoryFilter === catName) {
+          li.classList.add('selected');
+        }
 
-      // termék adatok normalizálva
-      var name = product.__norm_name || ((product.name || '').toString().toLowerCase());
-      var sku = product.__norm_sku || (product.sku || '').toString().toLowerCase();
-
-      // minden tokennek szerepelnie kell legalább a névben vagy cikkszámban
-      var allFound = tokens.every(function (tk) {
-        if (tk.length < MIN_TOKEN_LEN) return false;
-        return (
-          name.indexOf(tk) !== -1 ||
-          sku.indexOf(tk.replace(/[^a-z0-9]+/g, '')) !== -1
-        );
+        li.addEventListener('click', (e) => {
+          e.stopPropagation();
+          currentState.categoryFilter = catName;
+          btn.textContent = `Kategória: ${catName}`;
+          closeAllMenus();
+          filterAndRender();
+        });
+        menuList.appendChild(li);
       });
 
-      return allFound;
+      // Debug
+      console.log("Kategóriák frissítve:", keys.length, "db");
+    }
+
+    function closeAllMenus() {
+      document.querySelectorAll('.field.menu').forEach(field => {
+        field.classList.remove('open');
+        const btn = field.querySelector('button');
+        if (btn) btn.setAttribute('aria-expanded', false);
+      });
     }
 
 
-    /* ---------- Utilities ---------- */
-    function formatPrice(raw) {
-      var n = Number(raw);
-      if (isFinite(n)) {
-        var fmt = Math.round(n).toLocaleString('hu-HU').replace(/\u00A0/g, ' ');
-        return fmt + ' Ft';
+    /* ---------- ACTION MENU LOGIC (GENERIC) ---------- */
+    (function initMenus() {
+      const fields = document.querySelectorAll('.field.menu');
+
+      fields.forEach(field => {
+        const btn = field.querySelector('button');
+        const menu = field.querySelector('menu');
+        const options = menu.querySelectorAll('li');
+        const select = field.querySelector('select');
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = field.classList.contains('open');
+          closeAllMenus();
+          if (!isOpen) {
+            field.classList.add('open');
+            btn.setAttribute('aria-expanded', true);
+          }
+        });
+
+        if (select) {
+          // Statikus menü elemek eseménykezelői (Rendezés)
+          if (menu) {
+            const items = menu.querySelectorAll('li');
+            items.forEach(opt => {
+              opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const val = opt.dataset.option;
+                select.value = val;
+                items.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                closeAllMenus();
+                filterAndRender();
+              });
+            });
+          }
+        }
+      });
+
+      document.body.addEventListener('click', () => closeAllMenus());
+    })();
+
+    /* ---------- SLIDER ---------- */
+    function initSlider() {
+      if (!window.RangeSlider) { setTimeout(initSlider, 100); return; }
+      sliderInstance = new window.RangeSlider({
+        target: document.getElementById('slider'), props: { values: [0, 100000], min: 0, max: 100000, range: true, pips: false, springValues: { stiffness: 0.15, damping: 0.4 } }
+      });
+      sliderInstance.$on('change', ({ detail }) => {
+        const [min, max] = detail.values; priceRange.currentMin = min; priceRange.currentMax = max;
+        updatePriceLabels(min, max, priceRange.min, priceRange.max); filterAndRender();
+      });
+    }
+    function updatePriceLabels(vMin, vMax, absMin, absMax) {
+      const lblMin = document.getElementById('price-min'); const lblMax = document.getElementById('price-max'); const sliderEl = document.querySelector('#slider .rangeSlider'); if (!sliderEl) return;
+      const totalRange = absMax - absMin; if (totalRange <= 0) return;
+      lblMin.textContent = Math.round(vMin).toLocaleString('hu-HU') + ' Ft'; lblMax.textContent = Math.round(vMax).toLocaleString('hu-HU') + ' Ft';
+      requestAnimationFrame(() => {
+        let length = parseFloat(sliderEl.style.getPropertyValue('--slider-length') || 0);
+        const minPosPct = ((vMin - absMin) / totalRange) * 100; const maxPosPct = ((vMax - absMin) / totalRange) * 100;
+        lblMin.style.setProperty('--pos', minPosPct); lblMin.style.setProperty('--slider-length', length);
+        lblMax.style.setProperty('--pos', maxPosPct); lblMax.style.setProperty('--slider-length', length);
+        const diff = maxPosPct - minPosPct;
+        if (diff < 15) { lblMin.style.transform = 'translateX(-100%)'; lblMax.style.transform = 'translateX(0%)'; }
+        else { lblMin.style.transform = 'translateX(-50%)'; lblMax.style.transform = 'translateX(-50%)'; }
+      });
+    }
+    function updateSliderBounds(products) {
+      if (!products || products.length === 0) return;
+      const prices = products.map(p => parseFloat(p.price)).filter(p => !isNaN(p));
+      if (prices.length === 0) return;
+      
+      const min = Math.floor(Math.min(...prices)); 
+      const max = Math.ceil(Math.max(...prices));
+      
+      priceRange.min = min; 
+      priceRange.max = max;
+
+      // CSAK AKKOR állítjuk át a csúszkákat a szélekre, ha a jelenlegi beállítás "kilóg",
+      // vagy ha ez az első keresés és nincs URL paraméter.
+      // De a legegyszerűbb logika: Ha a user által kért limit (currentMax) magasabb, mint a valós max, akkor húzzuk össze.
+      // Ha alacsonyabb (pl. 150ezerre szűrt, de van 2 milliós motor), akkor NE nyúljunk a handle-höz, csak a pályához.
+      
+      if (sliderInstance) { 
+          // A pálya határait mindig beállítjuk a találatokra
+          sliderInstance.$set({ min: min, max: max });
+          
+          // Ha a jelenlegi filter (pl 150.000) nagyobb mint a találatok maximuma,
+          // vagy kisebb mint a minimuma, akkor igazítunk, egyébként hagyjuk a szűrést érvényben.
+          if (priceRange.currentMax > max || priceRange.currentMax === 0) {
+              priceRange.currentMax = max;
+              sliderInstance.$set({ values: [priceRange.currentMin, max] });
+          }
+          
+          updatePriceLabels(priceRange.currentMin, priceRange.currentMax, min, max); 
       }
-      return raw || '';
     }
 
-    function splitImageList(imgField) {
-      if (!imgField) return [];
-      return imgField.toString().split(/\||,|;|\n/).map(function (x) { return x.trim(); }).filter(Boolean);
-    }
-
-    /* ---------- Rendering ---------- */
-    function renderProductsList(list) {
-      var results = document.getElementById('results');
-      results.innerHTML = '';
-      if (!list || list.length === 0) {
-        results.innerHTML = '<div class="no-results">Nincs találat.</div>';
-        return;
-      }
-
-      // create row flex container
-      var row = document.createElement('div');
-      row.className = 'row';
-
-      for (var i = 0; i < list.length; i++) {
-        var p = list[i];
-        var a = document.createElement('a');
-        a.className = 'card';
-        a.href = p.url || '#';
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-
-        // add data-glow attribute so the glow CSS applies
-        a.setAttribute('data-glow', '');
-
-        // nested empty data-glow element used for blur/outer glow layer (per CSS)
-        var innerGlow = document.createElement('div');
-        innerGlow.setAttribute('data-glow', '');
-        // ensure the inner glow sits behind content via z-index in CSS
-        a.appendChild(innerGlow);
-
-        var overlay = document.createElement('div');
-        overlay.className = 'overlay';
-
-        var img = document.createElement('img');
-        img.loading = 'lazy';
-        img.alt = p.name || p.sku || '';
-        var imgs = splitImageList(p.img || '');
-        img._trying = 0;
-        img.src = imgs.length ? (imgs[0].indexOf('http') === 0 ? imgs[0] : ('https://' + imgs[0])) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-        // onerror fallback
-        img.onerror = (function (__imgs) {
-          return function () {
-            try {
-              if (this._trying < __imgs.length - 1) { this._trying++; this.src = __imgs[this._trying]; return; }
-              var cur = this.src || '';
-              if (cur.indexOf('http://') === 0) { this.src = cur.replace('http://', 'https://'); return; }
-              if (cur.indexOf('https://') === 0) { this.src = cur.replace('https://', 'http://'); return; }
-            } catch (e) { }
-            this.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-          };
-        })(imgs);
-
-        overlay.appendChild(img);
-
-        var nameBar = document.createElement('div');
-        nameBar.className = 'name-bar';
-        nameBar.textContent = p.name || '—';
-        overlay.appendChild(nameBar);
-
-        var meta = document.createElement('div');
-        meta.className = 'meta';
-        var skuSpan = document.createElement('span'); skuSpan.className = 'sku'; skuSpan.textContent = p.sku || '';
-        var priceSpan = document.createElement('span'); priceSpan.className = 'price';
-        (function () { var raw = p.price || ''; var n = Number(raw); if (isFinite(n) && n !== 0) { var fmt = Math.round(n).toLocaleString('hu-HU').replace(/\u00A0/g, ' '); priceSpan.textContent = fmt + ' Ft'; } else { priceSpan.textContent = (n === 0 ? '0 Ft' : (raw || '')); } })();
-        meta.appendChild(skuSpan); meta.appendChild(priceSpan);
-
-        a.appendChild(overlay);
-        a.appendChild(meta);
-        row.appendChild(a);
-      }
-
-      results.appendChild(row);
-      // after rendering, attach pointer handlers so glow follows per-card
-      if (window.attachCardPointer) {
-        setTimeout(window.attachCardPointer, 30);
-      }
-    }
-
-    /* ---------- ÁLLAPOTKEZELÉS ---------- */
-    let currentState = {
-      query: '',
-      page: 1,
-      isLoading: false,
-      hasMore: true
-    };
-
-    /* ---------- API HÍVÁS (Javított: egyedi limit kezelése) ---------- */
-    async function fetchProducts(query, page, customLimit) {
-      // Ha nincs megadva egyedi limit, marad a szabvány 50
-      const limit = customLimit || 50;
+    /* ---------- API & RENDER ---------- */
+    async function fetchProducts(query, page, limit) {
       const params = new URLSearchParams({ q: query, page: page, limit: limit });
-
       const response = await fetch(`${window.API_BASE}?${params.toString()}`);
       if (!response.ok) throw new Error('Hálózati hiba');
       return await response.json();
     }
 
-    /* ---------- KERESÉS INDÍTÁSA (Javított számlálóval) ---------- */
-    async function renderForQuery(q, preserveCount = false) {
-        const resultsEl = document.getElementById('results');
-        const debugEl = document.getElementById('debug');
-        
-        if (!q || q.trim().length < MIN_TOKEN_LEN) {
-            resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>';
-            removeLoadMoreButton();
-            if (debugEl) debugEl.style.display = 'none';
-            return;
+    function filterAndRender() {
+      const filtered = productsPool.filter(p => {
+        // 1. Ár
+        const price = parseFloat(p.price); if (isNaN(price)) return false;
+        if (price < priceRange.currentMin || price > priceRange.currentMax) return false;
+
+        // 2. Kategória
+        if (currentState.categoryFilter) {
+          if (!p.category) return false;
+          const parts = p.category.split('|');
+          const leaf = parts[parts.length - 1].trim();
+          if (leaf !== currentState.categoryFilter) return false;
         }
 
-        // Állapot kezelés
-        let fetchPage = 1;
-        let fetchLimit = 50;
-
-        if (preserveCount) {
-            currentState.query = q.trim();
-            fetchLimit = currentState.page * 50; 
-        } else {
-            currentState.query = q.trim();
-            currentState.page = 1;
-            currentState.hasMore = true;
-            fetchLimit = 50;
-        }
-        
-        if (!preserveCount) {
-             resultsEl.innerHTML = '<div class="loading">Keresés...</div>';
-             removeLoadMoreButton();
-        } else {
-             resultsEl.style.opacity = '0.5';
-        }
-
-        try {
-            const data = await fetchProducts(currentState.query, fetchPage, fetchLimit);
-            
-            // --- HIBAJAVÍTÁS: A SZÁMLÁLÓ ---
-            // Most már pontosan annyit írunk ki, amennyi a DOM-ban lesz
-            if (debugEl) {
-                debugEl.style.display = 'block';
-                const displayedCount = Math.min(data.total_count, currentState.page * 50);
-                debugEl.textContent = `Összes találat: ${data.total_count} (Betöltve: ${displayedCount})`;
-            }
-
-            resultsEl.style.opacity = '1';
-
-            if (data.results.length === 0) {
-                resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>';
-                return;
-            }
-
-            resultsEl.innerHTML = ''; 
-            let list = data.results;
-
-            // Szűrés
-            const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
-            if (imgOnly) {
-                list = list.filter(p => p.img && p.img.length > 0);
-            }
-            if (list.length === 0 && data.total_count > 0) {
-                resultsEl.innerHTML = '<div class="no-results">A betöltött elemek között nincs képpel rendelkező.</div>';
-            }
-
-            // Rendezés
-            const sortVal = document.getElementById('sortSelect') ? document.getElementById('sortSelect').value : 'relevance';
-            if (sortVal !== 'relevance') {
-                list.sort((a, b) => {
-                    if (sortVal.includes('price')) {
-                        const na = Number(a.price) || 0;
-                        const nb = Number(b.price) || 0;
-                        return sortVal === 'price_asc' ? (na - nb) : (nb - na);
-                    }
-                    if (sortVal.includes('name')) {
-                        const na = (a.name || '').toLowerCase();
-                        const nb = (b.name || '').toLowerCase();
-                        return sortVal === 'name_asc' ? na.localeCompare(nb) : nb.localeCompare(na);
-                    }
-                    return 0;
-                });
-            }
-
-            appendResults(list);
-
-            if (data.total_count > (currentState.page * 50)) {
-                createLoadMoreButton();
-            } else {
-                removeLoadMoreButton();
-            }
-
-        } catch (err) {
-            console.error(err);
-            resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>';
-            resultsEl.style.opacity = '1';
-        }
+        return true;
+      });
+      const countEl = document.getElementById('results-count');
+      if (countEl) { countEl.style.display = 'block'; countEl.textContent = `Találatok: ${filtered.length} db`; }
+      renderProductsList(filtered);
     }
 
-    /* ---------- TÖBB BETÖLTÉSE (JAVÍTOTT FANCY GOMB VERZIÓ) ---------- */
-    async function loadMore() {
-        if (currentState.isLoading || !currentState.hasMore) return;
-        
-        // FONTOS: Most már nem a gomb szövegét, hanem a benne lévő .btn-content-et írjuk át
-        const btnContent = document.querySelector('.fancy-btn .btn-content');
-        if(btnContent) btnContent.textContent = 'Betöltés...';
-        
-        currentState.isLoading = true;
-
-        try {
-            currentState.page++;
-            // Itt hívjuk meg a fetch-et az új oldalszámmal
-            const data = await fetchProducts(currentState.query, currentState.page);
-            
-            // Számláló frissítése
-            const debugEl = document.getElementById('debug');
-            if (debugEl) {
-                 const displayedCount = Math.min(data.total_count, currentState.page * 50);
-                 debugEl.textContent = `Összes találat: ${data.total_count} (Betöltve: ${displayedCount})`;
-            }
-
-            appendResults(data.results);
-
-            if (data.total_count <= (currentState.page * data.limit)) {
-                currentState.hasMore = false;
-                removeLoadMoreButton();
-            } else {
-                if(btnContent) btnContent.textContent = 'További találatok';
-            }
-        } catch (err) {
-            console.error(err);
-            if(btnContent) btnContent.textContent = 'Hiba (próbáld újra)';
-        } finally {
-            currentState.isLoading = false;
-        }
-    }
-
-    /* ---------- ÚJ FANCY GOMB LÉTREHOZÁSA ---------- */
-    function createLoadMoreButton() {
-        removeLoadMoreButton(); // Előző törlése, ha volt
-        
-        const btnContainer = document.createElement('div');
-        btnContainer.id = 'loadMoreContainer';
-        btnContainer.className = 'fancy-btn-container'; // Középre igazító konténer
-        
-        const btn = document.createElement('button');
-        btn.id = 'loadMoreBtn';
-        btn.className = 'fancy-btn'; // A CSS erre a class-ra harap!
-        btn.onclick = loadMore;
-
-        // 1. A rácsok (spanok) generálása az effekthez
-        const cellsDiv = document.createElement('div');
-        cellsDiv.className = 'btn-cells';
-        // 20 db span létrehozása a hover effekthez
-        for (let i = 0; i < 20; i++) {
-            cellsDiv.appendChild(document.createElement('span'));
-        }
-
-        // 2. A szöveg külön rétegen
-        const contentSpan = document.createElement('span');
-        contentSpan.className = 'btn-content';
-        contentSpan.textContent = 'További találatok';
-
-        // Összerakás
-        btn.appendChild(cellsDiv);
-        btn.appendChild(contentSpan);
-        
-        btnContainer.appendChild(btn);
-        
-        // Beillesztés a results után
-        document.getElementById('results').parentNode.insertBefore(btnContainer, document.getElementById('results').nextSibling);
-    }
-    /* ---------- SEGÉDFÜGGVÉNYEK ---------- */
-
-    /* ---------- SEGÉDFÜGGVÉNYEK (Javított szűréssel) ---------- */
-    function appendResults(list) {
-      // 1. Kliens oldali szűrés ellenőrzése
+    function renderProductsList(list) {
+      const resultsEl = document.getElementById('results'); resultsEl.innerHTML = '';
       const imgOnly = document.getElementById('imgOnly') && document.getElementById('imgOnly').checked;
-      
-      // 2. A tényleges szűrés elvégzése
-      let filtered = list;
-      if (imgOnly) {
-        filtered = list.filter(p => p.img && p.img.length > 0);
+      let finalList = list;
+      if (imgOnly) finalList = list.filter(p => p.img && p.img.length > 0);
+      if (finalList.length === 0) { resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>'; return; }
+
+      const sortVal = document.getElementById('sortSelect').value;
+      if (sortVal !== 'relevance') {
+        finalList.sort((a, b) => {
+          if (sortVal.includes('price')) { const na = Number(a.price) || 0; const nb = Number(b.price) || 0; return sortVal === 'price_asc' ? na - nb : nb - na; }
+          if (sortVal.includes('name')) { const na = (a.name || '').toLowerCase(); const nb = (b.name || '').toLowerCase(); return sortVal === 'name_asc' ? na.localeCompare(nb) : nb.localeCompare(na); }
+          if (sortVal === 'name_desc') return (b.name || '').toLowerCase().localeCompare((a.name || '').toLowerCase());
+          return 0;
+        });
       }
 
-      const resultsEl = document.getElementById('results');
-      let row = resultsEl.querySelector('.row');
-      if (!row) {
-        row = document.createElement('div');
-        row.className = 'row';
-        resultsEl.appendChild(row);
-      }
+      let row = document.createElement('div'); row.className = 'row';
 
-      // 3. HIBAJAVÍTÁS: Itt a 'filtered' tömbön megyünk végig, nem a 'list'-en!
-      filtered.forEach(p => {
-        const a = document.createElement('a');
-        a.className = 'card';
-        a.href = p.url || '#';
-        a.target = '_blank';
-        a.setAttribute('data-glow', '');
+      finalList.forEach(p => {
+        const card = document.createElement('a'); card.className = 'card'; card.href = p.url || '#'; card.target = '_blank'; card.setAttribute('data-glow', '');
+        card.onclick = function () { addToViewHistory(p); };
+        const bgLayer = document.createElement('div'); bgLayer.className = 'card-bg'; card.appendChild(bgLayer);
 
-        // Glow inner
-        const innerGlow = document.createElement('div');
-        innerGlow.setAttribute('data-glow', '');
-        a.appendChild(innerGlow);
-
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay';
-
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        // Képkezelés
+        const overlay = document.createElement('div'); overlay.className = 'overlay';
+        const img = document.createElement('img'); img.loading = 'lazy';
         const imgs = (p.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
         img.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-        
-        // Hibakezelés a kép betöltéséhez
-        img.onerror = function() {
-            this.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-        };
-
         overlay.appendChild(img);
+        overlay.appendChild(Object.assign(document.createElement('div'), { className: 'name-bar', textContent: p.name || '-' }));
 
-        const nameBar = document.createElement('div');
-        nameBar.className = 'name-bar';
-        nameBar.textContent = p.name || '-';
-        overlay.appendChild(nameBar);
-
-        const meta = document.createElement('div');
-        meta.className = 'meta';
+        const meta = document.createElement('div'); meta.className = 'meta';
         meta.innerHTML = `<span class="sku">${p.sku || ''}</span><span class="price">${p.price ? Math.round(p.price).toLocaleString('hu-HU') + ' Ft' : ''}</span>`;
+        card.appendChild(overlay); card.appendChild(meta);
 
-        a.appendChild(overlay);
-        a.appendChild(meta);
+        // CSILLAG
+        const favBtn = document.createElement('div'); favBtn.className = 'fav-icon';
+        const isFav = isFavorite(p.sku); if (isFav) favBtn.classList.add('active');
+        favBtn.innerHTML = getStarIcon(isFav);
+        favBtn.onclick = function (e) { e.preventDefault(); e.stopPropagation(); toggleFavorite(p, this, card.querySelector('img')); };
+        card.appendChild(favBtn);
 
-        row.appendChild(a);
+        row.appendChild(card);
       });
+      resultsEl.appendChild(row);
 
-      // Glow effekt újraaktiválása az új elemeken
+      // FIGYELEM: ITT NEM HÍVJUK MEG A KATEGÓRIA FRISSÍTÉST
+      // Mert ez szűréskor (pl. kategória váltáskor) eltüntetné a többi opciót.
+
+      if (currentState.hasMore) createLoadMoreButton(); else removeLoadMoreButton();
       if (window.attachCardPointer) window.attachCardPointer();
     }
 
-    
+    async function renderForQuery(q) {
+      const resultsEl = document.getElementById('results'); const countEl = document.getElementById('results-count');
+      if (!q || q.trim().length < MIN_TOKEN_LEN) { resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>'; if (countEl) countEl.style.display = 'none'; removeLoadMoreButton(); return; }
 
-    function removeLoadMoreButton() {
-      const el = document.getElementById('loadMoreContainer');
-      if (el) el.remove();
+      currentState.query = q.trim(); currentState.page = 1; productsPool = [];
+      resultsEl.innerHTML = '<div class="loading">Keresés...</div>'; if (countEl) countEl.style.display = 'none';
+
+      try {
+        const data = await fetchProducts(currentState.query, 1, 50);
+        productsPool = data.results;
+
+        // FONTOS: ITT HÍVJUK MEG A KATEGÓRIA FRISSÍTÉST
+        // Csak amikor új keresési eredmény jön a szerverről!
+        updateCategoryDropdown(productsPool);
+
+        if (data.results.length > 0) addToSearchHistory(currentState.query);
+        if (data.total_count > 50) { currentState.hasMore = true; } else { currentState.hasMore = false; }
+        if (productsPool.length === 0) { resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>'; return; }
+        resultsEl.innerHTML = '';
+        updateSliderBounds(productsPool); filterAndRender();
+      } catch (err) { console.error(err); resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>'; }
     }
 
-    /* ---------- ESEMÉNYKEZELŐK BEKÖTÉSE (wireEvents) ---------- */
-    (function wireEvents() {
-      var qInput = document.getElementById('q');
-      var timer = null;
-      const DEBOUNCE_DELAY = 500; // Fél másodperc várakozás gépelés után
-
-      // 1. Keresőmező figyelése
-      if (qInput) {
-        qInput.addEventListener('input', function (e) {
-          // Ellenőrizzük, hogy a Termékkereső fül aktív-e (az eredeti logika szerint)
-          var prodBtn = document.getElementById('prodBtn');
-          if (prodBtn && !prodBtn.classList.contains('active')) return;
-
-          // Töröljük az előző időzítőt (ha gyorsan gépel a felhasználó)
-          clearTimeout(timer);
-
-          // Indítjuk az újat
-          timer = setTimeout(function () {
-            renderForQuery(e.target.value);
-          }, DEBOUNCE_DELAY);
-        });
-      }
-
-      // 2. Rendezés legördülő menü figyelése
-      var sortSelect = document.getElementById('sortSelect');
-      if (sortSelect) {
-        sortSelect.addEventListener('change', function () {
-          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
-            // ITT A VÁLTOZÁS: true-t adunk át második paraméternek!
-            renderForQuery(qInput.value, true);
-          }
-        });
-      }
-
-      // 3. "Csak képpel" jelölőnégyzet figyelése
-      var imgOnlyCb = document.getElementById('imgOnly');
-      if (imgOnlyCb) {
-        imgOnlyCb.addEventListener('change', function () {
-          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) {
-            // ITT IS: true-t adunk át, hogy ne ugorjon vissza az elejére
-            renderForQuery(qInput.value, true);
-          }
-        });
-      }
-      // 4. Kompatibilitás (Régi ID-k támogatása, biztos ami biztos)
-      var altSort = document.getElementById('sort');
-      if (altSort) {
-        altSort.addEventListener('change', function () {
-          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value);
-        });
-      }
-
-      var altImg = document.getElementById('onlyWithImage');
-      if (altImg) {
-        altImg.addEventListener('change', function () {
-          if (qInput && qInput.value.trim().length >= MIN_TOKEN_LEN) renderForQuery(qInput.value);
-        });
-      }
-
-    })();
-
-    /* ---------- Auto-init when external JSON loaded ---------- */
-    (function autoInit() {
-      function finishInit() {
-        try {
-          if (window.__EMBEDDED_PRODUCTS && Array.isArray(window.__EMBEDDED_PRODUCTS)) {
-            PRODUCTS = window.__EMBEDDED_PRODUCTS.slice();
-          } else {
-            var raw = (document.getElementById('products-data') || { textContent: '' }).textContent || '';
-            if (raw && raw.trim().length > 10) {
-              try { PRODUCTS = JSON.parse(raw); } catch (e) { console.error('AUTO-INIT parse error', e); }
-            }
-          }
-          if (PRODUCTS && PRODUCTS.length > 0) {
-            preprocessProducts();
-            // enable search input
-            var qEl = document.getElementById('q');
-            if (qEl) { qEl.disabled = false; qEl.placeholder = 'Írja be a termék nevét vagy cikkszámát...'; }
-            console.log('AUTO-INIT: PRODUCTS=', PRODUCTS.length);
-          }
-        } catch (e) { console.error('AUTO-INIT error', e); }
-      }
-
-      document.addEventListener('productsDataReady', function () { finishInit(); }, { once: true });
-      // fallback attempt after short delay
-      setTimeout(finishInit, 1500);
-    })();
-  </script>
-
-  <!-- small navigation wiring -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    async function loadMore() {
+      if (currentState.isLoading || !currentState.hasMore) return;
+      const btnContent = document.querySelector('.fancy-btn .btn-content'); if (btnContent) btnContent.textContent = 'Betöltés...';
+      currentState.isLoading = true;
       try {
-        var prodBtn = document.getElementById('prodBtn');
-        var catBtn = document.getElementById('catBtn');
-        function setActive(isProd) { if (isProd) { prodBtn.classList.add('active'); catBtn.classList.remove('active'); } else { prodBtn.classList.remove('active'); catBtn.classList.add('active'); } }
-        setActive(true);
-        if (prodBtn) prodBtn.addEventListener('click', function (e) { e.preventDefault(); setActive(true); });
-        if (catBtn) catBtn.addEventListener('click', function (e) { e.preventDefault(); window.location.href = 'kepes_kereso_site.html'; });
-      } catch (e) { console.error(e) }
-    });
-  </script>
+        currentState.page++;
+        const data = await fetchProducts(currentState.query, currentState.page, 50);
+        productsPool = [...productsPool, ...data.results];
 
-  <!-- ---------- Per-card Pointer sync script for glow (from modified JS snippet) ---------- -->
-  <script>
+        // ITT IS FRISSÍTJÜK, HA TÖBB ADAT JÖTT (bővül a lista)
+        updateCategoryDropdown(productsPool);
+
+        updateSliderBounds(productsPool);
+        if (data.total_count <= productsPool.length) currentState.hasMore = false;
+        filterAndRender();
+      } catch (err) { console.error(err); if (btnContent) btnContent.textContent = 'Hiba (próbáld újra)'; } finally { currentState.isLoading = false; }
+    }
+
+    function createLoadMoreButton() {
+      removeLoadMoreButton();
+      const btnContainer = document.createElement('div'); btnContainer.id = 'loadMoreContainer'; btnContainer.className = 'fancy-btn-container';
+      const btn = document.createElement('button'); btn.id = 'loadMoreBtn'; btn.className = 'fancy-btn'; btn.onclick = loadMore;
+      const cellsDiv = document.createElement('div'); cellsDiv.className = 'btn-cells'; for (let i = 0; i < 20; i++) { cellsDiv.appendChild(document.createElement('span')); }
+      const contentSpan = document.createElement('span'); contentSpan.className = 'btn-content'; contentSpan.textContent = 'További találatok';
+      btn.appendChild(cellsDiv); btn.appendChild(contentSpan); btnContainer.appendChild(btn);
+      document.getElementById('results').parentNode.insertBefore(btnContainer, document.getElementById('results').nextSibling);
+    }
+    function removeLoadMoreButton() { const el = document.getElementById('loadMoreContainer'); if (el) el.remove(); }
+
     function attachCardPointer() {
       const cards = Array.from(document.querySelectorAll('.card[data-glow]'));
-      if (!cards.length) return;
-
       cards.forEach(card => {
-        if (card._glowPointerAttached) return;
-        card._glowPointerAttached = true;
-
-        // We'll track a single handler reference for attach/detach
+        if (card._glowPointerAttached) return; card._glowPointerAttached = true;
         let onMove = (ev) => {
           const rect = card.getBoundingClientRect();
           const x = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
           const y = Math.max(0, Math.min(rect.height, ev.clientY - rect.top));
-          card.style.setProperty('--x', x.toFixed(2));
-          card.style.setProperty('--xp', (x / rect.width).toFixed(3));
-          card.style.setProperty('--y', y.toFixed(2));
-          card.style.setProperty('--yp', (y / rect.height).toFixed(3));
+          card.style.setProperty('--x', x.toFixed(2)); card.style.setProperty('--xp', (x / rect.width).toFixed(3));
+          card.style.setProperty('--y', y.toFixed(2)); card.style.setProperty('--yp', (y / rect.height).toFixed(3));
         };
-
-        const onEnter = (e) => {
-          document.addEventListener('pointermove', onMove, { passive: true });
-          onMove(e);
-          card.classList.add('glow-active');
-        };
-
-        const onLeave = (e) => {
-          document.removeEventListener('pointermove', onMove);
-          card.classList.remove('glow-active');
-        };
-
-        const onPointerDown = (e) => {
-          document.addEventListener('pointermove', onMove, { passive: true });
-          onMove(e);
-        };
-        const onPointerUp = (e) => {
-          document.removeEventListener('pointermove', onMove);
-        };
-
-        card.addEventListener('pointerenter', onEnter);
-        card.addEventListener('pointerleave', onLeave);
-        card.addEventListener('pointerdown', onPointerDown, { passive: true });
-        document.addEventListener('pointerup', onPointerUp, { passive: true });
-
-        card.addEventListener('focus', (e) => {
-          const rect = card.getBoundingClientRect();
-          const cx = rect.width / 2, cy = rect.height / 2;
-          card.style.setProperty('--x', cx.toFixed(2));
-          card.style.setProperty('--xp', (cx / rect.width).toFixed(3));
-          card.style.setProperty('--y', cy.toFixed(2));
-          card.style.setProperty('--yp', (cy / rect.height).toFixed(3));
-        });
+        card.addEventListener('pointermove', onMove, { passive: true }); card.addEventListener('pointerenter', onMove);
       });
     }
 
+    (function wireEvents() {
+      var qInput = document.getElementById('q'); var timer = null;
+      if (qInput) {
+        qInput.addEventListener('input', function (e) {
+          clearTimeout(timer); timer = setTimeout(function () { renderForQuery(e.target.value); }, 500);
+        });
+      }
+      document.getElementById('sortSelect').addEventListener('change', filterAndRender);
+      document.getElementById('imgOnly').addEventListener('change', filterAndRender);
+      var qEl = document.getElementById('q'); if (qEl) qEl.disabled = false;
+    })();
+
     document.addEventListener('DOMContentLoaded', function () {
-      attachCardPointer();
+      initSlider();
+      
+      // --- ÚJ RÉSZ: URL Paraméterek olvasása ---
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryParam = urlParams.get('q');
+      const maxPriceParam = urlParams.get('maxprice');
+
+      // Ha van keresés a linkben, betöltjük
+      if (queryParam) {
+          const qInput = document.getElementById('q');
+          qInput.value = queryParam;
+          
+          // Ha van árkorlát is a linkben
+          if (maxPriceParam) {
+              // Beállítjuk a globális változót
+              priceRange.currentMax = Number(maxPriceParam);
+              // Késleltetve futtatjuk, hogy a slider inicializálódjon
+              setTimeout(() => {
+                   if(sliderInstance) {
+                       // Frissítjük a slidert vizuálisan is
+                       // Megjegyzés: a min értéket 0-n hagyjuk, a maxot állítjuk
+                       sliderInstance.$set({ values: [0, Number(maxPriceParam)] });
+                       updatePriceLabels(0, Number(maxPriceParam), priceRange.min, priceRange.max);
+                   }
+                   renderForQuery(queryParam);
+              }, 500);
+          } else {
+              renderForQuery(queryParam);
+          }
+      }
+      // ------------------------------------------
+
+      var prodBtn = document.getElementById('prodBtn'); var catBtn = document.getElementById('catBtn');
+      if (prodBtn) prodBtn.addEventListener('click', function (e) { e.preventDefault(); prodBtn.classList.add('active'); catBtn.classList.remove('active'); });
+      if (catBtn) catBtn.addEventListener('click', function (e) { e.preventDefault(); window.location.href = 'kepes_kereso_site.html'; });
+      updateSidebarUI();
     });
-
-    // Wrap existing renderProductsList so newly rendered cards reattach pointers
-    if (typeof window.renderProductsList === 'function') {
-      const _orig = window.renderProductsList.bind(window);
-      window.renderProductsList = function (list) {
-        _orig(list);
-        setTimeout(attachCardPointer, 40);
-      };
-    } else {
-      window.attachCardPointer = attachCardPointer;
-    }
   </script>
-  <footer style="font-size:13px;color:#666;padding:16px;text-align:center">
-    © 2025 MageSoft. Minden jog fenntartva.
-  </footer>
-
-
 </body>
 
 </html>
