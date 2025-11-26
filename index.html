@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Termékkereső 7.6 — Trinexus (Final Logic)</title>
+  <title>Termékkereső 7.8 — Trinexus (Min/Max Price & Iframe Fix)</title>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -971,7 +971,6 @@
       font-weight: 600;
       transition: right 0.3s;
 
-      /* LERÖVIDÍTÉS + MINIMUM SZÉLESSÉG */
       width: auto;
       min-width: 140px;
       justify-content: flex-start;
@@ -1017,7 +1016,6 @@
       font-weight: 600;
       transition: right 0.3s;
 
-      /* LERÖVIDÍTÉS + MINIMUM SZÉLESSÉG */
       width: auto;
       min-width: 140px;
       justify-content: flex-start;
@@ -1198,7 +1196,6 @@
         justify-content: center;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         min-width: 0;
-        /* Mobilon ne legyen limit */
       }
 
       #cat-trigger {
@@ -1447,9 +1444,11 @@
       <div class="amz-card">
         <div class="amz-header">Ajándékötletek</div>
         <div class="amz-grid-inner">
-          <div class="amz-item"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgA_aO9P7cu_Kg5f5oNJrS_l75VL4HbchI-g&s"
+          <div class="amz-item"><img
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgA_aO9P7cu_Kg5f5oNJrS_l75VL4HbchI-g&s"
               alt="Kikötés"><span>Ajándékutalvány</span></div>
-          <div class="amz-item"><img src="https://www.trinexus.hu/img/17496/R124108/1000x1000/R124108.webp?time=1693578662"
+          <div class="amz-item"><img
+              src="https://www.trinexus.hu/img/17496/R124108/1000x1000/R124108.webp?time=1693578662"
               alt="Horgony"><span>Ajándéktárgyak</span></div>
           <div class="amz-item"><img src="https://www.trinexus.hu/img/17496/4857/543x543,r/4857.webp?time=1689970093"
               alt="Kötél"><span>Hajós étkészlet</span></div>
@@ -1527,6 +1526,29 @@
     let priceRange = { min: 0, max: 100000, currentMin: 0, currentMax: 100000 };
     let sliderInstance = null;
     let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null };
+
+    /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS IFRAME-BEN IS ---------- */
+    function getUrlParams() {
+      // Alapeset: a saját URL paraméterei
+      let params = new URLSearchParams(window.location.search);
+
+      try {
+        // Megpróbáljuk a szülő ablakot olvasni, ha iframe-ben vagyunk
+        // Ez csak akkor működik, ha nincs cross-origin tiltás (pl. ugyanaz a domain)
+        if (window.parent !== window) {
+          const parentParams = new URLSearchParams(window.parent.location.search);
+          // Ha a szülőben van releváns paraméter, azt használjuk
+          if (parentParams.has('q') || parentParams.has('minprice') || parentParams.has('maxprice')) {
+            params = parentParams;
+          }
+        }
+      } catch (e) {
+        // Ha cross-origin hiba van (pl. Unas vs Netlify), akkor lenyeljük a hibát
+        // és maradunk a belső URL-nél. Ebben az esetben a direkt Netlify linket kell használni.
+        // console.warn("Nem sikerült olvasni a szülő ablak URL-jét (Cross-Origin).");
+      }
+      return params;
+    }
 
     /* ---------- SWITCHER ---------- */
     const switcher = document.querySelector('.switcher');
@@ -1665,7 +1687,7 @@
     }
 
 
-    /* ---------- KATEGÓRIA DROPDOWN LOGIKA (VÉGLEGES JAVÍTÁS) ---------- */
+    /* ---------- KATEGÓRIA DROPDOWN LOGIKA ---------- */
     function updateCategoryDropdown(products) {
       const menuList = document.getElementById('category-menu');
       const btn = document.getElementById('category-toggle');
@@ -1674,7 +1696,6 @@
 
       const categories = {};
 
-      // KIZÁRÓLAG a kapott (teljes) listából dolgozunk
       if (products && products.length > 0) {
         products.forEach(p => {
           if (p.category && p.category.trim() !== "") {
@@ -1719,9 +1740,6 @@
         });
         menuList.appendChild(li);
       });
-
-      // Debug
-      console.log("Kategóriák frissítve:", keys.length, "db");
     }
 
     function closeAllMenus() {
@@ -1733,7 +1751,7 @@
     }
 
 
-    /* ---------- ACTION MENU LOGIC (GENERIC) ---------- */
+    /* ---------- ACTION MENU LOGIC ---------- */
     (function initMenus() {
       const fields = document.querySelectorAll('.field.menu');
 
@@ -1754,7 +1772,6 @@
         });
 
         if (select) {
-          // Statikus menü elemek eseménykezelői (Rendezés)
           if (menu) {
             const items = menu.querySelectorAll('li');
             items.forEach(opt => {
@@ -1800,34 +1817,49 @@
         else { lblMin.style.transform = 'translateX(-50%)'; lblMax.style.transform = 'translateX(-50%)'; }
       });
     }
+
+    /* ---------- FONTOS JAVÍTÁS (1. pont): URL paraméterek előnyben ---------- */
     function updateSliderBounds(products) {
       if (!products || products.length === 0) return;
+
       const prices = products.map(p => parseFloat(p.price)).filter(p => !isNaN(p));
       if (prices.length === 0) return;
-      
-      const min = Math.floor(Math.min(...prices)); 
-      const max = Math.ceil(Math.max(...prices));
-      
-      priceRange.min = min; 
-      priceRange.max = max;
 
-      // CSAK AKKOR állítjuk át a csúszkákat a szélekre, ha a jelenlegi beállítás "kilóg",
-      // vagy ha ez az első keresés és nincs URL paraméter.
-      // De a legegyszerűbb logika: Ha a user által kért limit (currentMax) magasabb, mint a valós max, akkor húzzuk össze.
-      // Ha alacsonyabb (pl. 150ezerre szűrt, de van 2 milliós motor), akkor NE nyúljunk a handle-höz, csak a pályához.
-      
-      if (sliderInstance) { 
-          // A pálya határait mindig beállítjuk a találatokra
-          sliderInstance.$set({ min: min, max: max });
-          
-          // Ha a jelenlegi filter (pl 150.000) nagyobb mint a találatok maximuma,
-          // vagy kisebb mint a minimuma, akkor igazítunk, egyébként hagyjuk a szűrést érvényben.
-          if (priceRange.currentMax > max || priceRange.currentMax === 0) {
-              priceRange.currentMax = max;
-              sliderInstance.$set({ values: [priceRange.currentMin, max] });
-          }
-          
-          updatePriceLabels(priceRange.currentMin, priceRange.currentMax, min, max); 
+      const absMin = Math.floor(Math.min(...prices));
+      const absMax = Math.ceil(Math.max(...prices));
+
+      // A csúszka PÁLYÁJÁNAK beállítása
+      priceRange.min = absMin;
+      priceRange.max = absMax;
+
+      if (sliderInstance) {
+        sliderInstance.$set({ min: absMin, max: absMax });
+
+        // Ellenőrizzük az URL paramétereket
+        const urlParams = getUrlParams();
+        const urlMin = urlParams.get('minprice');
+        const urlMax = urlParams.get('maxprice');
+
+        let newHandleMin = priceRange.currentMin;
+        let newHandleMax = priceRange.currentMax;
+
+        // Ha az URL-ben van min/max, azt erőltetjük, ha érvényes
+        if (urlMin) newHandleMin = Number(urlMin);
+        else if (newHandleMin < absMin) newHandleMin = absMin; // Ha nincs URL, akkor track aljára
+
+        if (urlMax) newHandleMax = Number(urlMax);
+        else if (newHandleMax > absMax || newHandleMax === 0) newHandleMax = absMax; // Ha nincs URL, track tetejére
+
+        // Biztonsági ellenőrzés: ne csússzanak túl
+        if (newHandleMin < absMin) newHandleMin = absMin;
+        if (newHandleMax > absMax) newHandleMax = absMax;
+
+        // Mentés és renderelés
+        priceRange.currentMin = newHandleMin;
+        priceRange.currentMax = newHandleMax;
+
+        sliderInstance.$set({ values: [newHandleMin, newHandleMax] });
+        updatePriceLabels(newHandleMin, newHandleMax, absMin, absMax);
       }
     }
 
@@ -1906,9 +1938,6 @@
       });
       resultsEl.appendChild(row);
 
-      // FIGYELEM: ITT NEM HÍVJUK MEG A KATEGÓRIA FRISSÍTÉST
-      // Mert ez szűréskor (pl. kategória váltáskor) eltüntetné a többi opciót.
-
       if (currentState.hasMore) createLoadMoreButton(); else removeLoadMoreButton();
       if (window.attachCardPointer) window.attachCardPointer();
     }
@@ -1924,8 +1953,7 @@
         const data = await fetchProducts(currentState.query, 1, 50);
         productsPool = data.results;
 
-        // FONTOS: ITT HÍVJUK MEG A KATEGÓRIA FRISSÍTÉST
-        // Csak amikor új keresési eredmény jön a szerverről!
+        // Kategória frissítése
         updateCategoryDropdown(productsPool);
 
         if (data.results.length > 0) addToSearchHistory(currentState.query);
@@ -1945,9 +1973,7 @@
         const data = await fetchProducts(currentState.query, currentState.page, 50);
         productsPool = [...productsPool, ...data.results];
 
-        // ITT IS FRISSÍTJÜK, HA TÖBB ADAT JÖTT (bővül a lista)
         updateCategoryDropdown(productsPool);
-
         updateSliderBounds(productsPool);
         if (data.total_count <= productsPool.length) currentState.hasMore = false;
         filterAndRender();
@@ -1994,36 +2020,30 @@
 
     document.addEventListener('DOMContentLoaded', function () {
       initSlider();
-      
-      // --- ÚJ RÉSZ: URL Paraméterek olvasása ---
-      const urlParams = new URLSearchParams(window.location.search);
+
+      /* ---------- 2. Pont JAVÍTÁSA: IFRAME URL KEZELÉS ---------- */
+      const urlParams = getUrlParams(); // Itt használjuk az új okos függvényt!
       const queryParam = urlParams.get('q');
+      const minPriceParam = urlParams.get('minprice');
       const maxPriceParam = urlParams.get('maxprice');
 
-      // Ha van keresés a linkben, betöltjük
       if (queryParam) {
-          const qInput = document.getElementById('q');
-          qInput.value = queryParam;
-          
-          // Ha van árkorlát is a linkben
-          if (maxPriceParam) {
-              // Beállítjuk a globális változót
-              priceRange.currentMax = Number(maxPriceParam);
-              // Késleltetve futtatjuk, hogy a slider inicializálódjon
-              setTimeout(() => {
-                   if(sliderInstance) {
-                       // Frissítjük a slidert vizuálisan is
-                       // Megjegyzés: a min értéket 0-n hagyjuk, a maxot állítjuk
-                       sliderInstance.$set({ values: [0, Number(maxPriceParam)] });
-                       updatePriceLabels(0, Number(maxPriceParam), priceRange.min, priceRange.max);
-                   }
-                   renderForQuery(queryParam);
-              }, 500);
-          } else {
-              renderForQuery(queryParam);
+        const qInput = document.getElementById('q');
+        qInput.value = queryParam;
+
+        /* ---------- 1. Pont JAVÍTÁSA: MINIMUM ÁR KEZELÉSE ---------- */
+        if (minPriceParam) priceRange.currentMin = Number(minPriceParam);
+        if (maxPriceParam) priceRange.currentMax = Number(maxPriceParam);
+
+        setTimeout(() => {
+          if (sliderInstance && (minPriceParam || maxPriceParam)) {
+            sliderInstance.$set({
+              values: [priceRange.currentMin, priceRange.currentMax]
+            });
           }
+          renderForQuery(queryParam);
+        }, 500);
       }
-      // ------------------------------------------
 
       var prodBtn = document.getElementById('prodBtn'); var catBtn = document.getElementById('catBtn');
       if (prodBtn) prodBtn.addEventListener('click', function (e) { e.preventDefault(); prodBtn.classList.add('active'); catBtn.classList.remove('active'); });
