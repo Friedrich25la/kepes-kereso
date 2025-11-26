@@ -14,7 +14,7 @@ function normalize(s = '') {
     // egyszerű diakritika-eltávolítás (ékezetek)
     t = t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
     return t;
-  } catch (e) { return (s||'').toString().toLowerCase(); }
+  } catch (e) { return (s || '').toString().toLowerCase(); }
 }
 
 exports.handler = async (event) => {
@@ -22,7 +22,7 @@ exports.handler = async (event) => {
   // 1. BIZTONSÁG & CORS (Kik hívhatják meg a keresőt?)
   // ----------------------------------------------------------------
   const origin = event.headers.origin || event.headers.Origin;
-  
+
   // Itt sorold fel azokat a címeket, ahonnan engedélyezed a keresést:
   const allowedOrigins = [
     'https://aquamarine-cactus-d0f609.netlify.app', // A te Netlify oldalad
@@ -66,7 +66,7 @@ exports.handler = async (event) => {
     if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
       // Fontos: A netlify.toml-ben beállított included_files miatt ez a fájl ott lesz.
       const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
-      
+
       if (!fs.existsSync(filePath)) {
         throw new Error(`Database file not found at ${filePath}`);
       }
@@ -88,7 +88,8 @@ exports.handler = async (event) => {
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
       // Összefűzzük a nevet és cikkszámot a kereséshez
-      const hay = normalize((p.name || '') + ' ' + (p.sku || ''));
+      // Hozzáadjuk a kategóriát (p.category) is a keresési "szénakazalhoz"
+      const hay = normalize((p.name || '') + ' ' + (p.sku || '') + ' ' + (p.category || ''));
       let ok = true;
       for (let t of tokens) {
         if (!hay.includes(t)) { ok = false; break; }
@@ -103,14 +104,14 @@ exports.handler = async (event) => {
     // ----------------------------------------------------------------
     const start = (page - 1) * limit;
     const end = start + limit;
-    
+
     // Itt válogatjuk ki, milyen adatokat küldünk vissza a kliensnek (Security Whitelist)
     const pageResults = matches.slice(start, end).map(p => ({
-      id: p.id, 
-      name: p.name, 
-      sku: p.sku, 
-      price: p.price, 
-      thumb: p.thumb, 
+      id: p.id,
+      name: p.name,
+      sku: p.sku,
+      price: p.price,
+      thumb: p.thumb,
       url: p.url,
       img: p.img  // FONTOS: Ez kellett ahhoz, hogy a képek megjelenjenek!
     }));
