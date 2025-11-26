@@ -113,7 +113,8 @@ exports.handler = async (event) => {
       price: p.price,
       thumb: p.thumb,
       url: p.url,
-      img: p.img  // FONTOS: Ez kellett ahhoz, hogy a képek megjelenjenek!
+      img: p.img,  // FONTOS: Ez kellett ahhoz, hogy a képek megjelenjenek!
+      category: p.category
     }));
 
     return {
