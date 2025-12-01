@@ -2503,9 +2503,9 @@
       return params;
     }
 
-    /* ---------- VÉGLEGES ÁR KALKULÁTOR (BRUTTÓ JSON + DÁTUM ELLENŐRZÉS) ---------- */
+    /* ---------- JAVÍTOTT ÁR KALKULÁTOR (Üres dátumok kezelése) ---------- */
     function getPriceData(product) {
-      // 1. Alapár (A JSON-ban már bruttó van, NEM kell szorozni!)
+      // 1. Alapár (A JSON-ban már bruttó van)
       let currentPrice = parseFloat(product.price || 0);
       let originalPrice = currentPrice;
       let isSale = false;
@@ -2513,40 +2513,58 @@
       // 2. Akciós ár vizsgálata
       let salePrice = parseFloat(product.sale_price || 0);
 
-      // Csak akkor foglalkozunk az akcióval, ha létezik az ár és alacsonyabb az eredetinél
+      // Csak akkor foglalkozunk az akcióval, ha létezik az ár, nagyobb mint 0, és alacsonyabb az eredetinél
       if (salePrice > 0 && salePrice < originalPrice) {
         
-        // Dátum ellenőrzés
         const now = new Date();
-        now.setHours(0, 0, 0, 0); // A mai nap kezdete
+        now.setHours(0, 0, 0, 0); // Ma éjfél
 
-        let start = product.sale_start ? new Date(product.sale_start) : null;
-        let end = product.sale_end ? new Date(product.sale_end) : null;
+        // Dátumok biztonságos beolvasása (az üres stringet null-nak vesszük)
+        let startStr = product.sale_start;
+        let endStr = product.sale_end;
+
+        let start = (startStr && startStr.trim() !== "") ? new Date(startStr) : null;
+        let end = (endStr && endStr.trim() !== "") ? new Date(endStr) : null;
         
+        // Ellenőrizzük, hogy a dátumok érvényesek-e (Invalid Date kiszűrése)
+        if (start && isNaN(start.getTime())) start = null;
+        if (end && isNaN(end.getTime())) end = null;
+
         let isActive = false;
 
-        // SZIGORÚ SZABÁLY: Csak akkor aktív, ha van érvényes lejárati dátum
-        if (end && !isNaN(end.getTime())) {
+        // LOGIKA:
+        // 1. Ha van LEJÁRAT, azt mindenképp ellenőrizzük.
+        if (end) {
             let endCheck = new Date(end);
             endCheck.setHours(23, 59, 59, 999); // A nap vége
 
-            // Ha nincs kezdő dátum, de a lejárat még nem jött el
-            if (!start || isNaN(start.getTime())) {
-                if (now <= endCheck) {
-                    isActive = true;
-                }
-            } 
-            // Ha van kezdő és végdátum is
-            else {
-                let startCheck = new Date(start);
-                startCheck.setHours(0, 0, 0, 0);
-                
-                if (now >= startCheck && now <= endCheck) {
+            // Ha már lejárt, akkor biztosan nem aktív
+            if (now > endCheck) {
+                isActive = false;
+            } else {
+                // Még nem járt le. Nézzük a kezdetet.
+                if (start) {
+                    // Van kezdet is: akkor aktív, ha a ma a kezdet után van
+                    let startCheck = new Date(start);
+                    startCheck.setHours(0, 0, 0, 0);
+                    if (now >= startCheck) isActive = true;
+                } else {
+                    // Nincs kezdet, csak jövőbeli lejárat -> AKTÍV
                     isActive = true;
                 }
             }
+        } 
+        // 2. Ha NINCS lejárat, de van KEZDET
+        else if (start) {
+             let startCheck = new Date(start);
+             startCheck.setHours(0, 0, 0, 0);
+             if (now >= startCheck) isActive = true;
         }
-
+        // 3. Ha se kezdet, se lejárat, de van akciós ár -> AKTÍV (Opcionális: kiveheted, ha nem akarod)
+        // A te kérésed alapján: "ha a lejárat dátuma még nem jött el" -> ez feltételezi, hogy lennie kell lejáratnak?
+        // Ha szigorúan vesszük, hogy csak dátummal érvényes:
+        // else { isActive = false; } 
+        
         if (isActive) {
           currentPrice = salePrice;
           isSale = true;
@@ -2993,16 +3011,14 @@
         overlay.appendChild(img);
         overlay.appendChild(Object.assign(document.createElement('div'), { className: 'name-bar', textContent: p.name || '-' }));
 
-        // --- ÁR MEGJELENÍTÉS (getPriceData alapján) ---
+        // --- ÁR MEGJELENÍTÉS ---
         const priceData = getPriceData(p);
         const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
         
         let priceHtml = '';
         if (priceData.isSale) {
-            // Akciós: Piros, félkövér
             priceHtml = `<span class="price" style="color:#e60000; font-weight:800;">${priceFormatted}</span>`;
         } else {
-            // Sima: Fehér
             priceHtml = `<span class="price">${priceFormatted}</span>`;
         }
 
@@ -3019,11 +3035,13 @@
         favBtn.onclick = function (e) { e.preventDefault(); e.stopPropagation(); toggleFavorite(p, this, card.querySelector('img')); };
         card.appendChild(favBtn);
 
-        // LEÍRÁS GOMB (Szem ikon)
+        // LEÍRÁS GOMB (SZEM IKON)
         const descBtn = document.createElement('div');
         descBtn.className = 'desc-icon';
         descBtn.setAttribute('aria-label', 'Rövid leírás');
-        descBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        // SVG ikon
+        descBtn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        
         descBtn.onclick = function (e) {
           e.preventDefault();
           e.stopPropagation();
@@ -3179,15 +3197,14 @@
       if (modalOverlay && modalTitle && modalContent) {
         modalTitle.textContent = product.name;
         
-        // --- LEÍRÁS TISZTÍTÁSA ÉS MEGJELENÍTÉSE ---
-        // A short_description mezőt használjuk
+        // --- LEÍRÁS TISZTÍTÁSA ---
+        // Itt olvassuk a short_description-t!
         let dbDesc = product.short_description || "";
         
-        // Eltávolítjuk a "<!HTML KOD>" szöveget, bármilyen formában is van
+        // A replace eltávolítja a <!HTML KOD> részt
         dbDesc = dbDesc.replace(/<!HTML KOD>/gi, "").trim();
         
         if (dbDesc && dbDesc.length > 0) {
-             // Mivel a szöveg tartalmazhat HTML elemeket (<br>, <p>), innerHTML-t használunk
              modalContent.innerHTML = dbDesc; 
         } else {
              modalContent.innerText = "Ehhez a termékhez jelenleg nincs részletes leírás.";
@@ -3197,7 +3214,7 @@
         const imgs = (product.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
         modalImg.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-        // Árak megjelenítése (áthúzott eredeti árral, ha van akció)
+        // Árak megjelenítése
         const priceData = getPriceData(product);
         const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
         
@@ -3212,7 +3229,7 @@
             modalPrice.textContent = priceFormatted;
         }
 
-        // Garancia logika (változatlan)
+        // Garancia logika
         const price = priceData.price;
         const name = (product.name || '').toLowerCase();
         let warrantyText = "1 év garancia"; 
