@@ -2503,34 +2503,59 @@
       return params;
     }
 
-    /* ---------- ÚJ: AKCIÓS IDŐSZAK ELLENŐRZÉSE ---------- */
+    /* ---------- VÉGLEGES ÁR KALKULÁTOR (BRUTTÓ JSON + DÁTUM ELLENŐRZÉS) ---------- */
     function getPriceData(product) {
-      // Alapértelmezett értékek (ha nincs akció)
+      // 1. Alapár (A JSON-ban már bruttó van, NEM kell szorozni!)
       let currentPrice = parseFloat(product.price || 0);
+      let originalPrice = currentPrice;
       let isSale = false;
-      
-      // Ha vannak akciós adatok a JSON-ban (sale_price, sale_start, sale_end)
-      if (product.sale_price && product.sale_start && product.sale_end) {
+
+      // 2. Akciós ár vizsgálata
+      let salePrice = parseFloat(product.sale_price || 0);
+
+      // Csak akkor foglalkozunk az akcióval, ha létezik az ár és alacsonyabb az eredetinél
+      if (salePrice > 0 && salePrice < originalPrice) {
+        
+        // Dátum ellenőrzés
         const now = new Date();
-        const start = new Date(product.sale_start);
-        const end = new Date(product.sale_end);
+        now.setHours(0, 0, 0, 0); // A mai nap kezdete
+
+        let start = product.sale_start ? new Date(product.sale_start) : null;
+        let end = product.sale_end ? new Date(product.sale_end) : null;
         
-        // Ellenőrizzük az időszakot (a nap végét is beleértve)
-        end.setHours(23, 59, 59, 999); 
-        
-        if (now >= start && now <= end) {
-          const saleP = parseFloat(product.sale_price);
-          // Csak akkor akciós, ha az akciós ár tényleg alacsonyabb, mint az eredeti és nem 0
-          if (saleP > 0 && saleP < currentPrice) {
-            currentPrice = saleP;
-            isSale = true;
-          }
+        let isActive = false;
+
+        // SZIGORÚ SZABÁLY: Csak akkor aktív, ha van érvényes lejárati dátum
+        if (end && !isNaN(end.getTime())) {
+            let endCheck = new Date(end);
+            endCheck.setHours(23, 59, 59, 999); // A nap vége
+
+            // Ha nincs kezdő dátum, de a lejárat még nem jött el
+            if (!start || isNaN(start.getTime())) {
+                if (now <= endCheck) {
+                    isActive = true;
+                }
+            } 
+            // Ha van kezdő és végdátum is
+            else {
+                let startCheck = new Date(start);
+                startCheck.setHours(0, 0, 0, 0);
+                
+                if (now >= startCheck && now <= endCheck) {
+                    isActive = true;
+                }
+            }
+        }
+
+        if (isActive) {
+          currentPrice = salePrice;
+          isSale = true;
         }
       }
-      
+
       return {
         price: currentPrice,
-        originalPrice: parseFloat(product.price || 0),
+        originalPrice: originalPrice,
         isSale: isSale
       };
     }
@@ -2944,7 +2969,6 @@
       const sortVal = document.getElementById('sortSelect').value;
       if (sortVal !== 'relevance') {
         finalList.sort((a, b) => {
-          // Ár rendezésnél az AKTUÁLIS (esetleg akciós) árat kell figyelembe venni
           const pA = getPriceData(a).price;
           const pB = getPriceData(b).price;
           
@@ -2969,21 +2993,25 @@
         overlay.appendChild(img);
         overlay.appendChild(Object.assign(document.createElement('div'), { className: 'name-bar', textContent: p.name || '-' }));
 
-        // --- ÁR MEGJELENÍTÉS LOGIKA ---
+        // --- ÁR MEGJELENÍTÉS (getPriceData alapján) ---
         const priceData = getPriceData(p);
         const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
         
-        // Ha akciós, akkor piros szín
-        const priceHtml = priceData.isSale 
-            ? `<span class="price" style="color:#e60000; font-weight:800;">${priceFormatted}</span>`
-            : `<span class="price">${priceFormatted}</span>`;
+        let priceHtml = '';
+        if (priceData.isSale) {
+            // Akciós: Piros, félkövér
+            priceHtml = `<span class="price" style="color:#e60000; font-weight:800;">${priceFormatted}</span>`;
+        } else {
+            // Sima: Fehér
+            priceHtml = `<span class="price">${priceFormatted}</span>`;
+        }
 
         const meta = document.createElement('div'); meta.className = 'meta';
         meta.innerHTML = `<span class="sku">${p.sku || ''}</span>${priceHtml}`;
         
         card.appendChild(overlay); card.appendChild(meta);
 
-        // CSILLAG (KEDVENCEK)
+        // KEDVENC GOMB
         const favBtn = document.createElement('div'); favBtn.className = 'fav-icon';
         favBtn.setAttribute('data-sku', p.sku); 
         const isFav = isFavorite(p.sku); if (isFav) favBtn.classList.add('active');
@@ -2991,7 +3019,7 @@
         favBtn.onclick = function (e) { e.preventDefault(); e.stopPropagation(); toggleFavorite(p, this, card.querySelector('img')); };
         card.appendChild(favBtn);
 
-        // RÖVID LEÍRÁS IKON (SZEM)
+        // LEÍRÁS GOMB (Szem ikon)
         const descBtn = document.createElement('div');
         descBtn.className = 'desc-icon';
         descBtn.setAttribute('aria-label', 'Rövid leírás');
@@ -2999,7 +3027,7 @@
         descBtn.onclick = function (e) {
           e.preventDefault();
           e.stopPropagation();
-          openDescModal(p); // Itt hívjuk meg a modalt, ami majd kiolvassa a short_description-t
+          openDescModal(p);
         };
         card.appendChild(descBtn);
 
@@ -3149,50 +3177,45 @@
       const modalLinkBtn = document.getElementById('modal-link-btn');
 
       if (modalOverlay && modalTitle && modalContent) {
-        // 1. Cím és LEÍRÁS (Adatbázisból: short_description)
         modalTitle.textContent = product.name;
         
-        // JAVÍTÁS: A JSON-ban 'short_description' a mező neve!
-        let dbDesc = product.short_description; 
+        // --- LEÍRÁS TISZTÍTÁSA ÉS MEGJELENÍTÉSE ---
+        // A short_description mezőt használjuk
+        let dbDesc = product.short_description || "";
         
-        // Takarítás: A "HTML KOD" szöveg eltávolítása, ha benne maradt
-        if (dbDesc) {
-            dbDesc = dbDesc.replace('<!HTML KOD>', '').trim();
-        }
-
+        // Eltávolítjuk a "<!HTML KOD>" szöveget, bármilyen formában is van
+        dbDesc = dbDesc.replace(/<!HTML KOD>/gi, "").trim();
+        
         if (dbDesc && dbDesc.length > 0) {
-             // sortörések kezelése
-             modalContent.innerHTML = dbDesc.replace(/\n/g, '<br>');
+             // Mivel a szöveg tartalmazhat HTML elemeket (<br>, <p>), innerHTML-t használunk
+             modalContent.innerHTML = dbDesc; 
         } else {
              modalContent.innerText = "Ehhez a termékhez jelenleg nincs részletes leírás.";
         }
 
-        // 2. Kép
+        // Kép betöltése
         const imgs = (product.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
         modalImg.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-        // 3. ÁR MEGJELENÍTÉS (Akciós logika)
+        // Árak megjelenítése (áthúzott eredeti árral, ha van akció)
         const priceData = getPriceData(product);
         const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
         
         if (priceData.isSale) {
             const originalFormatted = Math.round(priceData.originalPrice).toLocaleString('hu-HU') + ' Ft';
-            // Eredeti ár áthúzva + Akciós ár pirosan
             modalPrice.innerHTML = `
                 <div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1.2;">
                     <span style="text-decoration:line-through; font-size:14px; color:#999;">${originalFormatted}</span>
                     <span style="color:#e60000; font-size:22px;">${priceFormatted}</span>
                 </div>`;
         } else {
-            // Sima ár
             modalPrice.textContent = priceFormatted;
         }
 
-        // 4. Okos Garancia Logika
+        // Garancia logika (változatlan)
         const price = priceData.price;
         const name = (product.name || '').toLowerCase();
         let warrantyText = "1 év garancia"; 
-
         if (name.includes('deeper chirp') || name.includes('tohatsu')) {
           warrantyText = "5 év garancia";
         } else {
@@ -3202,13 +3225,12 @@
         }
         modalWarranty.textContent = warrantyText;
 
-        // 5. Vásárlási Statisztika
+        // Statisztika
         const salesCount = getSalesCount(price);
         modalSales.textContent = `${salesCount} db eladva az elmúlt 30 napban`;
 
-        // 6. Gombok
+        // Gombok
         modalLinkBtn.href = product.url || '#';
-
         const isFav = isFavorite(product.sku);
         if (isFav) modalFavBtn.classList.add('active');
         else modalFavBtn.classList.remove('active');
