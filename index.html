@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Termékkereső 8.3 — Trinexus (Content & Logic Merged)</title>
+  <title>Termékkereső 8.7 — Trinexus (Szezonális logika + Szállítás)</title>
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,12 +41,12 @@
        ========================================= */
     :root {
       --accent: #33CCBE;
-      --bg: #ffffffe9;
+      --bg: #edebebe9;
       --muted: #666;
       --text-main: #111;
       --card-bg: #fff;
       --card-border: #eee;
-      --header-bg: #9b9b9b;
+      --header-bg: #919090;
 
       --thumb: 150px;
       --gap: 12px;
@@ -60,6 +60,12 @@
       --border: 9;
       --backup-border: var(--glow-backdrop);
       --radius: 12px;
+
+      /* Custom Scrollbar Változók */
+      --desc-modal-bg: #f4f4f4;
+      --scroll-track: rgba(0, 0, 0, 0.05);
+      --scroll-thumb: var(--accent);
+      --corner-radius: var(--radius);
     }
 
     body:has(.switcher__input[value="dark"]:checked) {
@@ -72,6 +78,9 @@
       --accent: #33CCBE;
       --accent-dark: #28a398;
       --glow-backdrop: rgba(255, 255, 255, 0.05);
+
+      --desc-modal-bg: #444446;
+      --scroll-track: rgba(255, 255, 255, 0.05);
     }
 
     * {
@@ -409,7 +418,7 @@
       background: var(--accent) !important;
     }
 
-    /* AMAZON GRID STYLES - JAVÍTOTT (LINK KEZELÉS + SORTÖRÉS FIX) */
+    /* AMAZON GRID STYLES */
     .amz-grid-container {
       display: flex;
       gap: 20px;
@@ -478,7 +487,6 @@
     .amz-item span {
       font-size: 12px;
       color: var(--muted);
-      /* JAVÍTÁS: Sortörés engedélyezése */
       white-space: normal;
       line-height: 1.3;
       text-align: center;
@@ -699,6 +707,55 @@
       fill: currentColor;
     }
 
+    /* RÖVID LEÍRÁS IKON (SZEM) - KÁRTYÁN */
+    .desc-icon {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+      z-index: 20;
+      color: var(--accent);
+    }
+
+    .desc-icon:hover {
+      transform: scale(1.15);
+      background: #fff;
+    }
+
+    .desc-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .desc-icon[aria-label]:hover::after {
+      content: attr(aria-label);
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
     /* FANCY GOMB */
     .fancy-btn-container {
       display: flex;
@@ -785,7 +842,7 @@
       height: 100vh;
       background: var(--card-bg);
       box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
+      z-index: 12000;
       transition: right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
       display: flex;
       flex-direction: column;
@@ -989,7 +1046,7 @@
       border-radius: 20px 0 0 20px;
       box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.2);
       cursor: pointer;
-      z-index: 900;
+      z-index: 1100;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1178,7 +1235,280 @@
       object-fit: cover;
     }
 
+    /* =========================================
+       MODAL ÉS CUSTOM SCROLLBAR STÍLUSOK
+       ========================================= */
+
+    /* Modal Háttér (Overlay) */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    /* Modal Doboz */
+    .desc-modal {
+      background: var(--desc-modal-bg);
+      width: 90%;
+      max-width: 500px;
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .close-modal-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--muted);
+      z-index: 10;
+    }
+
+    #desc-modal-title {
+      margin: 0;
+      padding-right: 30px;
+      font-size: 18px;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    /* ÚJ: Modal Info Sorok (Image + Price + Shipping) */
+    .modal-info-row {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        width: 100%;
+    }
+    
+    .mini-thumb {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--card-border);
+        background: #fff;
+        flex-shrink: 0;
+    }
+
+    /* Ár közvetlenül a kép mellett */
+    .modal-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-main);
+        white-space: nowrap;
+    }
+    
+    /* Szállítási blokk a jobb szélen */
+    .shipping-block {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        margin-left: auto; /* Ez tolja ki a jobb szélre */
+        align-items: flex-end; /* Jobbra igazítja a szöveget és ikonokat */
+    }
+    
+    .shipping-label {
+        font-size: 11px; /* Picit nagyobb betű */
+        color: var(--muted);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .shipping-icons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .shipping-icon {
+        height: 32px; /* Nagyobb ikonok (24px helyett) */
+        width: auto;
+        object-fit: contain;
+    }
+    .modal-meta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      /* Nagyobb térköz */
+      align-items: flex-start;
+      margin-top: 4px;
+    }
+
+    .warranty-badge {
+      background-color: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 99em;
+    }
+
+    .sales-text {
+      font-size: 14px;
+      /* Megnövelt betűméret */
+      color: #a9a9a9;
+      /* Figyelemfelhívóbb szín */
+      font-weight: 600;
+      /* Félkövér */
+      font-style: normal;
+    }
+
+    /* ÚJ: Modal Footer */
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 12px;
+    }
+
+    .modal-action-btn {
+      flex: 1;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .modal-action-btn:hover {
+      background: var(--card-bg);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .modal-action-btn.active {
+      color: #FFD700;
+      border-color: #FFD700;
+      background: #fff;
+    }
+
+    .modal-action-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* Tooltip a modal gombokhoz */
+    .modal-action-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      margin-bottom: 5px;
+    }
+
+    /* --- CUSTOM SCROLLBAR CONTAINER --- */
+    .desc-scroll-container {
+      height: 200px;
+      /* Kicsit kisebb, hogy minden kiférjen */
+      width: 100%;
+      background: var(--desc-modal-bg);
+      border-radius: var(--corner-radius);
+      position: relative;
+      mask:
+        radial-gradient(var(--corner-radius) at var(--corner-radius) var(--corner-radius), #0000 98%, #000) 0 0 / 51% 51% no-repeat,
+        radial-gradient(var(--corner-radius) at calc(100% - var(--corner-radius)) var(--corner-radius), #0000 98%, #000) 100% 0 / 51% 51% no-repeat,
+        radial-gradient(var(--corner-radius) at var(--corner-radius) calc(100% - var(--corner-radius)), #0000 98%, #000) 0 100% / 51% 51% no-repeat,
+        radial-gradient(var(--corner-radius) at calc(100% - var(--corner-radius)) calc(100% - var(--corner-radius)), #0000 98%, #000) 100% 100% / 51% 51% no-repeat,
+        linear-gradient(#000 0 0) center / 100% calc(100% - 2 * var(--corner-radius)) no-repeat,
+        linear-gradient(#000 0 0) center / calc(100% - 2 * var(--corner-radius)) 100% no-repeat;
+      -webkit-mask:
+        radial-gradient(var(--corner-radius) at var(--corner-radius) var(--corner-radius), #0000 98%, #000) 0 0 / 51% 51% no-repeat,
+        radial-gradient(var(--corner-radius) at calc(100% - var(--corner-radius)) var(--corner-radius), #0000 98%, #000) 100% 0 / 51% 51% no-repeat,
+        radial-gradient(var(--corner-radius) at var(--corner-radius) calc(100% - var(--corner-radius)), #0000 98%, #000) 0 100% / 51% 51% no-repeat,
+        radial-gradient(var(--corner-radius) at calc(100% - var(--corner-radius)) calc(100% - var(--corner-radius)), #0000 98%, #000) 100% 100% / 51% 51% no-repeat,
+        linear-gradient(#000 0 0) center / 100% calc(100% - 2 * var(--corner-radius)) no-repeat,
+        linear-gradient(#000 0 0) center / calc(100% - 2 * var(--corner-radius)) 100% no-repeat;
+    }
+
+    .desc-content {
+      height: 100%;
+      width: 100%;
+      overflow-y: auto;
+      padding: 15px;
+      padding-right: 25px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-main);
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .desc-content::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-track {
+      position: absolute;
+      top: var(--corner-radius);
+      right: 5px;
+      width: 10px;
+      height: calc(100% - 2 * var(--corner-radius));
+      background: var(--scroll-track);
+      border-radius: 10px;
+      z-index: 10;
+    }
+
+    .scrollbar-thumb {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: var(--scroll-thumb);
+      border-radius: 10px;
+      cursor: grab;
+    }
+
+    .scrollbar-thumb:active {
+      cursor: grabbing;
+    }
+
+   /* =========================================
+       MOBIL NÉZET JAVÍTÁSOK (HEADER + KERESŐ)
+       ========================================= */
+    /* =========================================
+       MOBIL NÉZET - MINDEN EGYBEN (HEADER + KERESŐ + MENÜ)
+       ========================================= */
     @media (max-width: 480px) {
+      
+      /* --- 1. HEADER ÉS LOGO --- */
       .header-wrap {
         padding: 0 10px;
         width: 100%;
@@ -1190,8 +1520,8 @@
       }
 
       .text {
-        font-size: 5vw;
-        margin: 0 30px;
+        font-size: 13px; /* Kisebb cím */
+        margin: 0 15px;  
       }
 
       .switcher {
@@ -1205,6 +1535,7 @@
         padding-right: 12px;
       }
 
+      /* --- 2. OLDALSÁVOK ÉS LEBEGŐ GOMBOK --- */
       #fav-sidebar {
         width: 100%;
         right: -100%;
@@ -1258,42 +1589,490 @@
         font-size: 11px;
       }
 
-      .toggle {
-        width: 100%;
-      }
-
+      /* --- 3. KERESŐSÁV JAVÍTÁSA (Hogy kiférjen a gomb mellett) --- */
       .search-row input.search {
-        min-width: 100%;
+        min-width: 0; 
+        flex: 1;      
+        width: auto;
+      }
+      
+      .cat-menu-trigger {
+        padding: 0 8px; /* Kisebb belső margó */
+        font-size: 13px;
+        max-width: 110px; 
+      }
+      
+      .cat-menu-trigger::after {
+          margin-left: 2px;
       }
 
-      .card {
-        width: 100%;
-      }
-
+      /* --- 4. EGYÉB UI ELEMEK --- */
+      .toggle { width: 100%; }
+      .card { width: 100%; }
       .controls-row {
         flex-direction: column;
         gap: 20px;
         align-items: stretch;
       }
-
-      .field.menu {
-        min-width: 100%;
-        max-width: 100%;
-      }
-
+      .field.menu { min-width: 100%; max-width: 100%; }
       #slider-wrapper {
         width: 100%;
         max-width: 100%;
         margin-top: 15px;
         flex: 1;
       }
+      .amz-card { max-width: 100%; }
+      .desc-modal { width: 95%; }
 
-      /* Amazon grid mobile */
-      .amz-card {
-        max-width: 100%;
+      /* ========================================================= */
+      /* 5. A MENÜ MOBIL JAVÍTÁSA (EZ A LÉNYEG!)                   */
+      /* ========================================================= */
+      
+      /* A konténer ne legyen fix széles (900px), hanem rugalmas */
+      .mm-container {
+        width: 100% !important; /* Teljes szélesség a szülőhöz képest */
+        min-width: 0 !important;
+        left: 0 !important;
+        margin-left: 0 !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        max-height: 60vh; /* Ha túl hosszú, lehessen görgetni */
+        overflow-y: auto;
+      }
+      
+      /* Kényszerített 1 OSZLOPOS megjelenítés */
+      ul.mm-root {
+        column-count: 1 !important; 
+        column-gap: 0 !important;
+        display: block !important;
+        height: auto !important;
+      }
+      
+      /* Menüpontok stílusa mobilon */
+      li.mm-item {
+        display: block !important;
+        width: 100% !important;
+        border-bottom: 1px solid #f0f0f0; /* Kis elválasztó vonal */
+      }
+      
+      a.mm-link {
+         padding: 12px 15px; /* Nagyobb érintési felület */
+         font-size: 14px;
+      }
+
+      /* MOBILON ELREJTJÜK AZ OLDALRA NYÍLÓ ALMENÜT */
+      /* Mert mobilon nincs "hover", és a kattintás a főkategóriára visz */
+      .mm-panel {
+          display: none !important; 
+      }
+      
+      /* A "has-sub" nyilacskákat is elrejtjük mobilon, ne tévesszen meg */
+      li.mm-item.has-sub > a.mm-link::after {
+          display: none !important;
       }
     }
+    /* ================= MENU.JS STÍLUSOK (3 OSZLOPOS FŐMENÜ FIX) ================= */
+    
+    .search-row {
+        position: relative;
+        z-index: 1000;
+    }
+    .search-wrapper-combined {
+        display: flex;
+        width: 100%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-radius: 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        position: relative;
+        transition: background 0.4s ease, border-color 0.4s ease;
+    }
+
+    /* GOMB */
+    .cat-menu-trigger {
+        background-color: transparent;
+        color: var(--text-main);
+        padding: 0 15px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 12px 0 0 12px;
+        display: flex; 
+        align-items: center; 
+        gap: 8px;
+        white-space: nowrap;
+        min-width: auto;
+        border-right: 1px solid var(--card-border);
+        transition: color 0.3s;
+        position: relative;
+        z-index: 10001;
+    }
+    
+    .cat-menu-trigger:hover {
+        color: var(--accent);
+    }
+    
+    .cat-menu-trigger::after { 
+        content: '';
+        border: solid currentColor;
+        border-width: 0 2px 2px 0;
+        display: inline-block;
+        padding: 2px;
+        transform: rotate(45deg);
+        margin-top: -2px;
+    }
+
+    /* OKOS NYITÁS - JAVÍTVA */
+    /* Csak a #catMenuBtn (Kategóriák) nyissa meg a menüt, az Aktuális gomb NE! */
+    #catMenuBtn:hover ~ .mm-container,
+    .mm-container:hover {
+        display: block;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    /* ================================================================= */
+    /* FŐMENÜ KONTÉNER - SZÉLESSÉG JAVÍTÁSA */
+    /* ================================================================= */
+    .mm-container {
+        display: none;
+        position: absolute;
+        top: 100%; 
+        left: 0; 
+        
+        /* ITT A JAVÍTÁS: 900px széles, hogy biztosan elférjen a 3 oszlop! */
+        width: 900px; 
+        min-width: 800px;
+        
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        z-index: 9999;
+        border-radius: 0 8px 8px 8px;
+        margin-top: 10px;
+        padding: 15px 0;
+    }
+
+    .mm-container::before {
+        content: '';
+        position: absolute;
+        top: -15px;
+        left: 0;
+        width: 100%;
+        height: 15px;
+        background: transparent;
+    }
+
+    /* FŐMENÜ LISTA - 3 OSZLOP */
+    ul.mm-root { 
+        list-style: none; 
+        padding: 0; 
+        margin: 0;
+        
+        /* A szélesebb konténer miatt a böngésző most már engedni fogja a 3 oszlopot */
+        column-count: 3; 
+        column-gap: 20px;
+        column-rule: 1px solid var(--card-border);
+    }
+    
+    li.mm-item {
+        break-inside: avoid; /* Ne vágja félbe az elemet */
+        page-break-inside: avoid;
+        position: relative;
+        display: inline-block; /* Segít a stabilitásban */
+        width: 100%;
+    }
+    
+    a.mm-link {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        padding: 8px 15px;
+        color: var(--text-main);
+        text-decoration: none; 
+        font-weight: 500; 
+        font-size: 13px;
+        transition: all 0.2s;
+        border-radius: 4px;
+        margin: 0 5px;
+        white-space: nowrap; /* Hosszú nevek kezelése */
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    li.mm-item:hover > a.mm-link {
+        background-color: var(--bg);
+        color: var(--accent);
+    }
+    
+    li.mm-item.has-sub > a.mm-link::after { 
+        content: '›'; 
+        font-size: 16px; 
+        font-weight: bold; 
+        color: var(--muted);
+    }
+
+    /* ================================================================= */
+    /* ALMENÜ PANEL - FÜGGŐLEGES (VERTIKÁLIS) LISTA + GIGA HÍD */
+    /* ================================================================= */
+    .mm-panel {
+        display: block;      
+        visibility: hidden;  
+        opacity: 0;          
+        
+        position: absolute;
+        
+        /* Fontos: Mivel a főmenü most széles, az almenü a szülő elem jobb szélétől nyílik */
+        /* Ez azt jelenti, hogy rátakarhat a 2. és 3. oszlopra - ez normális működés */
+        left: 100%; 
+        top: -5px;  
+        margin-left: 0; 
+        
+        width: 260px; /* Keskeny, vertikális lista */
+        
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        box-shadow: 5px 5px 20px rgba(0,0,0,0.15);
+        padding: 10px 0;
+        border-radius: 4px; 
+        z-index: 10000;
+        
+        transition: opacity 0.2s ease 0.1s, visibility 0s linear 0.3s;
+    }
+
+    /* GIGA HÍD - A STABILITÁSÉRT */
+    .mm-panel::before {
+        content: '';
+        position: absolute;
+        left: -20px;       
+        width: 20px; 
+        top: -100vh;
+        height: 300vh;
+        background: transparent;
+        z-index: 1;
+    }
+
+    li.mm-item:hover .mm-panel {
+        visibility: visible;
+        opacity: 1;
+        transition-delay: 0s; 
+    }
+
+    /* ALMENÜ TARTALOM - SIMA LISTA */
+    .mm-grid {
+        display: flex;
+        flex-direction: column; /* Egymás alá rendezés */
+        gap: 0;
+    }
+    
+    .mm-col { margin: 0; padding: 0; }
+
+    /* STÍLUSOK (Címsor és lista elemek) */
+    .mm-col-title, 
+    ul.mm-sublist a {
+        display: flex !important;
+        align-items: center;
+        padding: 8px 15px;
+        color: var(--text-main) !important; 
+        text-decoration: none !important;
+        font-size: 13px;
+        font-weight: 500;
+        transition: none; 
+        margin: 0;
+        border: none;
+        background: transparent;
+    }
+
+    .mm-col-title:hover,
+    ul.mm-sublist a:hover {
+        background-color: var(--bg) !important;
+        color: var(--accent) !important;
+        cursor: pointer;
+    }
+    /* =========================================
+       AKTUÁLIS GALÉRIA & GOMB STÍLUSOK
+       ========================================= */
+
+    /* Az új gomb stílusa */
+    .current-menu-trigger {
+        border-radius: 0 !important; /* Szögletes, mert középen van */
+        border-left: 1px solid var(--card-border);
+        border-right: 1px solid var(--card-border);
+        position: relative;
+    }
+    
+    /* Ha az Aktuális gomb aktív */
+    .current-menu-trigger.active {
+        color: var(--accent);
+        background-color: var(--bg);
+    }
+
+    /* GALÉRIA KONTÉNER (Alapállapot: csukva) */
+    #gallery-section {
+        width: 100%;
+        max-width: var(--max-width); /* Ugyanaz a szélesség, mint a container */
+        margin: 0 auto 20px auto; /* Kis térköz alul */
+        height: 0;
+        overflow: hidden;
+        position: relative;
+        transition: height 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        opacity: 0;
+        /* Rejtett állapotban ne foglaljon helyet a border */
+        border: 0px solid transparent; 
+    }
+
+    /* NYITOTT ÁLLAPOT */
+    #gallery-section.open {
+        height: 240px; /* PC magasság */
+        opacity: 1;
+        border: 1px solid var(--card-border);
+        margin-top: -15px; /* Hogy közelebb legyen a keresőhöz */
+        margin-bottom: 25px;
+    }
+
+    /* Színes csík a tetején (mint a ZIP-ben) */
+    .gallery-gradient-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, #ff00bb, #ff00b6, #ff347a, #ff9829, #ffd500);
+        z-index: 2;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.8s ease 0.2s;
+    }
+
+    #gallery-section.open .gallery-gradient-bar {
+        transform: scaleX(1);
+    }
+
+    /* Képek tárolója */
+    .gallery-items {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        padding: 3px 0 0 0; /* Hely a gradient csíknak */
+    }
+
+    /* Egy képkocka */
+    .gallery-item {
+        flex-grow: 1;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        transition: flex-grow 0.5s ease, opacity 0.3s ease, filter 0.3s;
+        cursor: pointer;
+        position: relative;
+        opacity: 0.8;
+        filter: grayscale(0.3);
+        min-width: 0; /* Fontos a flexboxhoz */
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    /* Szöveg a képen */
+    .gallery-label {
+        background: rgba(0,0,0,0.6);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px 4px 0 0;
+        margin-bottom: 0;
+        font-size: 13px;
+        font-weight: 600;
+        transform: translateY(100%); /* Alapból lent van */
+        transition: transform 0.3s;
+        text-align: center;
+        width: 100%;
+        backdrop-filter: blur(2px);
+    }
+
+    /* HOVER (PC) és ACTIVE (JS által adott osztály) */
+    .gallery-item:hover,
+    .gallery-item.active {
+        flex-grow: 3.5; /* Széthúzás */
+        opacity: 1;
+        filter: grayscale(0);
+    }
+    
+    .gallery-item:hover .gallery-label,
+    .gallery-item.active .gallery-label {
+        transform: translateY(0);
+    }
+
+    /* Ha egy elem aktív, a többiek menjenek össze kicsit */
+    .gallery-items:has(.gallery-item.active) .gallery-item:not(.active) {
+        flex-grow: 0.5;
+        opacity: 0.5;
+    }
+
+    /* MOBIL NÉZET JAVÍTÁS */
+    @media (max-width: 480px) {
+        /* Gombok igazítása mobilon */
+        .cat-menu-trigger {
+            border-radius: 12px 0 0 12px; 
+            max-width: none;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .current-menu-trigger {
+            border-radius: 0 12px 12px 0 !important;
+            border-right: 1px solid var(--card-border);
+            border-left: none;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        /* A kereső inputnak le kell kerülnie új sorba mobilon, 
+           hogy a két gomb elférjen egymás mellett felül */
+        .search-wrapper-combined {
+            flex-wrap: wrap;
+        }
+        
+        #q.search {
+            width: 100%;
+            border-radius: 12px !important;
+            margin-top: 10px;
+            order: 3; /* Harmadik sorba kerül */
+            min-width: 100%;
+        }
+
+        /* Galéria mobilon: Függőleges harmonika */
+        #gallery-section.open {
+            height: auto; /* Tartalomhoz igazodjon */
+            max-height: 800px; /* Biztonsági limit */
+            margin-top: 10px;
+        }
+
+        .gallery-items {
+            flex-direction: column;
+        }
+
+        .gallery-item {
+            width: 100%;
+            height: 60px; /* Csukott állapot magassága */
+            flex-grow: 0; /* Mobilon ne a flex-grow-val játsszunk alapból, hanem height-tel */
+            transition: height 0.4s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .gallery-item.active {
+            height: 200px; /* Kinyitott magasság mobilon */
+            flex-grow: 0;
+        }
+        
+        .gallery-label {
+            transform: translateY(0); /* Mobilon mindig látszódjon a felirat */
+            background: rgba(0,0,0,0.3);
+        }
+    }
   </style>
+  
 </head>
 
 <body>
@@ -1385,9 +2164,48 @@
   <div class="container">
 
     <div class="search-row">
-      <input id="q" class="search" type="search" placeholder="Írja be a termék nevét vagy cikkszámát..."
-        autocomplete="off" disabled />
+      <div class="search-wrapper-combined" id="searchWrapper">
+    
+        <div class="cat-menu-trigger" id="catMenuBtn">
+          Kategóriák
+        </div>
+
+        <div class="cat-menu-trigger current-menu-trigger" id="currentBtn" onclick="toggleGallery()">
+          Aktuális
+        </div>
+    
+        <input id="q" class="search" type="search" placeholder="Írja be a termék nevét vagy cikkszámát..."
+          autocomplete="off" style="border:none; border-radius:0 12px 12px 0; padding:12px;">
+    
+        <div class="mm-container">
+          <ul class="mm-root" id="megaMenuRoot">
+          </ul>
+        </div>
+      </div>
     </div>
+
+    <section id="gallery-section" class="gallery-hidden">
+      <div class="gallery-gradient-bar"></div>
+      <div class="gallery-items" id="galleryItems">
+        <div class="gallery-item" data-url="https://friedrich25la.github.io/haswing-landing/#top" style="background-image: url('https://www.fishing.net.nz/sites/default/cache/file/018586C8-D149-FF63-B79FC9FA546E4579.jpg');">
+            <span class="gallery-label">Haswing motorok és alkatrészek</span>
+        </div>
+        <div class="gallery-item" data-url="https://friedrich25la.github.io/rib-hajok/?source_cat=121689" style="background-image: url('https://pehn-boats.com/wp-content/uploads/Schlauchboot_MyRIB_03.jpg');">
+             <span class="gallery-label">Rib-hajók</span>
+        </div>
+        <div class="gallery-item" data-url="https://www.trinexus.hu/nyeremenyjatek" style="background-image: url('https://www.horgasz-zona.hu/termek_kepek/normal/Deeper-Smart-Sonar-Chirp--20-halradar-halradarok-kiegeszitok-11.jpg');">
+             <span class="gallery-label">Deeper nyereményjáték</span>
+        </div>
+        <div class="gallery-item" data-url="https://www.trinexus.hu/csonak-kajak-kenu-latrex" style="background-image: url('https://latrex.lv/image/cache/catalog/latrex-490/222-1140x400.jpg');">
+             <span class="gallery-label">Latrex csónakok</span>
+        </div>
+        <div class="gallery-item" data-url="https://www.trinexus.hu" style="background-image: url('https://minnkota.johnsonoutdoors.com/sites/default/files/styles/1534x/public/2023-06/C025-Tabs_3_FindFish_1280x720.png.webp');">
+             <span class="gallery-label">Ajándék mellény</span>
+        </div>
+      </div>
+    </section>
+    
+    <script src="menu.js"></script>
 
     <div class="controls-row">
       <div id="slider-wrapper">
@@ -1607,6 +2425,53 @@
   <footer style="font-size:13px;color:#666;padding:16px;text-align:center">© 2025 MageSoft. Minden jog fenntartva.
   </footer>
 
+  <div id="desc-modal-overlay" class="modal-overlay" onclick="closeDescModal()">
+    <div id="desc-modal" class="desc-modal" onclick="event.stopPropagation()">
+      <button class="close-modal-btn" onclick="closeDescModal()">&times;</button>
+
+      <h3 id="desc-modal-title">Termék neve</h3>
+
+      <div class="modal-info-row">
+          <img id="modal-img" class="mini-thumb" src="" alt="">
+        
+          <div id="modal-price" class="modal-price"></div>
+        
+          <div class="shipping-block">
+            <span class="shipping-label">Házhozszállítás:</span>
+            <div class="shipping-icons">
+              <img src="gls.png" alt="GLS" class="shipping-icon">
+              <img src="mpl.png" alt="MPL" class="shipping-icon">
+            </div>
+          </div>
+      </div>
+
+      <div class="modal-meta-row">
+        <span id="modal-warranty" class="warranty-badge"></span>
+        <span id="modal-sales" class="sales-text"></span>
+      </div>
+
+      <div class="desc-scroll-container">
+        <div class="desc-content" id="desc-modal-content">
+        </div>
+        <div class="scrollbar-track">
+          <div class="scrollbar-thumb"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modal-fav-btn" class="modal-action-btn" title="Kedvencekhez adás">
+        </button>
+        <a id="modal-link-btn" class="modal-action-btn" href="#" target="_blank" title="Termékoldal megnyitása">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+
   <script type="module">
     import RangeSlider from "https://esm.sh/svelte-range-slider-pips";
     window.RangeSlider = RangeSlider; 
@@ -1622,10 +2487,9 @@
     let priceRange = { min: 0, max: 100000, currentMin: 0, currentMax: 0 };
     let sliderInstance = null;
     let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null };
-    // ÚJ: Jelezzük, hogy ez az első betöltés-e (URL kezeléshez)
     let isFirstLoad = true;
 
-    /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS IFRAME-BEN IS ---------- */
+    /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS ---------- */
     function getUrlParams() {
       let params = new URLSearchParams(window.location.search);
       try {
@@ -1639,9 +2503,39 @@
       return params;
     }
 
-    /* ---------- ÚJ: BÖNGÉSZŐ ELŐZMÉNYEK FRISSÍTÉSE (HISTORY API) ---------- */
+    /* ---------- ÚJ: AKCIÓS IDŐSZAK ELLENŐRZÉSE ---------- */
+    function getPriceData(product) {
+      // Alapértelmezett értékek (ha nincs akció)
+      let currentPrice = parseFloat(product.price || 0);
+      let isSale = false;
+      
+      // Ha vannak akciós adatok a JSON-ban (sale_price, sale_start, sale_end)
+      if (product.sale_price && product.sale_start && product.sale_end) {
+        const now = new Date();
+        const start = new Date(product.sale_start);
+        const end = new Date(product.sale_end);
+        
+        // Ellenőrizzük az időszakot (a nap végét is beleértve)
+        end.setHours(23, 59, 59, 999); 
+        
+        if (now >= start && now <= end) {
+          const saleP = parseFloat(product.sale_price);
+          // Csak akkor akciós, ha az akciós ár tényleg alacsonyabb, mint az eredeti és nem 0
+          if (saleP > 0 && saleP < currentPrice) {
+            currentPrice = saleP;
+            isSale = true;
+          }
+        }
+      }
+      
+      return {
+        price: currentPrice,
+        originalPrice: parseFloat(product.price || 0),
+        isSale: isSale
+      };
+    }
+
     function updateBrowserHistory(query, min, max) {
-      // Ha nincs keresőszó, nem teszünk be semmit az URL-be
       if (!query) return;
 
       const url = new URL(window.location);
@@ -1653,28 +2547,21 @@
       if (max > 0) url.searchParams.set('maxprice', max);
       else url.searchParams.delete('maxprice');
 
-      // Ez a parancs frissíti a címsort anélkül, hogy újratöltené az oldalt
-      // Így a "Vissza" gomb is működni fog!
       window.history.pushState({ q: query, min: min, max: max }, '', url);
     }
 
-    /* ---------- VISSZA GOMB KEZELÉSE ---------- */
     window.addEventListener('popstate', (event) => {
-      // Ha a felhasználó megnyomja a Vissza gombot, olvassuk ki az URL-t
       const params = getUrlParams();
       const q = params.get('q');
 
       if (q) {
         document.getElementById('q').value = q;
-        // Jelezzük a renderForQuery-nek, hogy ez történeti visszalépés (ne írja felül a history-t újra)
         renderForQuery(q, true, true);
       } else {
-        // Ha nincs query, lehet, hogy a főoldalra léptünk vissza -> reset
         location.reload();
       }
     });
 
-    /* ---------- SEGÉDFÜGGVÉNY: KATEGÓRIA TISZTÍTÁS ---------- */
     function getLeafCategory(rawCategory) {
       if (!rawCategory) return "Egyéb";
       if (Array.isArray(rawCategory)) {
@@ -1763,7 +2650,23 @@
         if (imgElement) runFlyAnimation(imgElement);
       }
       saveFavorites(); updateSidebarUI();
+
+      // Ha a modal nyitva van, frissítjük annak a gombját is
+      const modalFavBtn = document.getElementById('modal-fav-btn');
+      if (modalFavBtn) {
+        const isFav = isFavorite(product.sku);
+        if (isFav) modalFavBtn.classList.add('active');
+        else modalFavBtn.classList.remove('active');
+        modalFavBtn.innerHTML = getStarIcon(isFav);
+      }
+      // Ha a listában vagyunk, frissítjük az összes kártyán lévő ikont is
+      document.querySelectorAll(`.fav-icon[data-sku="${product.sku}"]`).forEach(el => {
+        const isFav = isFavorite(product.sku);
+        if (isFav) el.classList.add('active'); else el.classList.remove('active');
+        el.innerHTML = getStarIcon(isFav);
+      });
     }
+
     function getStarIcon(isActive) { return `<svg viewBox="0 0 24 24"><path fill="${isActive ? '#FFD700' : 'currentColor'}" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`; }
 
     function updateSidebarUI() {
@@ -1958,59 +2861,51 @@
     /* ---------- JAVÍTOTT SLIDER LOGIKA (BERAGADÁS ELLEN) ---------- */
     function updateSliderBounds(products) {
       if (!products || products.length === 0) return;
-      
-      // 1. Megkeressük a tényleges legolcsóbb és legdrágább terméket a találatokban
+
       const prices = products.map(p => parseFloat(p.price)).filter(p => !isNaN(p));
       if (prices.length === 0) return;
-      
-      const absMin = Math.floor(Math.min(...prices)); 
+
+      const absMin = Math.floor(Math.min(...prices));
       const absMax = Math.ceil(Math.max(...prices));
-      
-      // Beállítjuk a csúszka technikai határait
-      priceRange.min = absMin; 
+
+      priceRange.min = absMin;
       priceRange.max = absMax;
 
-      if (sliderInstance) { 
-          sliderInstance.$set({ min: absMin, max: absMax });
+      if (sliderInstance) {
+        sliderInstance.$set({ min: absMin, max: absMax });
 
-          let nextMin = priceRange.currentMin;
-          let nextMax = priceRange.currentMax;
+        let nextMin = priceRange.currentMin;
+        let nextMax = priceRange.currentMax;
 
-          if (isFirstLoad) {
-              // CSAK első betöltéskor nézzük az URL-t
-              const urlParams = getUrlParams();
-              const urlMin = urlParams.get('minprice');
-              const urlMax = urlParams.get('maxprice');
+        if (isFirstLoad) {
+          const urlParams = getUrlParams();
+          const urlMin = urlParams.get('minprice');
+          const urlMax = urlParams.get('maxprice');
 
-              if (urlMin) nextMin = Number(urlMin);
-              else if (nextMin < absMin) nextMin = absMin; 
+          if (urlMin) nextMin = Number(urlMin);
+          else if (nextMin < absMin) nextMin = absMin;
 
-              if (urlMax) nextMax = Number(urlMax);
-              else if (nextMax === 0 || (!urlMax && nextMax < absMax)) {
-                  nextMax = absMax;
-              }
-          } else {
-             // Kézi keresésnél: Ha a határok nullák (reset volt), vagy érvénytelenek,
-             // akkor nyissuk ki a csúszkát teljesen a találatokra.
-             if (nextMax === 0 || (nextMin === 0 && nextMax === 0)) {
-                 nextMin = absMin;
-                 nextMax = absMax;
-             }
+          if (urlMax) nextMax = Number(urlMax);
+          else if (nextMax === 0 || (!urlMax && nextMax < absMax)) {
+            nextMax = absMax;
           }
+        } else {
+          if (nextMax === 0 || (nextMin === 0 && nextMax === 0)) {
+            nextMin = absMin;
+            nextMax = absMax;
+          }
+        }
 
-          // Biztonsági korrekció (ne lógjon ki a csúszka)
-          if (nextMin < absMin) nextMin = absMin;
-          if (nextMax > absMax) nextMax = absMax;
+        if (nextMin < absMin) nextMin = absMin;
+        if (nextMax > absMax) nextMax = absMax;
 
-          // Értékek mentése és csúszka frissítése
-          priceRange.currentMin = nextMin;
-          priceRange.currentMax = nextMax;
-          
-          sliderInstance.$set({ values: [nextMin, nextMax] });
-          updatePriceLabels(nextMin, nextMax, absMin, absMax); 
+        priceRange.currentMin = nextMin;
+        priceRange.currentMax = nextMax;
+
+        sliderInstance.$set({ values: [nextMin, nextMax] });
+        updatePriceLabels(nextMin, nextMax, absMin, absMax);
       }
-      
-      // Innentől kezdve már biztosan nem első betöltés
+
       isFirstLoad = false;
     }
 
@@ -2049,7 +2944,11 @@
       const sortVal = document.getElementById('sortSelect').value;
       if (sortVal !== 'relevance') {
         finalList.sort((a, b) => {
-          if (sortVal.includes('price')) { const na = Number(a.price) || 0; const nb = Number(b.price) || 0; return sortVal === 'price_asc' ? na - nb : nb - na; }
+          // Ár rendezésnél az AKTUÁLIS (esetleg akciós) árat kell figyelembe venni
+          const pA = getPriceData(a).price;
+          const pB = getPriceData(b).price;
+          
+          if (sortVal.includes('price')) { return sortVal === 'price_asc' ? pA - pB : pB - pA; }
           if (sortVal.includes('name')) { const na = (a.name || '').toLowerCase(); const nb = (b.name || '').toLowerCase(); return sortVal === 'name_asc' ? na.localeCompare(nb) : nb.localeCompare(na); }
           if (sortVal === 'name_desc') return (b.name || '').toLowerCase().localeCompare((a.name || '').toLowerCase());
           return 0;
@@ -2070,16 +2969,39 @@
         overlay.appendChild(img);
         overlay.appendChild(Object.assign(document.createElement('div'), { className: 'name-bar', textContent: p.name || '-' }));
 
+        // --- ÁR MEGJELENÍTÉS LOGIKA ---
+        const priceData = getPriceData(p);
+        const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
+        
+        // Ha akciós, akkor piros szín
+        const priceHtml = priceData.isSale 
+            ? `<span class="price" style="color:#e60000; font-weight:800;">${priceFormatted}</span>`
+            : `<span class="price">${priceFormatted}</span>`;
+
         const meta = document.createElement('div'); meta.className = 'meta';
-        meta.innerHTML = `<span class="sku">${p.sku || ''}</span><span class="price">${p.price ? Math.round(p.price).toLocaleString('hu-HU') + ' Ft' : ''}</span>`;
+        meta.innerHTML = `<span class="sku">${p.sku || ''}</span>${priceHtml}`;
+        
         card.appendChild(overlay); card.appendChild(meta);
 
-        // CSILLAG
+        // CSILLAG (KEDVENCEK)
         const favBtn = document.createElement('div'); favBtn.className = 'fav-icon';
+        favBtn.setAttribute('data-sku', p.sku); 
         const isFav = isFavorite(p.sku); if (isFav) favBtn.classList.add('active');
         favBtn.innerHTML = getStarIcon(isFav);
         favBtn.onclick = function (e) { e.preventDefault(); e.stopPropagation(); toggleFavorite(p, this, card.querySelector('img')); };
         card.appendChild(favBtn);
+
+        // RÖVID LEÍRÁS IKON (SZEM)
+        const descBtn = document.createElement('div');
+        descBtn.className = 'desc-icon';
+        descBtn.setAttribute('aria-label', 'Rövid leírás');
+        descBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        descBtn.onclick = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openDescModal(p); // Itt hívjuk meg a modalt, ami majd kiolvassa a short_description-t
+        };
+        card.appendChild(descBtn);
 
         row.appendChild(card);
       });
@@ -2094,19 +3016,18 @@
       if (!q || q.trim().length < MIN_TOKEN_LEN) { resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>'; if (countEl) countEl.style.display = 'none'; removeLoadMoreButton(); return; }
 
       currentState.query = q.trim(); currentState.page = 1; productsPool = [];
-      
+
       if (isManualSearch) {
-          // ITT A JAVÍTÁS:
-          priceRange.currentMin = 0;
-          priceRange.currentMax = 0; 
-          currentState.categoryFilter = null;
-          document.getElementById('category-toggle').textContent = "Kategória: Összes";
-          
-          // Kényszerítjük, hogy ne vegye figyelembe a régi URL paramétereket
-          isFirstLoad = false; 
-          
-          // Azonnal töröljük a "beragadt" paramétereket a böngésző címsorából
-          updateBrowserHistory(currentState.query, 0, 0); 
+        priceRange.currentMin = 0;
+        priceRange.currentMax = 0;
+        currentState.categoryFilter = null;
+        document.getElementById('category-toggle').textContent = "Kategória: Összes";
+
+        isFirstLoad = false;
+
+        if (!isHistoryNav) {
+          updateBrowserHistory(currentState.query, 0, 0);
+        }
       }
 
       resultsEl.innerHTML = '<div class="loading">Keresés...</div>'; if (countEl) countEl.style.display = 'none';
@@ -2122,14 +3043,8 @@
         if (productsPool.length === 0) { resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>'; return; }
         resultsEl.innerHTML = '';
 
-        // JAVÍTÁS: Update Slider után frissítjük az URL-t is, ha nem a vissza gombot nyomtuk
         updateSliderBounds(productsPool);
         filterAndRender();
-
-        if (isManualSearch && !isHistoryNav) {
-          updateBrowserHistory(currentState.query, priceRange.currentMin, priceRange.currentMax);
-        }
-
       } catch (err) { console.error(err); resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>'; }
     }
 
@@ -2175,6 +3090,218 @@
       });
     }
 
+    /* =========================================
+       ÚJ: RÖVID LEÍRÁS MODAL LOGIKA (OKOS ADATOKKAL)
+       ========================================= */
+
+    // SZEZONÁLIS + ÁRFÜGGŐ VÉLETLENSZÁM GENERÁTOR
+    // SZEZONÁLIS + ÁRFÜGGŐ VÉLETLENSZÁM GENERÁTOR (Több nullával)
+    function getSalesCount(price) {
+        const now = new Date();
+        const month = now.getMonth(); // 0 = Január ... 8 = Szeptember
+        
+        // Magas szezon: Március (2) - Szeptember (8)
+        const isHighSeason = (month >= 2 && month <= 8);
+        const isCheap = (price < 40000);
+
+        if (isHighSeason) {
+            // --- FŐSZEZON (Márc-Szept) ---
+            if (isCheap) {
+                // Olcsó: 15% esély a 0-ra, amúgy 1-7 db
+                if (Math.random() < 0.15) return 0; 
+                return Math.floor(Math.random() * 7) + 1; 
+            } else {
+                // Drága: Marad az óvatos (0-3 db)
+                const r = Math.random();
+                if (r < 0.4) return 0;  // 40% esély 0
+                if (r < 0.8) return 1;  // 40% esély 1
+                if (r < 0.95) return 2; // 15% esély 2
+                return 3;               // 5% esély 3
+            }
+        } else {
+            // --- HOLTSZEZON (Okt-Feb) ---
+            if (isCheap) {
+                // Olcsó: ITT A VÁLTOZÁS -> 50% esély a 0-ra!
+                if (Math.random() < 0.5) return 0;
+                
+                // Ha nem 0, akkor csak kicsi szám (1, 2 vagy 3)
+                return Math.floor(Math.random() * 3) + 1;
+            } else {
+                // Drága: Szinte halott (Sok 0, kevés 1)
+                const r = Math.random();
+                if (r < 0.85) return 0; // 85% esély 0
+                if (r < 0.98) return 1; // 13% esély 1
+                return 2;               // 2% esély 2
+            }
+        }
+    }
+
+    function openDescModal(product) {
+      const modalOverlay = document.getElementById('desc-modal-overlay');
+      const modalTitle = document.getElementById('desc-modal-title');
+      const modalContent = document.getElementById('desc-modal-content');
+
+      const modalImg = document.getElementById('modal-img');
+      const modalPrice = document.getElementById('modal-price');
+      const modalWarranty = document.getElementById('modal-warranty');
+      const modalSales = document.getElementById('modal-sales');
+      const modalFavBtn = document.getElementById('modal-fav-btn');
+      const modalLinkBtn = document.getElementById('modal-link-btn');
+
+      if (modalOverlay && modalTitle && modalContent) {
+        // 1. Cím és LEÍRÁS (Adatbázisból: short_description)
+        modalTitle.textContent = product.name;
+        
+        // JAVÍTÁS: A JSON-ban 'short_description' a mező neve!
+        let dbDesc = product.short_description; 
+        
+        // Takarítás: A "HTML KOD" szöveg eltávolítása, ha benne maradt
+        if (dbDesc) {
+            dbDesc = dbDesc.replace('<!HTML KOD>', '').trim();
+        }
+
+        if (dbDesc && dbDesc.length > 0) {
+             // sortörések kezelése
+             modalContent.innerHTML = dbDesc.replace(/\n/g, '<br>');
+        } else {
+             modalContent.innerText = "Ehhez a termékhez jelenleg nincs részletes leírás.";
+        }
+
+        // 2. Kép
+        const imgs = (product.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
+        modalImg.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+        // 3. ÁR MEGJELENÍTÉS (Akciós logika)
+        const priceData = getPriceData(product);
+        const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
+        
+        if (priceData.isSale) {
+            const originalFormatted = Math.round(priceData.originalPrice).toLocaleString('hu-HU') + ' Ft';
+            // Eredeti ár áthúzva + Akciós ár pirosan
+            modalPrice.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:flex-start; line-height:1.2;">
+                    <span style="text-decoration:line-through; font-size:14px; color:#999;">${originalFormatted}</span>
+                    <span style="color:#e60000; font-size:22px;">${priceFormatted}</span>
+                </div>`;
+        } else {
+            // Sima ár
+            modalPrice.textContent = priceFormatted;
+        }
+
+        // 4. Okos Garancia Logika
+        const price = priceData.price;
+        const name = (product.name || '').toLowerCase();
+        let warrantyText = "1 év garancia"; 
+
+        if (name.includes('deeper chirp') || name.includes('tohatsu')) {
+          warrantyText = "5 év garancia";
+        } else {
+          if (price > 250000) warrantyText = "3 év garancia";
+          else if (price > 10000) warrantyText = "2 év garancia";
+          else warrantyText = "1 év garancia";
+        }
+        modalWarranty.textContent = warrantyText;
+
+        // 5. Vásárlási Statisztika
+        const salesCount = getSalesCount(price);
+        modalSales.textContent = `${salesCount} db eladva az elmúlt 30 napban`;
+
+        // 6. Gombok
+        modalLinkBtn.href = product.url || '#';
+
+        const isFav = isFavorite(product.sku);
+        if (isFav) modalFavBtn.classList.add('active');
+        else modalFavBtn.classList.remove('active');
+        modalFavBtn.innerHTML = getStarIcon(isFav);
+
+        modalFavBtn.onclick = function () {
+          toggleFavorite(product, this, null);
+        };
+
+        modalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(initCustomScrollbar, 50);
+      }
+    }
+
+    window.closeDescModal = function () {
+      const modalOverlay = document.getElementById('desc-modal-overlay');
+      if (modalOverlay) {
+        modalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    };
+
+    function initCustomScrollbar() {
+      const content = document.querySelector('.desc-content');
+      const scrollbarThumb = document.querySelector('.scrollbar-thumb');
+      const scrollbarTrack = document.querySelector('.scrollbar-track');
+
+      if (!content || !scrollbarThumb || !scrollbarTrack) return;
+
+      function updateScrollbar() {
+        const contentHeight = content.scrollHeight;
+        const containerHeight = content.clientHeight;
+        if (contentHeight <= containerHeight) {
+          scrollbarTrack.style.display = 'none';
+        } else {
+          scrollbarTrack.style.display = 'block';
+          const thumbHeight = (containerHeight / contentHeight) * containerHeight;
+          scrollbarThumb.style.height = `${thumbHeight}px`;
+        }
+      }
+
+      content.addEventListener('scroll', () => {
+        const scrollTop = content.scrollTop;
+        const contentHeight = content.scrollHeight;
+        const containerHeight = content.clientHeight;
+        const trackHeight = scrollbarTrack.clientHeight;
+        const thumbHeight = scrollbarThumb.clientHeight;
+
+        const scrollPercentage = scrollTop / (contentHeight - containerHeight);
+        const thumbTop = scrollPercentage * (trackHeight - thumbHeight);
+        scrollbarThumb.style.top = `${thumbTop}px`;
+      });
+
+      let isDragging = false;
+      let startY;
+      let startTop;
+
+      scrollbarThumb.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startY = e.clientY;
+        startTop = parseInt(window.getComputedStyle(scrollbarThumb).top, 10) || 0;
+        document.body.style.userSelect = 'none';
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const deltaY = e.clientY - startY;
+        const trackHeight = scrollbarTrack.clientHeight;
+        const thumbHeight = scrollbarThumb.clientHeight;
+        let newTop = startTop + deltaY;
+
+        newTop = Math.max(0, Math.min(newTop, trackHeight - thumbHeight));
+
+        const scrollPercentage = newTop / (trackHeight - thumbHeight);
+        const contentHeight = content.scrollHeight;
+        const containerHeight = content.clientHeight;
+
+        content.scrollTop = scrollPercentage * (contentHeight - containerHeight);
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        document.body.style.userSelect = '';
+      });
+
+      updateScrollbar();
+      window.addEventListener('resize', updateScrollbar);
+    }
+
+
     (function wireEvents() {
       var qInput = document.getElementById('q'); var timer = null;
       if (qInput) {
@@ -2186,6 +3313,86 @@
       document.getElementById('imgOnly').addEventListener('change', filterAndRender);
       var qEl = document.getElementById('q'); if (qEl) qEl.disabled = false;
     })();
+
+    /* =========================================
+       AKTUÁLIS GALÉRIA LOGIKA (2 LÉPCSŐS KLIKK)
+       ========================================= */
+    
+    function toggleGallery() {
+        const section = document.getElementById('gallery-section');
+        const btn = document.getElementById('currentBtn');
+        const isOpen = section.classList.contains('open');
+
+        if (isOpen) {
+            closeGallery();
+        } else {
+            section.classList.add('open');
+            btn.classList.add('active');
+            
+            // Ha a kategória menü nyitva van, csukjuk be
+            const catWrap = document.getElementById('searchWrapper');
+            if(catWrap) catWrap.classList.remove('menu-active');
+        }
+    }
+
+    function closeGallery() {
+        const section = document.getElementById('gallery-section');
+        const btn = document.getElementById('currentBtn');
+        const items = document.querySelectorAll('.gallery-item');
+        
+        section.classList.remove('open');
+        btn.classList.remove('active');
+        
+        // Reseteljük a képek állapotát is
+        items.forEach(item => item.classList.remove('active'));
+    }
+
+    // Inicializálás
+    document.addEventListener('DOMContentLoaded', () => {
+        const galleryItems = document.querySelectorAll('.gallery-item');
+        
+        galleryItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation(); // Ne csukja be a galériát azonnal
+                
+                // 1. lépés: Ha még nem aktív, akkor kinyitjuk (active class)
+                if (!item.classList.contains('active')) {
+                    // Először csukjuk be a többit
+                    galleryItems.forEach(sib => sib.classList.remove('active'));
+                    item.classList.add('active');
+                } 
+                // 2. lépés: Ha már aktív, akkor megnyitjuk a linket
+                else {
+                    const url = item.getAttribute('data-url');
+                    if (url) {
+                        window.open(url, '_blank');
+                    }
+                }
+            });
+        });
+
+        // Kattintás kívülre -> Bezárás
+        document.addEventListener('click', (e) => {
+            const section = document.getElementById('gallery-section');
+            const btn = document.getElementById('currentBtn');
+            
+            if (section.classList.contains('open')) {
+                // Ha nem a galériára és nem a gombra kattintottunk
+                if (!section.contains(e.target) && !btn.contains(e.target)) {
+                    closeGallery();
+                }
+            }
+        });
+        
+        // Ha a "Kategóriák" gombra kattintunk, zárjuk be a galériát (hogy ne legyen nyitva mindkettő)
+        const catBtn = document.getElementById('catMenuBtn');
+        if(catBtn) {
+            catBtn.addEventListener('click', () => {
+                const section = document.getElementById('gallery-section');
+                if(section.classList.contains('open')) closeGallery();
+            });
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function () {
       initSlider();
@@ -2208,7 +3415,6 @@
               values: [priceRange.currentMin, priceRange.currentMax]
             });
           }
-          // Első betöltéskor NOT manual search (false)
           renderForQuery(queryParam, false);
         }, 500);
       }
