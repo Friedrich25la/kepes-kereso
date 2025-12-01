@@ -1,4 +1,3 @@
-// netlify/functions/search.js
 const fs = require('fs');
 const path = require('path');
 
@@ -6,7 +5,7 @@ let CACHE = null;
 let CACHE_TS = 0;
 const CACHE_TTL = 1000 * 60 * 5; // 5 perc cache
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 500; // Biztonsági korlát: ne engedj túl nagy lekérést egyszerre
+const MAX_LIMIT = 500; // Biztonsági korlát
 
 function normalize(s = '') {
   try {
@@ -19,25 +18,21 @@ function normalize(s = '') {
 
 exports.handler = async (event) => {
   // ----------------------------------------------------------------
-  // 1. BIZTONSÁG & CORS (Kik hívhatják meg a keresőt?)
+  // 1. BIZTONSÁG & CORS
   // ----------------------------------------------------------------
   const origin = event.headers.origin || event.headers.Origin;
 
-  // Itt sorold fel azokat a címeket, ahonnan engedélyezed a keresést:
   const allowedOrigins = [
-    'https://aquamarine-cactus-d0f609.netlify.app', // A te Netlify oldalad
-    'https://www.trinexus.hu',                      // A céges weboldal (ha beágyazod)
-    'http://localhost:8000',                        // Helyi teszteléshez (python server)
-    'http://127.0.0.1:8000',                        // Helyi tesztelés alternatív IP
-    'http://localhost:5500',                        // Live Server (VS Code) gyakori port
+    'https://aquamarine-cactus-d0f609.netlify.app',
+    'https://www.trinexus.hu',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:5500',
     'http://127.0.0.1:5500'
   ];
 
-  // Ha a hívó rajta van a listán, akkor engedjük. Ha nincs, akkor az elsőt (vagy null-t) adjuk vissza.
-  // (Ez megakadályozza, hogy idegen weboldalak használják a szerveredet)
   const allowOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
 
-  // Közös header beállítások
   const headers = {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -45,13 +40,11 @@ exports.handler = async (event) => {
   };
 
   try {
-    // Query paraméterek olvasása
     const qRaw = (event.queryStringParameters?.q || '').trim();
     const page = Math.max(1, Number(event.queryStringParameters?.page) || 1);
     let limit = Math.max(1, Number(event.queryStringParameters?.limit) || DEFAULT_LIMIT);
     if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
-    // Ha nincs keresőszó
     if (!qRaw || qRaw.length < 1) {
       return {
         statusCode: 400,
@@ -61,10 +54,10 @@ exports.handler = async (event) => {
     }
 
     // ----------------------------------------------------------------
-    // 2. ADATBÁZIS BETÖLTÉSE (Cache-elve a gyorsaságért)
+    // 2. ADATBÁZIS BETÖLTÉSE
     // ----------------------------------------------------------------
     if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
-      // Fontos: A netlify.toml-ben beállított included_files miatt ez a fájl ott lesz.
+      // FONTOS: Ellenőrizd, hogy a json fájl neve itt helyes-e!
       const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
 
       if (!fs.existsSync(filePath)) {
@@ -83,13 +76,15 @@ exports.handler = async (event) => {
     const qnorm = normalize(qRaw);
     const tokens = qnorm.split(/\s+/).filter(Boolean);
 
-    // Filter: minden tokennek (szótöredéknek) szerepelnie kell a névben VAGY cikkszámban (AND kapcsolat)
     const matches = [];
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
-      // Összefűzzük a nevet és cikkszámot a kereséshez
-      // Hozzáadjuk a kategóriát (p.category) is a keresési "szénakazalhoz"
-      const hay = normalize((p.name || '') + ' ' + (p.sku || '') + ' ' + (p.category || ''));
+      
+      // JAVÍTÁS 1: A rövid leírást is belevesszük a keresésbe!
+      // Így ha valaki a leírásban lévő szóra keres, azt is megtalálja.
+      const searchStr = (p.name || '') + ' ' + (p.sku || '') + ' ' + (p.category || '') + ' ' + (p.short_description || '');
+      const hay = normalize(searchStr);
+      
       let ok = true;
       for (let t of tokens) {
         if (!hay.includes(t)) { ok = false; break; }
@@ -105,7 +100,8 @@ exports.handler = async (event) => {
     const start = (page - 1) * limit;
     const end = start + limit;
 
-    // Itt válogatjuk ki, milyen adatokat küldünk vissza a kliensnek (Security Whitelist)
+    // JAVÍTÁS 2: ITT VOLT A HIBA!
+    // Hozzáadtam az új mezőket (sale_*, short_description), hogy a szerver visszaküldje őket.
     const pageResults = matches.slice(start, end).map(p => ({
       id: p.id,
       name: p.name,
@@ -113,8 +109,15 @@ exports.handler = async (event) => {
       price: p.price,
       thumb: p.thumb,
       url: p.url,
-      img: p.img,  // FONTOS: Ez kellett ahhoz, hogy a képek megjelenjenek!
-      category: p.category
+      img: p.img,
+      category: p.category,
+      
+      // --- ÚJ MEZŐK ---
+      sale_price: p.sale_price,
+      sale_start: p.sale_start,
+      sale_end: p.sale_end,
+      short_description: p.short_description,
+      status: p.status
     }));
 
     return {
@@ -133,7 +136,7 @@ exports.handler = async (event) => {
     console.error('search error', err);
     return {
       statusCode: 500,
-      headers, // Hiba esetén is küldjük a CORS fejlécet, különben a hibaüzenet se látszik
+      headers,
       body: JSON.stringify({ error: err.message || String(err) })
     };
   }
