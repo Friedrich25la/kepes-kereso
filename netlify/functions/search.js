@@ -41,9 +41,8 @@ exports.handler = async (event) => {
     // 1. Paraméterek beolvasása
     const qRaw = (event.queryStringParameters?.q || '').trim();
     const page = Math.max(1, Number(event.queryStringParameters?.page) || 1);
-
-    // ITT AZ ÚJ PARAMÉTER BEOLVASÁSA:
-    // Ha a frontend küldi a 'desc=true'-t, akkor ez igaz lesz.
+    
+    // Leírásban keresés kapcsoló
     const searchInDesc = event.queryStringParameters?.desc === 'true';
 
     let limit = Math.max(1, Number(event.queryStringParameters?.limit) || DEFAULT_LIMIT);
@@ -57,9 +56,8 @@ exports.handler = async (event) => {
       };
     }
 
-    // --- ADATBÁZIS BETÖLTÉSE (CACHE) ---
+    // --- ADATBÁZIS BETÖLTÉSE ---
     if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
-      // Fontos: ellenőrizd, hogy a fájl útvonalad helyes-e a te szervereden!
       const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
       if (!fs.existsSync(filePath)) throw new Error(`Database file not found at ${filePath}`);
       const raw = fs.readFileSync(filePath, 'utf-8');
@@ -76,17 +74,25 @@ exports.handler = async (event) => {
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
 
+      /* --- ÚJ RÉSZ: STÁTUSZ SZŰRÉS --- */
+      // Ha a status 0 (vagy "0"), akkor ezt a terméket átugorjuk
+      // A == megengedi a string ("0") és number (0) összehasonlítást is
+      if (p.status == 0) {
+          continue; 
+      }
+      /* ------------------------------- */
+
       // Alap keresési string: NÉV + CIKKSZÁM
       let searchStr = (p.name || '') + ' ' + (p.sku || '');
 
       // HA a felhasználó kérte a leírásban keresést, hozzáfűzzük azt is
       if (searchInDesc) {
-        searchStr += ' ' + (p.short_description || '');
+         searchStr += ' ' + (p.short_description || '');
       }
 
       const hay = normalize(searchStr);
 
-      // "ÉS" kapcsolat ellenőrzése: Minden beírt szónak szerepelnie kell
+      // "ÉS" kapcsolat ellenőrzése
       let ok = true;
       for (let t of tokens) {
         if (!hay.includes(t)) { ok = false; break; }
@@ -122,7 +128,7 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({
         q: qRaw,
-        desc_search: searchInDesc, // Visszajelezzük debug célból, hogy volt-e leírás keresés
+        desc_search: searchInDesc,
         page,
         limit,
         total_count: total,
