@@ -5,23 +5,21 @@ let CACHE = null;
 let CACHE_TS = 0;
 const CACHE_TTL = 1000 * 60 * 5; // 5 perc cache
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 500; // Biztonsági korlát
+const MAX_LIMIT = 500;
 
 function normalize(s = '') {
   try {
     let t = s.toString().toLowerCase();
-    // egyszerű diakritika-eltávolítás (ékezetek)
+    // Ékezetek eltávolítása (diakritika)
     t = t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
     return t;
   } catch (e) { return (s || '').toString().toLowerCase(); }
 }
 
 exports.handler = async (event) => {
-  // ----------------------------------------------------------------
-  // 1. BIZTONSÁG & CORS
-  // ----------------------------------------------------------------
   const origin = event.headers.origin || event.headers.Origin;
-
+  
+  // Engedélyezett domainek
   const allowedOrigins = [
     'https://aquamarine-cactus-d0f609.netlify.app',
     'https://www.trinexus.hu',
@@ -30,7 +28,7 @@ exports.handler = async (event) => {
     'http://localhost:5500',
     'http://127.0.0.1:5500'
   ];
-
+  
   const allowOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
 
   const headers = {
@@ -49,59 +47,52 @@ exports.handler = async (event) => {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Query param "q" required (min length 1).' }),
+        body: JSON.stringify({ error: 'Query param "q" required.' }),
       };
     }
 
-    // ----------------------------------------------------------------
-    // 2. ADATBÁZIS BETÖLTÉSE
-    // ----------------------------------------------------------------
+    // --- ADATBÁZIS BETÖLTÉSE ---
     if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
-      // FONTOS: Ellenőrizd, hogy a json fájl neve itt helyes-e!
       const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
-
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`Database file not found at ${filePath}`);
-      }
-
+      if (!fs.existsSync(filePath)) throw new Error(`Database file not found at ${filePath}`);
       const raw = fs.readFileSync(filePath, 'utf-8');
       CACHE = JSON.parse(raw);
       CACHE_TS = Date.now();
     }
     const data = CACHE || [];
 
-    // ----------------------------------------------------------------
-    // 3. KERESÉSI LOGIKA
-    // ----------------------------------------------------------------
+    // --- SZIGORÚ KERESÉSI LOGIKA ---
+    // Csak NÉV és CIKKSZÁM alapján!
     const qnorm = normalize(qRaw);
-    const tokens = qnorm.split(/\s+/).filter(Boolean);
+    const tokens = qnorm.split(/\s+/).filter(Boolean); // A keresett szavak
 
     const matches = [];
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
       
-      // JAVÍTÁS 1: A rövid leírást is belevesszük a keresésbe!
-      // Így ha valaki a leírásban lévő szóra keres, azt is megtalálja.
-      const searchStr = (p.name || '') + ' ' + (p.sku || '') + ' ' + (p.category || '') + ' ' + (p.short_description || '');
+      // ITT A VÁLTOZÁS: Csak a nevet és a cikkszámot vesszük figyelembe!
+      // Kivettem a category-t és a short_description-t.
+      const searchStr = (p.name || '') + ' ' + (p.sku || '');
+      
       const hay = normalize(searchStr);
       
+      // "ÉS" kapcsolat ellenőrzése: Minden beírt szónak szerepelnie kell
       let ok = true;
       for (let t of tokens) {
         if (!hay.includes(t)) { ok = false; break; }
       }
+      
       if (ok) matches.push(p);
     }
 
     const total = matches.length;
 
-    // ----------------------------------------------------------------
-    // 4. LAPOZÁS ÉS VÁLASZ FORMÁZÁSA
-    // ----------------------------------------------------------------
+    // --- LAPOZÁS ÉS VÁLASZ ---
     const start = (page - 1) * limit;
     const end = start + limit;
 
-    // JAVÍTÁS 2: ITT VOLT A HIBA!
-    // Hozzáadtam az új mezőket (sale_*, short_description), hogy a szerver visszaküldje őket.
+    // Itt továbbra is visszaküldjük az ÖSSZES adatot (beleértve a leírást is),
+    // hogy a felületen meg tudjuk jeleníteni, de a keresés már nem használja őket.
     const pageResults = matches.slice(start, end).map(p => ({
       id: p.id,
       name: p.name,
@@ -112,7 +103,7 @@ exports.handler = async (event) => {
       img: p.img,
       category: p.category,
       
-      // --- ÚJ MEZŐK ---
+      // Új mezők átadása a frontendnek
       sale_price: p.sale_price,
       sale_start: p.sale_start,
       sale_end: p.sale_end,
