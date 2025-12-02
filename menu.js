@@ -1,4 +1,4 @@
-/* menu.js - FINAL JAVÍTOTT verzió (19-es sor törölve) */
+/* menu.js - FINAL JAVÍTOTT verzió (Vesszők kezelése javítva) */
 
 // 1. A FŐMENÜ SORRENDJE
 const MAIN_MENU_ORDER = [
@@ -9,31 +9,33 @@ const MAIN_MENU_ORDER = [
     { name: "Haswing", url: "https://friedrich25la.github.io/haswing-landing/#top?source_cat=329206", type: "manual" },
     { name: "Csomagajánlatok", url: "https://www.trinexus.hu/Csomagajanlatok", type: "manual" },
     { name: "Kiárusítás alatt", url: "https://www.trinexus.hu/kiarusitas", type: "manual" },
-    
-    { name: "Kötelező felszerelés", url: "https://www.trinexus.hu/kotelezo-felszereles-JAVITANDO", type: "cat" },
-    { name: "Hajó", url: "https://www.trinexus.hu/hajo-JAVITANDO", type: "cat" },
-    { name: "Gumicsónak", url: "https://www.trinexus.hu/gumicsonak-JAVITANDO", type: "cat" },
-    { name: "Csónak, kajak, kenu", url: "https://www.trinexus.hu/csonak-kajak-kenu-JAVITANDO", type: "cat" },
-    { name: "Robbanómotor", url: "https://www.trinexus.hu/robbanomotor-JAVITANDO", type: "cat" },
-    { name: "Elektromos csónakmotor", url: "https://www.trinexus.hu/elektromos-csonakmotor-JAVITANDO", type: "cat" },
-    { name: "Navigáció, autopilot, rádió", url: "https://www.trinexus.hu/navigacio-autopilot-radio-JAVITANDO", type: "cat" },
-    { name: "Halradar", url: "https://www.trinexus.hu/halradar-JAVITANDO", type: "cat" },
-    { name: "Hajófelszerelés", url: "https://www.trinexus.hu/hajofelszereles-JAVITANDO", type: "cat" },
-    { name: "Festék, vegyi és karbantartó anyag", url: "https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-JAVITANDO", type: "cat" },
-    { name: "Tréler, tartozék", url: "https://www.trinexus.hu/treler-tartozek-JAVITANDO", type: "cat" },
-    { name: "Elektronika, audió, napelem", url: "https://www.trinexus.hu/elektronika-audio-napelem-JAVITANDO", type: "cat" },
-    { name: "Vízisport", url: "https://www.trinexus.hu/vizisport-JAVITANDO", type: "cat" },
-    { name: "Horgász termékek", url: "https://www.trinexus.hu/horgasz-termekek-JAVITANDO", type: "cat" },
-    { name: "Garmin okosórák", url: "https://www.trinexus.hu/garmin-okosorak-JAVITANDO", type: "cat" },
-    
-    { name: "Jetski", url: "https://www.trinexus.hu/Jetski", type: "manual" }, 
+
+    // Itt kezdődnek a kategóriák, amiknek eddig nem volt linkje:
+    { name: "Kötelező felszerelés", url: "https://www.trinexus.hu/kotelezo-felszereles", type: "cat" },
+    { name: "Hajó", url: "https://www.trinexus.hu/hajo", type: "cat" },
+    { name: "Gumicsónak", url: "https://www.trinexus.hu/gumicsonak", type: "cat" },
+    { name: "Csónak", url: "https://www.trinexus.hu/csonak-kajak-kenu", type: "cat" },
+    { name: "Robbanómotor", url: "https://www.trinexus.hu/robbanomotor", type: "cat" },
+    { name: "Elektromos csónakmotor", url: "https://www.trinexus.hu/elektromos-csonakmotor", type: "cat" },
+    { name: "Navigáció, autopilot, rádió", url: "https://www.trinexus.hu/navigacio-autopilot-radio", type: "cat" },
+    { name: "Kajak, kenu és kiegészítőik", url: "https://www.trinexus.hu/csonak-kajak-kenu-kiegeszitok", type: "cat" },
+    { name: "Halradar", url: "https://www.trinexus.hu/halradar", type: "cat" },
+    { name: "Hajófelszerelés", url: "https://www.trinexus.hu/hajofelszereles", type: "cat" },
+    { name: "Festék, vegyi és karbantartó anyag", url: "https://www.trinexus.hu/festek-vegyi-karbantarto-anyag", type: "cat" },
+    { name: "Tréler, tartozék", url: "https://www.trinexus.hu/trelek-tartozek", type: "cat" },
+    { name: "Elektronika, audió, napelem", url: "https://www.trinexus.hu/elektronika", type: "cat" },
+    { name: "Vízisport", url: "https://www.trinexus.hu/vizisport", type: "cat" },
+    { name: "Horgász termékek", url: "https://www.trinexus.hu/horgasztermek", type: "cat" },
+    { name: "Garmin okosórák", url: "https://www.trinexus.hu/Garmin-Okosorak", type: "cat" },
+
+    { name: "Jetski", url: "https://www.trinexus.hu/Jetski", type: "manual" },
     { name: "Vitorlás termékek", url: "https://www.trinexus.hu/vitorlas-termek", type: "manual" },
-    
-    { name: "Ajándéktárgyak, oktatási anyagok", url: "https://www.trinexus.hu/ajandektargyak-oktatasi-anyagok-JAVITANDO", type: "cat" },
-    { name: "Ruházat", url: "https://www.trinexus.hu/ruhazat-JAVITANDO", type: "cat" }
+
+    { name: "Ajándéktárgyak, oktatási anyagok", url: "https://www.trinexus.hu/ajandektargy", type: "cat" },
+    { name: "Ruházat", url: "https://www.trinexus.hu/ruhazat", type: "cat" }
 ];
 
-// 2. ADATBÁZIS (19-es sor törölve)
+// 2. ADATBÁZIS - JAVÍTVA (Idézőjelek hozzáadva a vesszős nevekhez)
 const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 1,Kötelező felszerelés,0 - 6 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-0-6-m-kozotti-hajotestek
 2,Kötelező felszerelés,6 - 12 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-6-12-m-kozotti-hajotestek
@@ -50,10 +52,10 @@ const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 13,Gumicsónak,Allroundmarin,https://www.trinexus.hu/gumicsonak-allroundmarin
 14,Gumicsónak,Takaróponyva,https://www.trinexus.hu/gumicsonak-takaroponyva
 15,Gumicsónak,Pumpa, szerelvény, ülés, kiegészítő,https://www.trinexus.hu/gumicsonak-pumpa-szerelveny-ules-kiegeszito
-16,"Csónak, kajak, kenu",Caytan alumínium csónakok,https://www.trinexus.hu/Caytan-aluminium-csonakok
-17,"Csónak, kajak, kenu",Műanyag csónakok,https://www.trinexus.hu/csonak-muanyag-csonakok
-18,"Csónak, kajak, kenu",Cadrava alumínium csónakok,https://www.trinexus.hu/csonak-cadrava-aluminium-csonakok
-20,"Csónak, kajak, kenu",Sevylor termék,https://www.trinexus.hu/csonak-sevylor-termek
+16,"Csónak",Caytan alumínium csónakok,https://www.trinexus.hu/Caytan-aluminium-csonakok
+17,"Csónak",Műanyag csónakok,https://www.trinexus.hu/csonak-muanyag-csonakok
+18,"Csónak",Cadrava alumínium csónakok,https://www.trinexus.hu/csonak-cadrava-aluminium-csonakok
+20,"Csónak",Sevylor termék,https://www.trinexus.hu/csonak-sevylor-termek
 21,Robbanómotor,Mercury,https://www.trinexus.hu/robbanomotor-mercury
 22,Robbanómotor,Tohatsu,https://www.trinexus.hu/robbanomotor-tohatsu
 23,Robbanómotor,Honda,https://www.trinexus.hu/robbanomotor-honda
@@ -148,6 +150,11 @@ const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 112,Ruházat,Törülközők,https://www.trinexus.hu/spl/816441/Torulkozok
 113,Ruházat,Hajós divat, ruházat,https://www.trinexus.hu/spl/551633/Hajos-divat-ruhazat
 114,Ruházat,Sapka, kalap,https://www.trinexus.hu/spl/646654/Sapka-kalap
+115,Kajak, kenu és kiegészítőik,Sit on top kajak,https://www.trinexus.hu/Sit-on-top-kajak
+116,Kajak, kenu és kiegészítőik,Hagyományos kajak-kenu,https://www.trinexus.hu/csonak-kajak-kenu-hagyomanyos
+117,Kajak, kenu és kiegészítőik,Evezős kiegészítő,https://www.trinexus.hu/csonak-kajak-kenu-evezos-kiegeszito
+118,Kajak, kenu és kiegészítőik,Jobe kajak,https://www.trinexus.hu/Jobe-kajak
+
 `;
 
 function parseCSV(csvText) {
@@ -174,7 +181,7 @@ function parseCSV(csvText) {
         const cols = splitCSV(line);
         if (cols.length < 3) return;
 
-        let parentName = cols[1].replace(/^"|"$/g, '').trim(); 
+        let parentName = cols[1].replace(/^"|"$/g, '').trim();
         let name = cols[2].replace(/^"|"$/g, '').trim();
         let rawUrl = cols.length > 3 ? cols[3].replace(/^"|"$/g, '').trim() : '';
 
@@ -218,7 +225,7 @@ function buildHybridMenu() {
         if (hasSub) {
             html += `<div class="mm-panel"><div class="mm-grid">`;
             children.forEach(child => {
-                html += `<div class="mm-col"><a href="${child.url}" class="mm-col-title" target="_blank">${child.name}</a></div>`; 
+                html += `<div class="mm-col"><a href="${child.url}" class="mm-col-title" target="_blank">${child.name}</a></div>`;
             });
             html += `</div></div>`;
         }
@@ -231,10 +238,10 @@ function buildHybridMenu() {
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('megaMenuRoot');
     if (container) container.innerHTML = buildHybridMenu();
-    
+
     const btn = document.getElementById('catMenuBtn');
     const wrap = document.getElementById('searchWrapper');
-    
+
     if (btn && wrap) {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -244,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wrap.classList.remove('menu-active');
         });
         const panel = document.querySelector('.mm-container');
-        if(panel) panel.addEventListener('click', e => e.stopPropagation());
+        if (panel) panel.addEventListener('click', e => e.stopPropagation());
     }
 
     // ===============================================
@@ -259,26 +266,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Reset
             panel.style.top = '-1px';
-            
+
             const rect = panel.getBoundingClientRect();
             const panelHeight = rect.height;
             const viewportHeight = window.innerHeight;
-            
+
             const itemRect = item.getBoundingClientRect();
             const spaceBelow = viewportHeight - itemRect.top;
 
             if (panelHeight > spaceBelow - 20) {
                 // Mennyivel kell feljebb húzni?
                 let shiftAmount = panelHeight - spaceBelow + 40;
-                
+
                 // BIZTONSÁGI LIMIT: Ne menjen ki felül a képernyőről!
                 // Megnézzük, mennyi hely van felfelé (a menüpont tetejétől az ablak tetejéig)
-                const spaceAbove = itemRect.top; 
-                
+                const spaceAbove = itemRect.top;
+
                 // Ha a shiftAmount nagyobb, mint a fenti hely (mínusz fejléc magasság kb 60px),
                 // akkor csak annyit húzunk rajta, amennyit szabad.
-                const maxShift = spaceAbove - 60; 
-                
+                const maxShift = spaceAbove - 60;
+
                 if (shiftAmount > maxShift) {
                     shiftAmount = maxShift;
                 }
@@ -287,4 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
 });
+
