@@ -18,7 +18,7 @@ function normalize(s = '') {
 
 exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;
-  
+
   // Engedélyezett domainek
   const allowedOrigins = [
     'https://aquamarine-cactus-d0f609.netlify.app',
@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     'http://localhost:5500',
     'http://127.0.0.1:5500'
   ];
-  
+
   const allowOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
 
   const headers = {
@@ -38,8 +38,14 @@ exports.handler = async (event) => {
   };
 
   try {
+    // 1. Paraméterek beolvasása
     const qRaw = (event.queryStringParameters?.q || '').trim();
     const page = Math.max(1, Number(event.queryStringParameters?.page) || 1);
+
+    // ITT AZ ÚJ PARAMÉTER BEOLVASÁSA:
+    // Ha a frontend küldi a 'desc=true'-t, akkor ez igaz lesz.
+    const searchInDesc = event.queryStringParameters?.desc === 'true';
+
     let limit = Math.max(1, Number(event.queryStringParameters?.limit) || DEFAULT_LIMIT);
     if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
@@ -51,8 +57,9 @@ exports.handler = async (event) => {
       };
     }
 
-    // --- ADATBÁZIS BETÖLTÉSE ---
+    // --- ADATBÁZIS BETÖLTÉSE (CACHE) ---
     if (!CACHE || (Date.now() - CACHE_TS) > CACHE_TTL) {
+      // Fontos: ellenőrizd, hogy a fájl útvonalad helyes-e a te szervereden!
       const filePath = path.join(__dirname, '_assets', 'products_with_status_min.json');
       if (!fs.existsSync(filePath)) throw new Error(`Database file not found at ${filePath}`);
       const raw = fs.readFileSync(filePath, 'utf-8');
@@ -61,27 +68,30 @@ exports.handler = async (event) => {
     }
     const data = CACHE || [];
 
-    // --- SZIGORÚ KERESÉSI LOGIKA ---
-    // Csak NÉV és CIKKSZÁM alapján!
+    // --- KERESÉSI LOGIKA ---
     const qnorm = normalize(qRaw);
     const tokens = qnorm.split(/\s+/).filter(Boolean); // A keresett szavak
 
     const matches = [];
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
-      
-      // ITT A VÁLTOZÁS: Csak a nevet és a cikkszámot vesszük figyelembe!
-      // Kivettem a category-t és a short_description-t.
-      const searchStr = (p.name || '') + ' ' + (p.sku || '');
-      
+
+      // Alap keresési string: NÉV + CIKKSZÁM
+      let searchStr = (p.name || '') + ' ' + (p.sku || '');
+
+      // HA a felhasználó kérte a leírásban keresést, hozzáfűzzük azt is
+      if (searchInDesc) {
+        searchStr += ' ' + (p.short_description || '');
+      }
+
       const hay = normalize(searchStr);
-      
+
       // "ÉS" kapcsolat ellenőrzése: Minden beírt szónak szerepelnie kell
       let ok = true;
       for (let t of tokens) {
         if (!hay.includes(t)) { ok = false; break; }
       }
-      
+
       if (ok) matches.push(p);
     }
 
@@ -91,8 +101,6 @@ exports.handler = async (event) => {
     const start = (page - 1) * limit;
     const end = start + limit;
 
-    // Itt továbbra is visszaküldjük az ÖSSZES adatot (beleértve a leírást is),
-    // hogy a felületen meg tudjuk jeleníteni, de a keresés már nem használja őket.
     const pageResults = matches.slice(start, end).map(p => ({
       id: p.id,
       name: p.name,
@@ -102,8 +110,6 @@ exports.handler = async (event) => {
       url: p.url,
       img: p.img,
       category: p.category,
-      
-      // Új mezők átadása a frontendnek
       sale_price: p.sale_price,
       sale_start: p.sale_start,
       sale_end: p.sale_end,
@@ -116,6 +122,7 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({
         q: qRaw,
+        desc_search: searchInDesc, // Visszajelezzük debug célból, hogy volt-e leírás keresés
         page,
         limit,
         total_count: total,
