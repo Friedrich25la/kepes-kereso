@@ -15,10 +15,10 @@ const MAIN_MENU_ORDER = [
     { name: "Hajó", url: "https://www.trinexus.hu/hajo", type: "cat" },
     { name: "Gumicsónak", url: "https://www.trinexus.hu/gumicsonak", type: "cat" },
     { name: "Csónak", url: "https://www.trinexus.hu/csonak-kajak-kenu", type: "cat" },
+    { name: "Kajak, kenu és kiegészítőik", url: "https://www.trinexus.hu/csonak-kajak-kenu-kiegeszitok", type: "cat" },
     { name: "Robbanómotor", url: "https://www.trinexus.hu/robbanomotor", type: "cat" },
     { name: "Elektromos csónakmotor", url: "https://www.trinexus.hu/elektromos-csonakmotor", type: "cat" },
-    { name: "Navigáció, autopilot, rádió", url: "https://www.trinexus.hu/navigacio-autopilot-radio", type: "cat" },
-    { name: "Kajak, kenu és kiegészítőik", url: "https://www.trinexus.hu/csonak-kajak-kenu-kiegeszitok", type: "cat" },
+    { name: "Navigáció, autopilot, rádió", url: "https://www.trinexus.hu/navigacio-autopilot-radio", type: "cat" },    
     { name: "Halradar", url: "https://www.trinexus.hu/halradar", type: "cat" },
     { name: "Hajófelszerelés", url: "https://www.trinexus.hu/hajofelszereles", type: "cat" },
     { name: "Festék, vegyi és karbantartó anyag", url: "https://www.trinexus.hu/festek-vegyi-karbantarto-anyag", type: "cat" },
@@ -134,13 +134,13 @@ const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 96,Ajándéktárgyak, oktatási anyagok,Ajándékutalvány,https://www.trinexus.hu/Ajandekutalvany
 97,Ajándéktárgyak, oktatási anyagok,Hajómodell,https://www.trinexus.hu/ajandektargy-hajosmodell
 98,Ajándéktárgyak, oktatási anyagok,Dísztárgyak,https://www.trinexus.hu/ajandektargy-butor-disztargy
-99,Ajándéktárgyak, oktatási anyagok,Hajós oktatási anyag,https://www.trinexus.hu/hajos-oktatasi-anyag
-100,Ajándéktárgyak, oktatási anyagok,Lakberendezés,https://www.trinexus.hu/Lakberendezes
-101,Ajándéktárgyak, oktatási anyagok,Hobbi építőkészlet,https://www.trinexus.hu/Hobbi-epitokeszlet
-102,Ajándéktárgyak, oktatási anyagok,Térkép, könyv, naptár,poszter,https://www.trinexus.hu/ajandektargy-terkep-konyv-naptar-poszter
-103,Ajándéktárgyak, oktatási anyagok,Kulcstartó,https://www.trinexus.hu/ajandektargy-kulcstarto
-104,Ajándéktárgyak, oktatási anyagok,Karkötők,https://www.trinexus.hu/ajandektargy-karkotok
-105,Ajándéktárgyak, oktatási anyagok,Mindenféle egyebek,https://www.trinexus.hu/Mindenfele-egyebek
+99,"Ajándéktárgyak, oktatási anyagok",Hajós oktatási anyag,https://www.trinexus.hu/hajos-oktatasi-anyag
+100,"Ajándéktárgyak, oktatási anyagok",Lakberendezés,https://www.trinexus.hu/Lakberendezes
+101,"Ajándéktárgyak, oktatási anyagok",Hobbi építőkészlet,https://www.trinexus.hu/Hobbi-epitokeszlet
+102,"Ajándéktárgyak, oktatási anyagok",Térkép, könyv, naptár,poszter,https://www.trinexus.hu/ajandektargy-terkep-konyv-naptar-poszter
+103,"Ajándéktárgyak, oktatási anyagok",Kulcstartó,https://www.trinexus.hu/ajandektargy-kulcstarto
+104,"Ajándéktárgyak, oktatási anyagok",Karkötők,https://www.trinexus.hu/ajandektargy-karkotok
+105,"Ajándéktárgyak, oktatási anyagok",Mindenféle egyebek,https://www.trinexus.hu/Mindenfele-egyebek
 106,Ruházat,Vízálló ruházat,https://www.trinexus.hu/ruhazat-vizallo-ruhazat
 107,Ruházat,Póló,https://www.trinexus.hu/ruhazat-polo
 108,Ruházat,Lábbeli,https://www.trinexus.hu/ruhazat-labbeli
@@ -150,11 +150,10 @@ const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 112,Ruházat,Törülközők,https://www.trinexus.hu/spl/816441/Torulkozok
 113,Ruházat,Hajós divat, ruházat,https://www.trinexus.hu/spl/551633/Hajos-divat-ruhazat
 114,Ruházat,Sapka, kalap,https://www.trinexus.hu/spl/646654/Sapka-kalap
-115,Kajak, kenu és kiegészítőik,Sit on top kajak,https://www.trinexus.hu/Sit-on-top-kajak
-116,Kajak, kenu és kiegészítőik,Hagyományos kajak-kenu,https://www.trinexus.hu/csonak-kajak-kenu-hagyomanyos
-117,Kajak, kenu és kiegészítőik,Evezős kiegészítő,https://www.trinexus.hu/csonak-kajak-kenu-evezos-kiegeszito
-118,Kajak, kenu és kiegészítőik,Jobe kajak,https://www.trinexus.hu/Jobe-kajak
-
+115,"Kajak, kenu és kiegészítőik",Sit on top kajak,https://www.trinexus.hu/Sit-on-top-kajak
+116,"Kajak, kenu és kiegészítőik",Hagyományos kajak-kenu,https://www.trinexus.hu/csonak-kajak-kenu-hagyomanyos
+117,"Kajak, kenu és kiegészítőik",Evezős kiegészítő,https://www.trinexus.hu/csonak-kajak-kenu-evezos-kiegeszito
+118,"Kajak, kenu és kiegészítőik",Jobe kajak,https://www.trinexus.hu/Jobe-kajak
 `;
 
 function parseCSV(csvText) {
