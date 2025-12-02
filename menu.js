@@ -1,4 +1,4 @@
-/* menu.js - FINAL JAVÍTOTT verzió (Vesszők kezelése javítva) */
+/* menu.js - FINAL JAVÍTOTT verzió (19-es sor törölve) */
 
 // 1. A FŐMENÜ SORRENDJE
 const MAIN_MENU_ORDER = [
@@ -10,31 +10,30 @@ const MAIN_MENU_ORDER = [
     { name: "Csomagajánlatok", url: "https://www.trinexus.hu/Csomagajanlatok", type: "manual" },
     { name: "Kiárusítás alatt", url: "https://www.trinexus.hu/kiarusitas", type: "manual" },
     
-    // Itt kezdődnek a kategóriák, amiknek eddig nem volt linkje:
-    { name: "Kötelező felszerelés", url: "https://www.trinexus.hu/kotelezo-felszereles", type: "cat" },
-    { name: "Hajó", url: "https://www.trinexus.hu/hajo", type: "cat" },
-    { name: "Gumicsónak", url: "https://www.trinexus.hu/gumicsonak", type: "cat" },
-    { name: "Csónak, kajak, kenu", url: "https://www.trinexus.hu/csonak-kajak-kenu", type: "cat" },
-    { name: "Robbanómotor", url: "https://www.trinexus.hu/robbanomotor", type: "cat" },
-    { name: "Elektromos csónakmotor", url: "https://www.trinexus.hu/elektromos-csonakmotor", type: "cat" },
-    { name: "Navigáció, autopilot, rádió", url: "https://www.trinexus.hu/navigacio-autopilot-radio", type: "cat" },
-    { name: "Halradar", url: "https://www.trinexus.hu/halradar", type: "cat" },
-    { name: "Hajófelszerelés", url: "https://www.trinexus.hu/hajofelszereles", type: "cat" },
-    { name: "Festék, vegyi és karbantartó anyag", url: "https://www.trinexus.hu/festek-vegyi-karbantarto-anyag", type: "cat" },
-    { name: "Tréler, tartozék", url: "https://www.trinexus.hu/trelek-tartozek", type: "cat" },
-    { name: "Elektronika, audió, napelem", url: "https://www.trinexus.hu/elektronika", type: "cat" },
-    { name: "Vízisport", url: "https://www.trinexus.hu/vizisport", type: "cat" },
-    { name: "Horgász termékek", url: "https://www.trinexus.hu/horgasztermek", type: "cat" },
-    { name: "Garmin okosórák", url: "https://www.trinexus.hu/Garmin-Okosorak", type: "cat" },
+    { name: "Kötelező felszerelés", url: "https://www.trinexus.hu/kotelezo-felszereles-JAVITANDO", type: "cat" },
+    { name: "Hajó", url: "https://www.trinexus.hu/hajo-JAVITANDO", type: "cat" },
+    { name: "Gumicsónak", url: "https://www.trinexus.hu/gumicsonak-JAVITANDO", type: "cat" },
+    { name: "Csónak, kajak, kenu", url: "https://www.trinexus.hu/csonak-kajak-kenu-JAVITANDO", type: "cat" },
+    { name: "Robbanómotor", url: "https://www.trinexus.hu/robbanomotor-JAVITANDO", type: "cat" },
+    { name: "Elektromos csónakmotor", url: "https://www.trinexus.hu/elektromos-csonakmotor-JAVITANDO", type: "cat" },
+    { name: "Navigáció, autopilot, rádió", url: "https://www.trinexus.hu/navigacio-autopilot-radio-JAVITANDO", type: "cat" },
+    { name: "Halradar", url: "https://www.trinexus.hu/halradar-JAVITANDO", type: "cat" },
+    { name: "Hajófelszerelés", url: "https://www.trinexus.hu/hajofelszereles-JAVITANDO", type: "cat" },
+    { name: "Festék, vegyi és karbantartó anyag", url: "https://www.trinexus.hu/festek-vegyi-karbantarto-anyag-JAVITANDO", type: "cat" },
+    { name: "Tréler, tartozék", url: "https://www.trinexus.hu/treler-tartozek-JAVITANDO", type: "cat" },
+    { name: "Elektronika, audió, napelem", url: "https://www.trinexus.hu/elektronika-audio-napelem-JAVITANDO", type: "cat" },
+    { name: "Vízisport", url: "https://www.trinexus.hu/vizisport-JAVITANDO", type: "cat" },
+    { name: "Horgász termékek", url: "https://www.trinexus.hu/horgasz-termekek-JAVITANDO", type: "cat" },
+    { name: "Garmin okosórák", url: "https://www.trinexus.hu/garmin-okosorak-JAVITANDO", type: "cat" },
     
     { name: "Jetski", url: "https://www.trinexus.hu/Jetski", type: "manual" }, 
     { name: "Vitorlás termékek", url: "https://www.trinexus.hu/vitorlas-termek", type: "manual" },
     
-    { name: "Ajándéktárgyak, oktatási anyagok", url: "https://www.trinexus.hu/ajandektargy", type: "cat" },
-    { name: "Ruházat", url: "https://www.trinexus.hu/ruhazat", type: "cat" }
+    { name: "Ajándéktárgyak, oktatási anyagok", url: "https://www.trinexus.hu/ajandektargyak-oktatasi-anyagok-JAVITANDO", type: "cat" },
+    { name: "Ruházat", url: "https://www.trinexus.hu/ruhazat-JAVITANDO", type: "cat" }
 ];
 
-// 2. ADATBÁZIS - JAVÍTVA (Idézőjelek hozzáadva a vesszős nevekhez)
+// 2. ADATBÁZIS (19-es sor törölve)
 const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 1,Kötelező felszerelés,0 - 6 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-0-6-m-kozotti-hajotestek
 2,Kötelező felszerelés,6 - 12 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-6-12-m-kozotti-hajotestek
@@ -54,7 +53,6 @@ const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 16,"Csónak, kajak, kenu",Caytan alumínium csónakok,https://www.trinexus.hu/Caytan-aluminium-csonakok
 17,"Csónak, kajak, kenu",Műanyag csónakok,https://www.trinexus.hu/csonak-muanyag-csonakok
 18,"Csónak, kajak, kenu",Cadrava alumínium csónakok,https://www.trinexus.hu/csonak-cadrava-aluminium-csonakok
-19,"Csónak, kajak, kenu",Kajak, kenu és kiegészítőik,https://www.trinexus.hu/csonak-kajak-kenu-kiegeszitok
 20,"Csónak, kajak, kenu",Sevylor termék,https://www.trinexus.hu/csonak-sevylor-termek
 21,Robbanómotor,Mercury,https://www.trinexus.hu/robbanomotor-mercury
 22,Robbanómotor,Tohatsu,https://www.trinexus.hu/robbanomotor-tohatsu
@@ -289,5 +287,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-
 });
