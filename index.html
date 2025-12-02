@@ -673,6 +673,81 @@
       font-weight: 700;
     }
 
+    /* ÚJ: Custom Checkbox Stílusok (ZIP alapján, témára igazítva) */
+    .checkbox-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px; /* Távolság a két sor között */
+      margin-left: 10px;
+    }
+
+    /* Eltüntetjük az alap checkboxot */
+    .checkbox-column input[type="checkbox"] {
+      display: none;
+    }
+
+    /* A szöveg és a doboz helye */
+    .checkbox-column label {
+      position: relative;
+      padding-left: 26px; /* Hely a doboznak */
+      cursor: pointer;
+      font-size: 13px; /* Kicsit kisebb betű, hogy elférjen */
+      line-height: 18px;
+      color: var(--text-main);
+      user-select: none;
+      display: block;
+      font-weight: 500;
+      transition: color 0.2s;
+      margin: 0; /* Reset */
+    }
+
+    .checkbox-column label:hover {
+      color: var(--accent);
+    }
+
+    /* A doboz (Üres állapot) */
+    .checkbox-column label:before {
+      content: '';
+      display: block;
+      width: 16px;  /* Kompakt méret */
+      height: 16px;
+      border: 1px solid var(--muted); /* Alapból szürke keret */
+      position: absolute;
+      left: 0;
+      top: 1px;
+      opacity: 0.6;
+      transition: all .12s, border-color .08s;
+      border-radius: 3px; /* Picit kerekített, modernebb */
+    }
+
+    /* Hover állapot a dobozon */
+    .checkbox-column input[type="checkbox"] + label:hover:before {
+      border-color: var(--accent);
+    }
+
+    /* Pipa állapot (Animáció a ZIP-ből) */
+    /* Pipa állapot (Animáció a ZIP-ből - JAVÍTVA) */
+    .checkbox-column input[type="checkbox"]:checked + label:before {
+      width: 8px; /* Szűkebb lesz, ettől lesz pipa alakja */
+      top: -4px;  /* Pozíció igazítás */
+      left: 5px;
+      
+      border-radius: 0;
+      opacity: 1;
+
+      /* FONTOS A SORREND! */
+      /* 1. Először megadjuk a színt és vastagságot minden oldalra */
+      border: 2px solid var(--accent); 
+
+      /* 2. ÉS CSAK UTÁNA tüntetjük el a felső és bal oldalt */
+      border-top-color: transparent;
+      border-left-color: transparent;
+
+      /* Forgatás */
+      transform: rotate(45deg);
+    }
+
     /* UI ELEMENTS */
     .fav-icon {
       position: absolute;
@@ -2303,9 +2378,17 @@
         </select>
       </div>
 
-      <label style="white-space:nowrap; display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="imgOnly"> csak képpel
-      </label>
+      <div class="checkbox-column">
+        <div>
+          <input type="checkbox" id="descSearch">
+          <label for="descSearch">keresés leírásban is</label>
+        </div>
+      
+        <div>
+          <input type="checkbox" id="imgOnly">
+          <label for="imgOnly">csak képpel</label>
+        </div>
+      </div>
     </div>
 
     <div class="amz-grid-container">
@@ -2978,8 +3061,19 @@
     }
 
     /* ---------- API & RENDER ---------- */
+    // Keress rá erre a függvényre a kódban, és cseréld le/bővítsd ki:
     async function fetchProducts(query, page, limit) {
-      const params = new URLSearchParams({ q: query, page: page, limit: limit });
+      // Beolvassuk a checkbox állapotát
+      const descSearch = document.getElementById('descSearch')?.checked || false;
+      
+      // Hozzáadjuk a paraméterekhez a 'desc' kulcsot
+      const params = new URLSearchParams({ 
+          q: query, 
+          page: page, 
+          limit: limit, 
+          desc: descSearch // <--- Ez az új rész
+      });
+      
       const response = await fetch(`${window.API_BASE}?${params.toString()}`);
       if (!response.ok) throw new Error('Hálózati hiba');
       return await response.json();
@@ -3116,6 +3210,16 @@
 
         updateSliderBounds(productsPool);
         filterAndRender();
+        if (productsPool.length > 0) {
+          setTimeout(() => {
+            const controlsRow = document.querySelector('.controls-row');
+            if (controlsRow) {
+              // A 'start' opció a képernyő tetejére igazítja a sávot (így átugorja a galériát)
+              // A 'scrollMarginTop' segítségével hagyhatunk kis helyet, ha szükséges
+              controlsRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 100); // Pici késleltetés, hogy a DOM biztosan kész legyen
+        }
       } catch (err) { console.error(err); resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>'; }
     }
 
@@ -3375,7 +3479,17 @@
       }
       document.getElementById('sortSelect').addEventListener('change', filterAndRender);
       document.getElementById('imgOnly').addEventListener('change', filterAndRender);
-      var qEl = document.getElementById('q'); if (qEl) qEl.disabled = false;
+      // ÚJ: Ha a leírás checkbox változik, ÚJRA KELL HÍVNI az API-t (nem elég a filterAndRender)
+      const descCheckbox = document.getElementById('descSearch');
+      if (descCheckbox) {
+        descCheckbox.addEventListener('change', function () {
+          // Újraküldjük a keresést a jelenlegi kulcsszóval
+          const currentQ = document.getElementById('q').value;
+          if (currentQ && currentQ.length >= window.MIN_TOKEN_LEN) {
+            renderForQuery(currentQ, true);
+          }
+        });
+      }
     })();
 
     /* =========================================
