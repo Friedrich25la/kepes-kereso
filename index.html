@@ -2070,6 +2070,31 @@
             transform: translateY(0); /* Mobilon mindig látszódjon a felirat */
             background: rgba(0,0,0,0.3);
         }
+
+        /* ========================================================= */
+      /* 6. GLOW EFFEKT TILTÁSA MOBILON (GÖRGETÉS JAVÍTÁSA)        */
+      /* ========================================================= */
+      [data-glow] {
+        /* A legfontosabb: visszakapcsoljuk a görgetést! */
+        touch-action: auto !important; 
+        
+        /* Opcionális: A vizuális effekt elrejtése mobilon a gyorsaságért */
+        background-image: none !important;
+        border: 1px solid var(--card-border) !important;
+      }
+
+      /* A fénylő keretek elrejtése */
+      [data-glow]::before,
+      [data-glow]::after {
+        display: none !important;
+      }
+      
+      /* A kártya ne "ugorjon" fel mobilon érintéskor */
+      .card:hover, .card:active {
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        z-index: 1 !important;
+      }
     }
   </style>
   
