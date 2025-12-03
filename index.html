@@ -3269,9 +3269,49 @@
        ÚJ: RÖVID LEÍRÁS MODAL LOGIKA (OKOS ADATOKKAL)
        ========================================= */
 
-    // SZEZONÁLIS + ÁRFÜGGŐ VÉLETLENSZÁM GENERÁTOR
-    // SZEZONÁLIS + ÁRFÜGGŐ VÉLETLENSZÁM GENERÁTOR (Több nullával)
-    function getSalesCount(price) {
+    /* =========================================
+       JAVÍTOTT MODAL LOGIKA (Seeded RNG + Smart Shipping)
+       ========================================= */
+
+    // 1. Segédfüggvény: Hányadik hét van most? (Hogy hetente változzon a szám)
+    function getWeekNumber() {
+        const d = new Date();
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    // 2. Saját véletlenszám generátor (Seed based)
+    // Ez a függvény mindig UGYANAZT a számot adja vissza (0 és 1 között), 
+    // ha ugyanazt a 'seed'-et (magot) kapja bemenetnek.
+    function seededRandom(seed) {
+        var x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+
+    // 3. A TE EREDETI LOGIKÁD, de "stabil" számokkal
+    function getSalesCount(price, sku) {
+        // A "seed" (mag) létrehozása: Cikkszám + Év + Hét
+        // Így egy adott terméknél, egy adott héten mindig ugyanaz a véletlen szám jön ki.
+        const currentWeek = getWeekNumber();
+        
+        // A cikkszámot számmá alakítjuk (hash)
+        let hash = 0;
+        const str = sku + "_" + currentWeek;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        let seed = Math.abs(hash); // Ez lesz a kiinduló számunk
+
+        // BELSŐ FÜGGVÉNY: Math.random() helyett ezt használjuk
+        // Minden hívásnál növeljük a seed-et, hogy a következő százalékvizsgálat más legyen
+        function myRandom() {
+            seed++; 
+            return seededRandom(seed);
+        }
+
+        /* --- INNENTŐL A TE EREDETI LOGIKÁD (Csak Math.random() -> myRandom()-ra cserélve) --- */
         const now = new Date();
         const month = now.getMonth(); // 0 = Január ... 8 = Szeptember
         
@@ -3280,33 +3320,31 @@
         const isCheap = (price < 40000);
 
         if (isHighSeason) {
-            // --- FŐSZEZON (Márc-Szept) ---
+            // --- FŐSZEZON ---
             if (isCheap) {
-                // Olcsó: 15% esély a 0-ra, amúgy 1-7 db
-                if (Math.random() < 0.15) return 0; 
-                return Math.floor(Math.random() * 7) + 1; 
+                // Olcsó: 15% esély a 0-ra
+                if (myRandom() < 0.15) return 0; 
+                return Math.floor(myRandom() * 7) + 1; 
             } else {
-                // Drága: Marad az óvatos (0-3 db)
-                const r = Math.random();
+                // Drága
+                const r = myRandom();
                 if (r < 0.4) return 0;  // 40% esély 0
                 if (r < 0.8) return 1;  // 40% esély 1
                 if (r < 0.95) return 2; // 15% esély 2
                 return 3;               // 5% esély 3
             }
         } else {
-            // --- HOLTSZEZON (Okt-Feb) ---
+            // --- HOLTSZEZON ---
             if (isCheap) {
-                // Olcsó: ITT A VÁLTOZÁS -> 50% esély a 0-ra!
-                if (Math.random() < 0.5) return 0;
-                
-                // Ha nem 0, akkor csak kicsi szám (1, 2 vagy 3)
-                return Math.floor(Math.random() * 3) + 1;
+                // Olcsó
+                if (myRandom() < 0.5) return 0;
+                return Math.floor(myRandom() * 3) + 1;
             } else {
-                // Drága: Szinte halott (Sok 0, kevés 1)
-                const r = Math.random();
-                if (r < 0.85) return 0; // 85% esély 0
-                if (r < 0.98) return 1; // 13% esély 1
-                return 2;               // 2% esély 2
+                // Drága
+                const r = myRandom();
+                if (r < 0.85) return 0; 
+                if (r < 0.98) return 1; 
+                return 2;              
             }
         }
     }
@@ -3322,17 +3360,16 @@
       const modalSales = document.getElementById('modal-sales');
       const modalFavBtn = document.getElementById('modal-fav-btn');
       const modalLinkBtn = document.getElementById('modal-link-btn');
+      
+      // Szállítási blokk elem
+      const shippingBlock = document.querySelector('.shipping-block');
 
       if (modalOverlay && modalTitle && modalContent) {
         modalTitle.textContent = product.name;
         
         // --- LEÍRÁS TISZTÍTÁSA ---
-        // Itt olvassuk a short_description-t!
         let dbDesc = product.short_description || "";
-        
-        // A replace eltávolítja a <!HTML KOD> részt
         dbDesc = dbDesc.replace(/<!HTML KOD>/gi, "").trim();
-        
         if (dbDesc && dbDesc.length > 0) {
              modalContent.innerHTML = dbDesc; 
         } else {
@@ -3358,8 +3395,35 @@
             modalPrice.textContent = priceFormatted;
         }
 
-        // Garancia logika
+        /* --- SZÁLLÍTÁS ELREJTÉSE (LOGIKA) --- */
+        const catLower = (product.category || "").toLowerCase();
         const price = priceData.price;
+        let showShipping = true;
+
+        // 1. Tiltólistás szavak (ezeknél soha nincs szállítás)
+        const forbiddenWords = ["hajó", "csónak", "sit on top", "hagyományos kajak-kenu"];
+        
+        for (let word of forbiddenWords) {
+            if (catLower.includes(word)) {
+                showShipping = false;
+                break;
+            }
+        }
+
+        // 2. Tréler speciális logika (csak 100.000 Ft felett rejtjük el)
+        if (showShipping && catLower.includes("tréler")) {
+            if (price > 100000) {
+                showShipping = false;
+            }
+        }
+
+        // Megjelenítés vagy elrejtés
+        if (shippingBlock) {
+            shippingBlock.style.display = showShipping ? 'flex' : 'none';
+        }
+        /* ------------------------------------- */
+
+        // Garancia logika
         const name = (product.name || '').toLowerCase();
         let warrantyText = "1 év garancia"; 
         if (name.includes('deeper chirp') || name.includes('tohatsu')) {
@@ -3371,8 +3435,9 @@
         }
         modalWarranty.textContent = warrantyText;
 
-        // Statisztika
-        const salesCount = getSalesCount(price);
+        // Statisztika (MOST MÁR STABIL SZÁMOT AD!)
+        // Átadjuk az SKU-t is, hogy abból generálja a számot
+        const salesCount = getSalesCount(price, product.sku);
         modalSales.textContent = `${salesCount} db eladva az elmúlt 30 napban`;
 
         // Gombok
