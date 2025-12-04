@@ -3005,7 +3005,7 @@
     let productsPool = [];
     let priceRange = { min: 0, max: 100000, currentMin: 0, currentMax: 0 };
     let sliderInstance = null;
-    let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null };
+    let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null, isCategorySearch: false };
     let isFirstLoad = true;
 
     /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS ---------- */
@@ -3499,29 +3499,34 @@
         const price = parseFloat(p.price); if (isNaN(price)) return false;
         if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) return false;
 
-        // --- JAVÍTOTT KATEGÓRIA SZŰRÉS (Tartalmazás vizsgálat) ---
+        // --- OKOSÍTOTT KATEGÓRIA ÉS NÉV SZŰRÉS ---
         if (currentState.categoryFilter) {
-          const pCat = p.category || ""; // A termék teljes kategória útvonala
+          const pCat = (p.category || "").toLowerCase(); // Kisbetűsítve a biztosabb találatért
+          const pName = (p.name || "").toLowerCase();    // Névben is keresünk!
           
           if (Array.isArray(currentState.categoryFilter)) {
               // Ha a filter tömb (pl. ['Lítium', 'Ólom-sav']):
-              // Megnézzük, hogy a termék kategóriájában szerepel-e BÁRMELYIK szó a tömbből.
-              const match = currentState.categoryFilter.some(filterWord => pCat.includes(filterWord));
+              // Megnézzük, hogy a szűrő szavak BÁRMELYIKE benne van-e a kategóriában VAGY a névben
+              const match = currentState.categoryFilter.some(filterWord => {
+                  const fw = filterWord.toLowerCase();
+                  return pCat.includes(fw) || pName.includes(fw); // <--- ITT A LÉNYEG
+              });
               if (!match) return false;
           } 
           else {
-              // Ha csak egy szó (pl. 'Gumicsónak'):
-              if (!pCat.includes(currentState.categoryFilter)) return false;
+              // Ha csak egy szó
+              const fw = currentState.categoryFilter.toLowerCase();
+              if (!pCat.includes(fw) && !pName.includes(fw)) return false;
           }
         }
-        // ---------------------------------------------------------
+        // ------------------------------------------
 
         return true;
       });
       
-      // Találatok száma és lista frissítése
       const countEl = document.getElementById('results-count');
       if (countEl) { countEl.style.display = 'block'; countEl.textContent = `Találatok: ${filtered.length} db`; }
+      
       renderProductsList(filtered);
     }
 
@@ -3606,15 +3611,31 @@
     }
 
     async function renderForQuery(q, isManualSearch = false, isHistoryNav = false) {
-      const resultsEl = document.getElementById('results'); const countEl = document.getElementById('results-count');
-      if (!q || q.trim().length < MIN_TOKEN_LEN) { resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>'; if (countEl) countEl.style.display = 'none'; removeLoadMoreButton(); return; }
+      const resultsEl = document.getElementById('results'); 
+      const countEl = document.getElementById('results-count');
+      
+      // Ellenőrzés: van-e elég karakter
+      if (!q || q.trim().length < MIN_TOKEN_LEN) { 
+          resultsEl.innerHTML = '<div class="no-results">Írjon legalább ' + MIN_TOKEN_LEN + ' karaktert.</div>'; 
+          if (countEl) countEl.style.display = 'none'; 
+          removeLoadMoreButton(); 
+          return; 
+      }
 
-      currentState.query = q.trim(); currentState.page = 1; productsPool = [];
+      currentState.query = q.trim(); 
+      currentState.page = 1; 
+      productsPool = [];
 
       if (isManualSearch) {
+        // Resetelünk mindent, mert ez egy új, kézi keresés
         priceRange.currentMin = 0;
         priceRange.currentMax = 0;
         currentState.categoryFilter = null;
+        
+        // --- JAVÍTÁS ITT: KIKAPCSOLJUK A KATEGÓRIA KERESÉST ---
+        currentState.isCategorySearch = false; 
+        // ------------------------------------------------------
+
         document.getElementById('category-toggle').textContent = "Kategória: Összes";
 
         isFirstLoad = false;
@@ -3624,48 +3645,77 @@
         }
       }
 
-      resultsEl.innerHTML = '<div class="loading">Keresés...</div>'; if (countEl) countEl.style.display = 'none';
+      resultsEl.innerHTML = '<div class="loading">Keresés...</div>'; 
+      if (countEl) countEl.style.display = 'none';
 
       try {
+        // Sima keresés indítása (nem küldünk cat: true opciót)
         const data = await fetchProducts(currentState.query, 1, 500);
         productsPool = data.results;
 
         updateCategoryDropdown(productsPool);
 
         if (data.results.length > 0) addToSearchHistory(currentState.query);
+        
+        // Load More gomb kezelése
         if (data.total_count > 500) { currentState.hasMore = true; } else { currentState.hasMore = false; }
-        if (productsPool.length === 0) { resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>'; return; }
+        
+        if (productsPool.length === 0) { 
+            resultsEl.innerHTML = '<div class="no-results">Nincs találat.</div>'; 
+            return; 
+        }
         resultsEl.innerHTML = '';
 
         updateSliderBounds(productsPool);
         filterAndRender();
+        
+        // Görgetés a találatokhoz
         if (productsPool.length > 0) {
           setTimeout(() => {
             const controlsRow = document.querySelector('.controls-row');
             if (controlsRow) {
-              // A 'start' opció a képernyő tetejére igazítja a sávot (így átugorja a galériát)
-              // A 'scrollMarginTop' segítségével hagyhatunk kis helyet, ha szükséges
               controlsRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-          }, 100); // Pici késleltetés, hogy a DOM biztosan kész legyen
+          }, 100); 
         }
-      } catch (err) { console.error(err); resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>'; }
+      } catch (err) { 
+          console.error(err); 
+          resultsEl.innerHTML = '<div class="no-results">Hiba történt: ' + err.message + '</div>'; 
+      }
     }
 
     async function loadMore() {
       if (currentState.isLoading || !currentState.hasMore) return;
-      const btnContent = document.querySelector('.fancy-btn .btn-content'); if (btnContent) btnContent.textContent = 'Betöltés...';
+      
+      const btnContent = document.querySelector('.fancy-btn .btn-content'); 
+      if (btnContent) btnContent.textContent = 'Betöltés...';
+      
       currentState.isLoading = true;
       try {
         currentState.page++;
-        const data = await fetchProducts(currentState.query, currentState.page, 500);
+        
+        // JAVÍTÁS: Átadjuk a 'cat' opciót, ha kategória alapú volt a keresés
+        const options = { cat: currentState.isCategorySearch };
+        
+        const data = await fetchProducts(currentState.query, currentState.page, 500, options);
         productsPool = [...productsPool, ...data.results];
 
         updateCategoryDropdown(productsPool);
         updateSliderBounds(productsPool);
         if (data.total_count <= productsPool.length) currentState.hasMore = false;
-        filterAndRender();
-      } catch (err) { console.error(err); if (btnContent) btnContent.textContent = 'Hiba (próbáld újra)'; } finally { currentState.isLoading = false; }
+        
+        filterAndRender(); // Ez a függvény már az új szűrési logikát fogja használni (lásd lejjebb)
+        
+      } catch (err) { 
+          console.error(err); 
+          if (btnContent) btnContent.textContent = 'Hiba (próbáld újra)'; 
+          // Hiba esetén visszalépünk egy oldalt, hogy újra próbálhassa
+          currentState.page--;
+      } finally { 
+          currentState.isLoading = false; 
+          // Ha sikeres volt, visszaírjuk a gomb szövegét (a filterAndRender úgyis kezeli a gomb létét)
+          if(currentState.hasMore && btnContent) btnContent.textContent = 'További találatok';
+      }
     }
 
     function createLoadMoreButton() {
@@ -4163,7 +4213,7 @@
     });
     async function filterByCategories(card, searchTerm, categoriesStr) {
         
-        // 1. Vizuális kezelés (aktív kártya)
+        // 1. Vizuális kezelés
         document.querySelectorAll('.cat-sub-level .cat-card').forEach(c => c.classList.remove('active-sub'));
         card.classList.add('active-sub');
 
@@ -4171,6 +4221,12 @@
         const categoryList = categoriesStr.split(',').map(s => s.trim());
         currentState.categoryFilter = categoryList;
         
+        // --- JAVÍTÁS: MENTJÜK A KERESÉSI ÁLLAPOTOT A LOAD MORE SZÁMÁRA ---
+        currentState.query = searchTerm;      // Hogy a loadMore tudja, mit kerestünk
+        currentState.isCategorySearch = true; // Hogy a loadMore tudja, hogy kategóriában is kell keresni
+        currentState.page = 1;                // Reseteljük az oldalszámot
+        // ------------------------------------------------------------------
+
         // Gomb szöveg frissítés
         const catBtn = document.getElementById('category-toggle');
         if(catBtn) catBtn.textContent = "Kategória: " + categoryList[0] + (categoryList.length > 1 ? "..." : "");
@@ -4179,16 +4235,18 @@
         resultsEl.innerHTML = '<div class="loading">Termékek betöltése kategória alapján...</div>';
         
         try {
-            // 3. LEKÉRDEZÉS (cat: true paraméterrel!)
-            // Így a backend a kategóriában is keresi a 'searchTerm'-et.
+            // 3. LEKÉRDEZÉS
             const data = await fetchProducts(searchTerm, 1, 500, { cat: true });
             
             productsPool = data.results;
             
+            // Load More gomb állapotának kezelése
+            if (data.total_count > 500) { currentState.hasMore = true; } else { currentState.hasMore = false; }
+            
             if(productsPool.length > 0) {
                 updateCategoryDropdown(productsPool);
                 updateSliderBounds(productsPool);
-                filterAndRender(); // Szigorú szűrés a 'categoryList' alapján
+                filterAndRender(); 
                 
                 setTimeout(() => {
                     const controlsRow = document.querySelector('.controls-row');
@@ -4196,6 +4254,7 @@
                 }, 100);
             } else {
                 resultsEl.innerHTML = '<div class="no-results">Nincs találat ebben a kategóriában.</div>';
+                removeLoadMoreButton(); // Ha nincs találat, gomb se kell
             }
             
         } catch(err) {
