@@ -2582,7 +2582,7 @@
           </div>
         </label>
       
-        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'I-széria')">
+        <label class="cat-card" onclick="filterByCategories(this, 'Motor', 'SKU:901431, 090423, 090424')">
           <div class="cat-card__body">
             <div class="cat-card__cover"><img class="cat-card__image"
                 src="https://tbnation.net/cdn/shop/products/epropulsion-i-series-electric-inboard-motor-i-20-20-kw-watercraft-engines-motors-1-tiny-boat-nation.jpg?v=1741942095"
@@ -2597,7 +2597,8 @@
           </div>
         </label>
       
-        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'Pod Drive eSSA, Pod Drive Evo')">
+        <label class="cat-card"
+          onclick="filterByCategories(this, 'Motor', 'SKU:1268-00, 1269-00, 1283-00, 901485, 901482, 901483, 901484, 090428, 090429, 090430')">
           <div class="cat-card__body">
             <div class="cat-card__cover"><img class="cat-card__image"
                 src="https://static.b24.co/thumbs/xxlarge/607155-1724301467.jpg" alt="">
@@ -2611,7 +2612,7 @@
           </div>
         </label>
       
-        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'Osapian, Protruar, Endura C 2 sorozat, Endura Max sorozat, Traxxis sorozat, Zebco, Dawn Marine')">
+        <label class="cat-card" onclick="filterByCategories(this, 'Motor', 'Osapian, Protruar, Endura C 2 sorozat, Endura Max sorozat, Traxxis sorozat, Zebco, Dawn Marine')">
           <div class="cat-card__body">
             <div class="cat-card__cover"><img class="cat-card__image"
                 src="https://www.trinexus.hu/img/17496/50765-80-BY/1000x1000/50765-80-BY.webp?time=1739367369" alt="">
@@ -2699,7 +2700,8 @@
           </div>
         </label>
       
-        <label class="cat-card" onclick="filterByCategories(this, 'Csónak', 'Caytan alumínium csónakok, Cadrava alumínium csónakok')">
+        <label class="cat-card"
+          onclick="filterByCategories(this, 'Csónak', 'SKU:A470B, A420B, A420BV, A350K, A310GB, 099100, 099100SZ, 099102')">
           <div class="cat-card__body">
             <div class="cat-card__cover"><img class="cat-card__image" src="https://www.trinexus.hu/img/17496/A420B/A420B.webp"
                 alt="">
@@ -3499,25 +3501,37 @@
         const price = parseFloat(p.price); if (isNaN(price)) return false;
         if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) return false;
 
-        // --- OKOSÍTOTT KATEGÓRIA ÉS NÉV SZŰRÉS ---
+        // --- OKOSÍTOTT KATEGÓRIA, NÉV ÉS CIKKSZÁM (SKU) SZŰRÉS ---
         if (currentState.categoryFilter) {
-          const pCat = (p.category || "").toLowerCase(); // Kisbetűsítve a biztosabb találatért
-          const pName = (p.name || "").toLowerCase();    // Névben is keresünk!
+          const pCat = (p.category || "").toLowerCase();
+          const pName = (p.name || "").toLowerCase();
+          const pSku = (p.sku || "").toString().trim();
           
           if (Array.isArray(currentState.categoryFilter)) {
-              // Ha a filter tömb (pl. ['Lítium', 'Ólom-sav']):
-              // Megnézzük, hogy a szűrő szavak BÁRMELYIKE benne van-e a kategóriában VAGY a névben
-              const match = currentState.categoryFilter.some(filterWord => {
-                  const fw = filterWord.toLowerCase();
-                  return pCat.includes(fw) || pName.includes(fw); // <--- ITT A LÉNYEG
-              });
-              if (!match) return false;
+              
+              // 1. CIKKSZÁM LISTA DETEKTÁLÁSA (Ha az első elem 'SKU:'-val kezdődik)
+              // Példa paraméter: 'SKU:1234, 5678, 9012'
+              if (currentState.categoryFilter.length > 0 && currentState.categoryFilter[0].startsWith('SKU:')) {
+                  // Levágjuk a "SKU:" előtagot az első elemről
+                  const firstSku = currentState.categoryFilter[0].replace('SKU:', '').trim();
+                  
+                  // Ellenőrizzük, hogy a termék cikkszáma egyezik-e az elsővel, VAGY a lista többi elemével
+                  // A többi elem már tisztán cikkszámként kerül a tömbbe a split miatt
+                  const isMatch = (pSku === firstSku) || currentState.categoryFilter.slice(1).some(s => s.trim() === pSku);
+                  
+                  if (!isMatch) return false;
+              } 
+              
+              // 2. HAGYOMÁNYOS SZÖVEGES SZŰRÉS (Kategória vagy Név alapján)
+              else {
+                  const match = currentState.categoryFilter.some(filterWord => {
+                      const fw = filterWord.toLowerCase();
+                      // Megnézzük a kategóriában ÉS a névben is!
+                      return pCat.includes(fw) || pName.includes(fw);
+                  });
+                  if (!match) return false;
+              }
           } 
-          else {
-              // Ha csak egy szó
-              const fw = currentState.categoryFilter.toLowerCase();
-              if (!pCat.includes(fw) && !pName.includes(fw)) return false;
-          }
         }
         // ------------------------------------------
 
@@ -3526,7 +3540,6 @@
       
       const countEl = document.getElementById('results-count');
       if (countEl) { countEl.style.display = 'block'; countEl.textContent = `Találatok: ${filtered.length} db`; }
-      
       renderProductsList(filtered);
     }
 
