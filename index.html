@@ -2171,6 +2171,211 @@
         z-index: 1 !important;
       }
     }
+    /* =========================================
+       TOP KATEGÓRIÁK (KÁRTYA DESIGN & LOGIKA)
+       ========================================= */
+    
+    /* A lenyíló szekció konténere */
+    #top-cat-section {
+        width: 100%;
+        max-width: var(--max-width);
+        margin: -10px auto 20px auto;
+        height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: height 0.5s ease, opacity 0.5s ease;
+        background: var(--card-bg);
+        border-radius: 12px;
+        /* Alapból rejtve, border nélkül */
+    }
+
+    #top-cat-section.open {
+        height: auto; /* JS fogja számolni, vagy auto */
+        opacity: 1;
+        padding: 20px;
+        border: 1px solid var(--card-border);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        overflow: visible; /* Hogy a pipák kilóghassanak ha kell */
+    }
+
+    /* Rács elrendezés a kártyáknak */
+    .cat-grid {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    /* LEVEL 2 konténer (alapból rejtve) */
+    .cat-sub-level {
+        display: none; /* JS kapcsolja flex-re */
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 1px dashed var(--card-border);
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- KÁRTYA STÍLUS (ZIP alapján, Trinexus színekkel) --- */
+    .cat-card {
+        --bg-color: #fff;
+        --accent-color: var(--accent); /* Türkiz */
+        --text-color: #666;
+        --card-size: 160px; /* Kicsit kompaktabb */
+        --radius: 12px;
+        --transition: 0.2s;
+        
+        position: relative;
+        width: var(--card-size);
+        height: var(--card-size);
+        background: var(--bg-color);
+        border-radius: var(--radius);
+        cursor: pointer;
+        user-select: none;
+        perspective: 1000px;
+        display: block; /* Label elem */
+    }
+
+    /* Input elrejtése */
+    .cat-card__input {
+        display: none;
+    }
+
+    /* Kártya test */
+    .cat-card__body {
+        width: 100%;
+        height: 100%;
+        border-radius: var(--radius);
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: transform var(--transition), box-shadow var(--transition);
+        background: var(--bg-color);
+        border: 2px solid transparent; /* Keret helye */
+    }
+
+    .cat-card:active .cat-card__body {
+        transform: scale(0.96);
+    }
+
+    /* Kép tároló + Clip Path effekt */
+    .cat-card__cover {
+        width: 100%;
+        height: 75%; /* Kép aránya */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cat-card__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: grayscale(1); /* Alapból fekete-fehér */
+        transition: filter 0.3s ease;
+        
+        /* A ZIP-ben lévő tördelt üveg effekt */
+        clip-path: polygon(0% 0%, 100% 0%, 100% 90%, 67% 83%, 33% 90%, 0% 85%);
+    }
+
+    /* Szöveg rész */
+    .cat-card__header {
+        height: 25%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 10px;
+    }
+
+    .cat-card__title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #797979;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    /* CHECKBOX PIPA ANIMÁCIÓ */
+    .cat-card__checkbox {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        background: var(--accent-color);
+        border: 2px solid #fff;
+        border-radius: 50%;
+        z-index: 2;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cat-card__checkbox svg {
+        width: 12px;
+        height: 12px;
+        fill: none;
+        stroke: #fff;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 16px;
+        stroke-dashoffset: 16px;
+        transition: stroke-dashoffset 0.3s ease 0.1s;
+    }
+
+    /* --- AKTÍV ÁLLAPOT (CHECKED) --- */
+    .cat-card__input:checked + .cat-card__body {
+        border-color: var(--accent-color); /* Színes keret */
+        box-shadow: 0 0 15px rgba(51, 204, 190, 0.3);
+    }
+
+    .cat-card__input:checked + .cat-card__body .cat-card__image {
+        filter: grayscale(0); /* Színes kép */
+    }
+
+    .cat-card__input:checked + .cat-card__body .cat-card__checkbox {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .cat-card__input:checked + .cat-card__body .cat-card__checkbox svg {
+        stroke-dashoffset: 0; /* Pipa rajzolása */
+    }
+
+    /* MOBILON kisebb kártyák */
+    @media (max-width: 480px) {
+        .cat-card { --card-size: 100px; }
+        .cat-card__title { font-size: 11px; }
+        .cat-grid, .cat-sub-level { gap: 10px; }
+    }
+
+    /* --- LEVEL 2 AKTÍV STÍLUS (Kiválasztott kártya) --- */
+    .cat-card.active-sub .cat-card__body {
+        border-color: var(--accent); /* Türkiz keret */
+        box-shadow: 0 0 15px rgba(51, 204, 190, 0.4);
+    }
+    
+    .cat-card.active-sub .cat-card__image {
+        filter: grayscale(0); /* Színes kép */
+    }
+
+    /* Pipa megjelenítése az aktív alsó kártyán is */
+    .cat-card.active-sub .cat-card__checkbox {
+        opacity: 1;
+        transform: scale(1);
+    }
+    
+    .cat-card.active-sub .cat-card__checkbox svg {
+        stroke-dashoffset: 0;
+    }
   </style>
   
 </head>
@@ -2269,7 +2474,10 @@
         <div class="cat-menu-trigger" id="catMenuBtn">
           Kategóriák
         </div>
-
+        
+        <div class="cat-menu-trigger current-menu-trigger" id="topCatBtn" onclick="toggleTopCategories()">
+          Top kategóriák
+        </div>
         <div class="cat-menu-trigger current-menu-trigger" id="currentBtn" onclick="toggleGallery()">
           Aktuális
         </div>
@@ -2304,6 +2512,209 @@
         </div>
       </div>
     </section>
+
+    <div id="top-cat-section">
+    
+      <div class="cat-grid">
+    
+        <label class="cat-card">
+          <input type="checkbox" class="cat-card__input" name="top_level_1"
+            onchange="handleTopCatChange(this, 'sub-motorok')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover">
+              <img class="cat-card__image" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7fudEgeint3iPRj33gV5R1xC6g7q_DzbnMA&s" alt="Motorok">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Elektromos motorok</h3>
+            </div>
+          </div>
+        </label>
+    
+        <label class="cat-card">
+          <input type="checkbox" class="cat-card__input" name="top_level_1" onchange="handleTopCatChange(this, 'sub-akku')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover">
+              <img class="cat-card__image" src="https://www.trinexus.hu/img/17496/2104-00_altpic_3/2104-00.webp?time=1689996307" alt="Akkumulátorok">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Akkumulátorok</h3>
+            </div>
+          </div>
+        </label>
+    
+        <label class="cat-card">
+          <input type="checkbox" class="cat-card__input" name="top_level_1"
+            onchange="handleTopCatChange(this, 'sub-csonak')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover">
+              <img class="cat-card__image" src="https://www.trinexus.hu/img/17496/842470_altpic_1/842470.webp?time=1681499437" alt="Csónakok">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Csónakok</h3>
+            </div>
+          </div>
+        </label>
+    
+      </div>
+    
+      <div id="sub-motorok" class="cat-sub-level">
+        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'Armada, Ultima, Ventura, Torqeedo Travel, Torqeedo Cruise, Torqeedo Deep Blue, Navy Evo, Spirit 1.0, X-széria, X-Series, Leisure, Mercury Avator')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://www.torqeedo.com/on/demandware.static/-/Sites-torqeedo-master/default/dwd69738d1/torqeedo/outboards/deep-blue/deep-blue-80-r/1/torqeedo-deep-blue-80-r-2000x2000.jpg"
+                alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Külmotorok</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'I-széria')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://tbnation.net/cdn/shop/products/epropulsion-i-series-electric-inboard-motor-i-20-20-kw-watercraft-engines-motors-1-tiny-boat-nation.jpg?v=1741942095"
+                alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Belmotorok</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'Pod Drive eSSA, Pod Drive Evo')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://static.b24.co/thumbs/xxlarge/607155-1724301467.jpg" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Pod-motorok</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'Osapian, Protruar, Endura C 2 sorozat, Endura Max sorozat, Traxxis sorozat, Zebco, Dawn Marine')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://www.trinexus.hu/img/17496/50765-80-BY/1000x1000/50765-80-BY.webp?time=1739367369" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Trolling motorok</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Elektromos csónakmotor', 'Cayman, Powerdrive sorozat, Terrova sorozat, Ulterra sorozat, Ultrex sorozat')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://www.trinexus.hu/img/17496/903010_altpic_1/903010.webp?time=1700057131" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Orrmotorok</h3>
+            </div>
+          </div>
+        </label>
+      </div>
+    
+      <div id="sub-akku" class="cat-sub-level">
+        <label class="cat-card" onclick="filterByCategories(this, 'Munka akkumulátor', 'HE-LI LiFePo4 lítiumos akkumulátor, EZ Lítium akkumulátorok')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://www.trinexus.hu/img/17496/901259/901259.webp" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Lítium</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Akkumulátor, töltő, kapcsoló, doboz, egyebek', 'ZAP, Rocket, Banner, Effekta, Indító akkumulátor, Törpe akkumulátor')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://www.trinexus.hu/img/17496/95607/500x500/95607.webp?time=1689956900" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Ólom-sav</h3>
+            </div>
+          </div>
+        </label>
+      </div>
+    
+      <div id="sub-csonak" class="cat-sub-level">
+        <label class="cat-card" onclick="filterByCategories(this, 'Gumicsónak', 'Dawn Marine Farfalla, Kolibri, Honda, Allroundmarin')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://www.trinexus.hu/img/17496/842300/842300.webp" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Gumicsónakok</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Műanyag csónakok', 'BIC csónakok, Whaly, Latrex, Aquajoy')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image"
+                src="https://m.media-amazon.com/images/I/71odr0CgBvL._AC_UF350,350_QL80_.jpg" alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Műanyag csónakok</h3>
+            </div>
+          </div>
+        </label>
+      
+        <label class="cat-card" onclick="filterByCategories(this, 'Csónak', 'Caytan alumínium csónakok, Cadrava alumínium csónakok')">
+          <div class="cat-card__body">
+            <div class="cat-card__cover"><img class="cat-card__image" src="https://www.trinexus.hu/img/17496/A420B/A420B.webp"
+                alt="">
+              <div class="cat-card__checkbox"><svg viewBox="0 0 12 10">
+                  <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                </svg></div>
+            </div>
+            <div class="cat-card__header">
+              <h3 class="cat-card__title">Alumínium csónakok</h3>
+            </div>
+          </div>
+        </label>
+      </div>
+    
+    </div>
     
     <script src="menu.js"></script>
 
@@ -3061,17 +3472,21 @@
     }
 
     /* ---------- API & RENDER ---------- */
-    // Keress rá erre a függvényre a kódban, és cseréld le/bővítsd ki:
-    async function fetchProducts(query, page, limit) {
-      // Beolvassuk a checkbox állapotát
-      const descSearch = document.getElementById('descSearch')?.checked || false;
+    async function fetchProducts(query, page, limit, options = {}) {
+      // 1. Megnézzük a DOM-ból a leírás kapcsolót
+      const descSearchDom = document.getElementById('descSearch')?.checked || false;
       
-      // Hozzáadjuk a paraméterekhez a 'desc' kulcsot
+      // 2. Összefésüljük a DOM beállítást a paraméterben kapott opciókkal
+      // Az options.desc felülírhatja a DOM-ot, ha szükséges, de alapból a DOM nyer, vagy a cat jön options-ből
+      const useDesc = (options.desc !== undefined) ? options.desc : descSearchDom;
+      const useCat  = (options.cat !== undefined) ? options.cat : false;
+
       const params = new URLSearchParams({ 
           q: query, 
           page: page, 
           limit: limit, 
-          desc: descSearch // <--- Ez az új rész
+          desc: useDesc,
+          cat: useCat    // <--- ÚJ: Elküldjük a cat paramétert is
       });
       
       const response = await fetch(`${window.API_BASE}?${params.toString()}`);
@@ -3084,13 +3499,27 @@
         const price = parseFloat(p.price); if (isNaN(price)) return false;
         if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) return false;
 
+        // --- JAVÍTOTT KATEGÓRIA SZŰRÉS (Tartalmazás vizsgálat) ---
         if (currentState.categoryFilter) {
-          const leaf = getLeafCategory(p.category);
-          if (leaf !== currentState.categoryFilter) return false;
+          const pCat = p.category || ""; // A termék teljes kategória útvonala
+          
+          if (Array.isArray(currentState.categoryFilter)) {
+              // Ha a filter tömb (pl. ['Lítium', 'Ólom-sav']):
+              // Megnézzük, hogy a termék kategóriájában szerepel-e BÁRMELYIK szó a tömbből.
+              const match = currentState.categoryFilter.some(filterWord => pCat.includes(filterWord));
+              if (!match) return false;
+          } 
+          else {
+              // Ha csak egy szó (pl. 'Gumicsónak'):
+              if (!pCat.includes(currentState.categoryFilter)) return false;
+          }
         }
+        // ---------------------------------------------------------
 
         return true;
       });
+      
+      // Találatok száma és lista frissítése
       const countEl = document.getElementById('results-count');
       if (countEl) { countEl.style.display = 'block'; countEl.textContent = `Találatok: ${filtered.length} db`; }
       renderProductsList(filtered);
@@ -3578,6 +4007,71 @@
         }
     }
 
+    /* =========================================
+       TOP KATEGÓRIÁK LOGIKA
+       ========================================= */
+    
+    // 1. A FŐ GOMB NYITÁSA/CSUKÁSA
+    function toggleTopCategories() {
+        const section = document.getElementById('top-cat-section');
+        const btn = document.getElementById('topCatBtn');
+        const isOpen = section.classList.contains('open');
+
+        if (isOpen) {
+            section.classList.remove('open');
+            btn.classList.remove('active');
+        } else {
+            // Először zárjuk be a galériát, ha nyitva van
+            if(document.getElementById('gallery-section').classList.contains('open')) {
+                closeGallery();
+            }
+            section.classList.add('open');
+            btn.classList.add('active');
+        }
+    }
+
+    // 2. SZINT KEZELÉSE (Ha rákattintasz az egyikre, nyíljon meg alatta a sora)
+    window.handleTopCatChange = function(checkbox, targetId) {
+        // Ha ezt bepipálták, akkor a TÖBBI hasonlót ki kell venni (radio button viselkedés)
+        if(checkbox.checked) {
+            const allInputs = document.querySelectorAll('input[name="top_level_1"]');
+            allInputs.forEach(input => {
+                if(input !== checkbox) input.checked = false;
+            });
+        }
+
+        // Az összes al-panelt elrejtjük
+        document.querySelectorAll('.cat-sub-level').forEach(el => el.style.display = 'none');
+
+        // Ha be van pipálva, megjelenítjük a hozzá tartozót
+        if(checkbox.checked) {
+            const target = document.getElementById(targetId);
+            if(target) {
+                target.style.display = 'flex';
+                // Kis animáció triggerelése újra
+                target.style.animation = 'none';
+                target.offsetHeight; /* trigger reflow */
+                target.style.animation = 'fadeIn 0.4s ease-out';
+            }
+        }
+    };
+
+    // 3. KERESÉS INDÍTÁSA A 2. SZINTRŐL
+    window.triggerSearch = function(keyword) {
+        // Bezárjuk a panelt
+        toggleTopCategories();
+        
+        // Beírjuk a keresőbe és keresünk
+        const qInput = document.getElementById('q');
+        qInput.value = keyword;
+        renderForQuery(keyword, true);
+    };
+
+    // + Kiegészítés: Ha a galériát nyitjuk, ez csukódjon be (tedd ezt a toggleGallery-be!)
+    // A toggleGallery függvényed elejére írd be: 
+    // const topCat = document.getElementById('top-cat-section');
+    // if(topCat && topCat.classList.contains('open')) toggleTopCategories();
+
     function closeGallery() {
         const section = document.getElementById('gallery-section');
         const btn = document.getElementById('currentBtn');
@@ -3667,6 +4161,48 @@
       if (catBtn) catBtn.addEventListener('click', function (e) { e.preventDefault(); window.location.href = 'kepes_kereso_site.html'; });
       updateSidebarUI();
     });
+    async function filterByCategories(card, searchTerm, categoriesStr) {
+        
+        // 1. Vizuális kezelés (aktív kártya)
+        document.querySelectorAll('.cat-sub-level .cat-card').forEach(c => c.classList.remove('active-sub'));
+        card.classList.add('active-sub');
+
+        // 2. Filter beállítása
+        const categoryList = categoriesStr.split(',').map(s => s.trim());
+        currentState.categoryFilter = categoryList;
+        
+        // Gomb szöveg frissítés
+        const catBtn = document.getElementById('category-toggle');
+        if(catBtn) catBtn.textContent = "Kategória: " + categoryList[0] + (categoryList.length > 1 ? "..." : "");
+
+        const resultsEl = document.getElementById('results');
+        resultsEl.innerHTML = '<div class="loading">Termékek betöltése kategória alapján...</div>';
+        
+        try {
+            // 3. LEKÉRDEZÉS (cat: true paraméterrel!)
+            // Így a backend a kategóriában is keresi a 'searchTerm'-et.
+            const data = await fetchProducts(searchTerm, 1, 500, { cat: true });
+            
+            productsPool = data.results;
+            
+            if(productsPool.length > 0) {
+                updateCategoryDropdown(productsPool);
+                updateSliderBounds(productsPool);
+                filterAndRender(); // Szigorú szűrés a 'categoryList' alapján
+                
+                setTimeout(() => {
+                    const controlsRow = document.querySelector('.controls-row');
+                    if(controlsRow) controlsRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            } else {
+                resultsEl.innerHTML = '<div class="no-results">Nincs találat ebben a kategóriában.</div>';
+            }
+            
+        } catch(err) {
+            console.error(err);
+            resultsEl.innerHTML = '<div class="no-results">Hiba történt.</div>';
+        }
+    }
   </script>
 </body>
 
