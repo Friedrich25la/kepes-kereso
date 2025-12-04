@@ -41,9 +41,12 @@ exports.handler = async (event) => {
     // 1. Paraméterek beolvasása
     const qRaw = (event.queryStringParameters?.q || '').trim();
     const page = Math.max(1, Number(event.queryStringParameters?.page) || 1);
-    
+
     // Leírásban keresés kapcsoló
     const searchInDesc = event.queryStringParameters?.desc === 'true';
+
+    // --- ÚJ: Kategóriában keresés kapcsoló ---
+    const searchInCat = event.queryStringParameters?.cat === 'true';
 
     let limit = Math.max(1, Number(event.queryStringParameters?.limit) || DEFAULT_LIMIT);
     if (limit > MAX_LIMIT) limit = MAX_LIMIT;
@@ -74,20 +77,22 @@ exports.handler = async (event) => {
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
 
-      /* --- ÚJ RÉSZ: STÁTUSZ SZŰRÉS --- */
-      // Ha a status 0 (vagy "0"), akkor ezt a terméket átugorjuk
-      // A == megengedi a string ("0") és number (0) összehasonlítást is
+      /* --- STÁTUSZ SZŰRÉS (Megmaradt) --- */
       if (p.status == 0) {
-          continue; 
+        continue;
       }
-      /* ------------------------------- */
 
       // Alap keresési string: NÉV + CIKKSZÁM
       let searchStr = (p.name || '') + ' ' + (p.sku || '');
 
       // HA a felhasználó kérte a leírásban keresést, hozzáfűzzük azt is
       if (searchInDesc) {
-         searchStr += ' ' + (p.short_description || '');
+        searchStr += ' ' + (p.short_description || '');
+      }
+
+      // --- ÚJ: HA a felhasználó kérte a kategória keresést, hozzáfűzzük azt is ---
+      if (searchInCat) {
+        searchStr += ' ' + (p.category || '');
       }
 
       const hay = normalize(searchStr);
@@ -129,6 +134,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         q: qRaw,
         desc_search: searchInDesc,
+        cat_search: searchInCat, // Visszajelezzük debug célból
         page,
         limit,
         total_count: total,
