@@ -4247,7 +4247,6 @@
             if (data.total_count > productsPool.length) { currentState.hasMore = true; } else { currentState.hasMore = false; }
             
             if(productsPool.length > 0) {
-                // --- JAVÍTÁS: ÁRAK RESETELÉSE ---
                 // Kiszámoljuk az új termékek min/max árát
                 const prices = productsPool.map(p => parseFloat(p.price)).filter(x => !isNaN(x));
                 const min = prices.length ? Math.min(...prices) : 0;
@@ -4259,10 +4258,12 @@
 
                 // Frissítjük a csúszkát (határok + fogantyúk pozíciója)
                 updateSliderBounds(productsPool); 
+                
+                // --- JAVÍTÁS: HELYES SZINTAXIS A CSÚSZKÁHOZ ---
                 if (sliderInstance) {
-                    sliderInstance.set([min, max]); // Ez "húzza szét" a csúszkát a szélére
+                    sliderInstance.$set({ values: [min, max] }); 
                 }
-                // -------------------------------
+                // ----------------------------------------------
 
                 updateCategoryDropdown(productsPool);
                 filterAndRender(); 
