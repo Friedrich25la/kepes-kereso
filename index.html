@@ -3859,7 +3859,6 @@
       if (modalOverlay && modalTitle && modalContent) {
         modalTitle.textContent = product.name;
         
-        // --- LEÍRÁS TISZTÍTÁSA ---
         let dbDesc = product.short_description || "";
         dbDesc = dbDesc.replace(/<!HTML KOD>/gi, "").trim();
         if (dbDesc && dbDesc.length > 0) {
@@ -3868,11 +3867,9 @@
              modalContent.innerText = "Ehhez a termékhez jelenleg nincs részletes leírás.";
         }
 
-        // Kép betöltése
         const imgs = (product.img || '').toString().split(/\||,|;|\n/).filter(Boolean);
         modalImg.src = imgs.length ? (imgs[0].startsWith('http') ? imgs[0] : 'https://' + imgs[0]) : 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-        // Árak megjelenítése
         const priceData = getPriceData(product);
         const priceFormatted = Math.round(priceData.price).toLocaleString('hu-HU') + ' Ft';
         
@@ -3887,9 +3884,9 @@
             modalPrice.textContent = priceFormatted;
         }
 
-        /* --- SZÁLLÍTÁS ELREJTÉSE (LOGIKA) --- */
+        /* --- VISSZAKERÜLT: SZÁLLÍTÁS ELREJTÉSE (LOGIKA) --- */
         const catLower = (product.category || "").toLowerCase();
-        const price = priceData.price;
+        const priceVal = priceData.price;
         let showShipping = true;
 
         // 1. Tiltólistás szavak (ezeknél soha nincs szállítás)
@@ -3904,7 +3901,7 @@
 
         // 2. Tréler speciális logika (csak 100.000 Ft felett rejtjük el)
         if (showShipping && catLower.includes("tréler")) {
-            if (price > 100000) {
+            if (priceVal > 100000) {
                 showShipping = false;
             }
         }
@@ -3913,7 +3910,7 @@
         if (shippingBlock) {
             shippingBlock.style.display = showShipping ? 'flex' : 'none';
         }
-        /* ------------------------------------- */
+        /* ----------------------------------------------------- */
 
         // Garancia logika
         const name = (product.name || '').toLowerCase();
@@ -3921,18 +3918,15 @@
         if (name.includes('deeper chirp') || name.includes('tohatsu')) {
           warrantyText = "5 év garancia";
         } else {
-          if (price > 250000) warrantyText = "3 év garancia";
-          else if (price > 10000) warrantyText = "2 év garancia";
+          if (priceVal > 250000) warrantyText = "3 év garancia";
+          else if (priceVal > 10000) warrantyText = "2 év garancia";
           else warrantyText = "1 év garancia";
         }
         modalWarranty.textContent = warrantyText;
 
-        // Statisztika (MOST MÁR STABIL SZÁMOT AD!)
-        // Átadjuk az SKU-t is, hogy abból generálja a számot
-        const salesCount = getSalesCount(price, product.sku);
+        const salesCount = getSalesCount(priceVal, product.sku);
         modalSales.textContent = `${salesCount} db eladva az elmúlt 30 napban`;
 
-        // Gombok
         modalLinkBtn.href = product.url || '#';
         const isFav = isFavorite(product.sku);
         if (isFav) modalFavBtn.classList.add('active');
@@ -4225,40 +4219,52 @@
       updateSidebarUI();
     });
     async function filterByCategories(card, searchTerm, categoriesStr) {
-        
-        // 1. Vizuális kezelés
+        // 1. Vizuális reset
         document.querySelectorAll('.cat-sub-level .cat-card').forEach(c => c.classList.remove('active-sub'));
         card.classList.add('active-sub');
 
         // 2. Filter beállítása
         const categoryList = categoriesStr.split(',').map(s => s.trim());
         currentState.categoryFilter = categoryList;
-        
-        // --- JAVÍTÁS: MENTJÜK A KERESÉSI ÁLLAPOTOT A LOAD MORE SZÁMÁRA ---
-        currentState.query = searchTerm;      // Hogy a loadMore tudja, mit kerestünk
-        currentState.isCategorySearch = true; // Hogy a loadMore tudja, hogy kategóriában is kell keresni
-        currentState.page = 1;                // Reseteljük az oldalszámot
-        // ------------------------------------------------------------------
+        currentState.query = searchTerm;      
+        currentState.isCategorySearch = true; 
+        currentState.page = 1;
+        currentState.hasMore = true; 
 
-        // Gomb szöveg frissítés
+        // Gomb szöveg
         const catBtn = document.getElementById('category-toggle');
         if(catBtn) catBtn.textContent = "Kategória: " + categoryList[0] + (categoryList.length > 1 ? "..." : "");
 
         const resultsEl = document.getElementById('results');
-        resultsEl.innerHTML = '<div class="loading">Termékek betöltése kategória alapján...</div>';
+        resultsEl.innerHTML = '<div class=\"loading\">Termékek betöltése kategória alapján...</div>';
         
+        productsPool = []; 
+
         try {
-            // 3. LEKÉRDEZÉS
             const data = await fetchProducts(searchTerm, 1, 500, { cat: true });
-            
             productsPool = data.results;
             
-            // Load More gomb állapotának kezelése
-            if (data.total_count > 500) { currentState.hasMore = true; } else { currentState.hasMore = false; }
+            if (data.total_count > productsPool.length) { currentState.hasMore = true; } else { currentState.hasMore = false; }
             
             if(productsPool.length > 0) {
+                // --- JAVÍTÁS: ÁRAK RESETELÉSE ---
+                // Kiszámoljuk az új termékek min/max árát
+                const prices = productsPool.map(p => parseFloat(p.price)).filter(x => !isNaN(x));
+                const min = prices.length ? Math.min(...prices) : 0;
+                const max = prices.length ? Math.max(...prices) : 0;
+
+                // Beállítjuk a szűrő belső állapotát a teljes terjedelemre
+                priceRange.currentMin = min;
+                priceRange.currentMax = max;
+
+                // Frissítjük a csúszkát (határok + fogantyúk pozíciója)
+                updateSliderBounds(productsPool); 
+                if (sliderInstance) {
+                    sliderInstance.set([min, max]); // Ez "húzza szét" a csúszkát a szélére
+                }
+                // -------------------------------
+
                 updateCategoryDropdown(productsPool);
-                updateSliderBounds(productsPool);
                 filterAndRender(); 
                 
                 setTimeout(() => {
@@ -4266,13 +4272,13 @@
                     if(controlsRow) controlsRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
-                resultsEl.innerHTML = '<div class="no-results">Nincs találat ebben a kategóriában.</div>';
-                removeLoadMoreButton(); // Ha nincs találat, gomb se kell
+                resultsEl.innerHTML = '<div class=\"no-results\">Nincs találat ebben a kategóriában.</div>';
+                removeLoadMoreButton();
             }
             
         } catch(err) {
             console.error(err);
-            resultsEl.innerHTML = '<div class="no-results">Hiba történt.</div>';
+            resultsEl.innerHTML = '<div class=\"no-results\">Hiba történt.</div>';
         }
     }
   </script>
