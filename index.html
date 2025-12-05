@@ -2704,6 +2704,54 @@ body {
     background-color: #ccc;
     border-radius: 4px;
 }
+
+/* =========================================
+       MOBIL WIDGET BEÁLLÍTÁSOK (Bal alsó sarok + Kisebb méret)
+       ========================================= */
+    @media (max-width: 480px) {
+        .fab-container {
+            right: auto;  /* Kivesszük a jobb oldalról */
+            left: 15px;   /* Áttesszük a bal oldalra */
+            bottom: 15px; /* Kicsit lejjebb vesszük */
+            align-items: flex-start; /* Balra igazítjuk a gombokat */
+        }
+
+        /* 1. FŐ GOMB KICSINYÍTÉSE (84px -> 60px) */
+        .fab-container .fab {
+            width: 60px;
+            height: 60px;
+        }
+        /* A sarok-effekt (letörés) igazítása */
+        .fab-container .fab::before {
+            width: 30px;
+            height: 30px;
+        }
+
+        /* 2. KIS GOMBOK KICSINYÍTÉSE (50px -> 40px) */
+        .fab-container .sub-button {
+            width: 40px;
+            height: 40px;
+            right: auto; /* Jobb igazítás törlése */
+            left: 10px;  /* Középre igazítás a 60px-es főgombhoz képest (60-40)/2 */
+            bottom: 10px;
+        }
+        
+        /* Ikonok méretének csökkentése */
+        .fab-container .sub-button .material-icons {
+            font-size: 20px;
+        }
+
+        /* 3. ANIMÁCIÓK ÚJRASZÁMOLÁSA */
+        /* Mivel kisebbek a gombok, közelebb kell ugraniuk egymáshoz */
+        .fab-container:hover .sub-button:nth-child(2) { transform: translateY(-70px); }
+        .fab-container:hover .sub-button:nth-child(3) { transform: translateY(-120px); }
+        .fab-container:hover .sub-button:nth-child(4) { transform: translateY(-170px); }
+        
+        /* A "láthatatlan híd" magasságának csökkentése */
+        .fab-container:hover::after {
+            height: 220px;
+        }
+    }
   </style>
   
 </head>
