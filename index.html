@@ -4244,7 +4244,7 @@
         currentState.page = 1;
         currentState.hasMore = true; 
 
-        // Gomb szöveg
+        // Gomb szöveg frissítése
         const catBtn = document.getElementById('category-toggle');
         if(catBtn) catBtn.textContent = "Kategória: " + categoryList[0] + (categoryList.length > 1 ? "..." : "");
 
@@ -4260,42 +4260,54 @@
             if (data.total_count > productsPool.length) { currentState.hasMore = true; } else { currentState.hasMore = false; }
             
             if(productsPool.length > 0) {
-                // Kiszámoljuk az új termékek teljes ártartományát
+                // Árak számítása
                 const prices = productsPool.map(p => parseFloat(p.price)).filter(x => !isNaN(x));
                 const min = prices.length ? Math.min(...prices) : 0;
                 const max = prices.length ? Math.max(...prices) : 0;
 
-                // --- SPECIÁLIS MINIMUM ÁRAK BEÁLLÍTÁSA ---
-                // Megnézzük, melyik kártya volt az a kulcsszavak alapján
+                // --- SPECIÁLIS MINIMUM ÁRAK ---
                 let forcedMin = min; 
-                
-                // Külmotorok (Torqeedo, Navy, Spirit...) -> 200.000
                 if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
-                
-                // Trolling motorok (Osapian, Protruar...) -> 58.000
                 else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
-                
-                // Orrmotorok (Cayman, Terrova...) -> 190.000
                 else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
-                
-                // Gumicsónakok (Kolibri, Honda...) -> 150.000
                 else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
 
-                // Ha a kényszerített minimum nagyobb, mint a valós, akkor korrigáljuk
                 if (forcedMin > max) forcedMin = min; 
                 
-                // Beállítjuk a szűrőt
                 priceRange.currentMin = forcedMin;
                 priceRange.currentMax = max;
 
-                // Frissítjük a csúszkát
                 updateSliderBounds(productsPool); 
                 if (sliderInstance) {
                     sliderInstance.$set({ values: [forcedMin, max] }); 
                 }
-                // ------------------------------------------
 
-                updateCategoryDropdown(productsPool);
+                // --- JAVÍTOTT RÉSZ: ELŐSZŰRÉS A DROPDOWN SZÁMÁRA ---
+                // Itt szűrjük le a termékeket ugyanazzal a logikával, amit a megjelenítéshez használunk,
+                // így a legördülő menübe nem kerülnek bele az irreleváns kategóriák.
+                const filteredForDropdown = productsPool.filter(p => {
+                     const pCat = (p.category || "").toLowerCase();
+                     const pName = (p.name || "").toLowerCase();
+                     const pSku = (p.sku || "").toString().trim();
+
+                     // SKU alapú szűrés ellenőrzése
+                     if (categoryList.length > 0 && categoryList[0].startsWith('SKU:')) {
+                          const firstSku = categoryList[0].replace('SKU:', '').trim();
+                          return (pSku === firstSku) || categoryList.slice(1).some(s => s.trim() === pSku);
+                     } 
+                     // Szöveges szűrés ellenőrzése
+                     else {
+                          return categoryList.some(filterWord => {
+                              const fw = filterWord.toLowerCase();
+                              return pCat.includes(fw) || pName.includes(fw);
+                          });
+                     }
+                });
+
+                // Most már a tisztított listát adjuk át
+                updateCategoryDropdown(filteredForDropdown);
+                // ----------------------------------------------------
+
                 filterAndRender(); 
                 
                 setTimeout(() => {
@@ -4305,6 +4317,8 @@
             } else {
                 resultsEl.innerHTML = '<div class=\"no-results\">Nincs találat ebben a kategóriában.</div>';
                 removeLoadMoreButton();
+                // Üres lista esetén a dropdown is legyen üres vagy alaphelyzet
+                updateCategoryDropdown([]);
             }
             
         } catch(err) {
