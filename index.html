@@ -3356,6 +3356,7 @@
     }
 
     /* ---------- ACTION MENU LOGIC ---------- */
+    /* ---------- ACTION MENU LOGIC ---------- */
     (function initMenus() {
       const fields = document.querySelectorAll('.field.menu');
 
@@ -3383,6 +3384,17 @@
                 e.stopPropagation();
                 const val = opt.dataset.option;
                 select.value = val;
+                
+                // --- JAVÍTÁS: GOMB SZÖVEG FRISSÍTÉSE ---
+                const labelText = opt.querySelector('h3').textContent;
+                // Ha rendezés menü, akkor "Rendezés: ...", ha kategória, akkor "Kategória: ..."
+                if(btn.id === 'sharing-toggle') {
+                    btn.textContent = "Rendezés: " + labelText;
+                } else {
+                    btn.textContent = labelText; // Kategóriánál (elvileg ezt a másik függvény kezeli, de nem árt)
+                }
+                // ----------------------------------------
+
                 items.forEach(o => o.classList.remove('selected'));
                 opt.classList.add('selected');
                 closeAllMenus();
@@ -3395,7 +3407,6 @@
 
       document.body.addEventListener('click', () => closeAllMenus());
     })();
-
     /* ---------- SLIDER ---------- */
     function initSlider() {
       if (!window.RangeSlider) { setTimeout(initSlider, 100); return; }
@@ -3853,7 +3864,6 @@
       const modalFavBtn = document.getElementById('modal-fav-btn');
       const modalLinkBtn = document.getElementById('modal-link-btn');
       
-      // Szállítási blokk elem
       const shippingBlock = document.querySelector('.shipping-block');
 
       if (modalOverlay && modalTitle && modalContent) {
@@ -3884,18 +3894,22 @@
             modalPrice.textContent = priceFormatted;
         }
 
-        /* --- VISSZAKERÜLT: SZÁLLÍTÁS ELREJTÉSE (LOGIKA) --- */
+        /* --- JAVÍTOTT SZÁLLÍTÁS LOGIKA --- */
         const catLower = (product.category || "").toLowerCase();
         const priceVal = priceData.price;
         let showShipping = true;
 
-        // 1. Tiltólistás szavak (ezeknél soha nincs szállítás)
+        // 1. Tiltólistás szavak
         const forbiddenWords = ["hajó", "csónak", "sit on top", "hagyományos kajak-kenu"];
         
-        for (let word of forbiddenWords) {
-            if (catLower.includes(word)) {
-                showShipping = false;
-                break;
+        // CSAK AKKOR tiltjuk le, ha drágább mint 40.000 Ft. 
+        // Így az olcsó kiegészítők (pl. "Hajócsavar", "Csónak ragasztó") megkapják a szállítást.
+        if (priceVal > 40000) { 
+            for (let word of forbiddenWords) {
+                if (catLower.includes(word)) {
+                    showShipping = false;
+                    break;
+                }
             }
         }
 
@@ -3906,7 +3920,6 @@
             }
         }
 
-        // Megjelenítés vagy elrejtés
         if (shippingBlock) {
             shippingBlock.style.display = showShipping ? 'flex' : 'none';
         }
@@ -4247,23 +4260,40 @@
             if (data.total_count > productsPool.length) { currentState.hasMore = true; } else { currentState.hasMore = false; }
             
             if(productsPool.length > 0) {
-                // Kiszámoljuk az új termékek min/max árát
+                // Kiszámoljuk az új termékek teljes ártartományát
                 const prices = productsPool.map(p => parseFloat(p.price)).filter(x => !isNaN(x));
                 const min = prices.length ? Math.min(...prices) : 0;
                 const max = prices.length ? Math.max(...prices) : 0;
 
-                // Beállítjuk a szűrő belső állapotát a teljes terjedelemre
-                priceRange.currentMin = min;
+                // --- SPECIÁLIS MINIMUM ÁRAK BEÁLLÍTÁSA ---
+                // Megnézzük, melyik kártya volt az a kulcsszavak alapján
+                let forcedMin = min; 
+                
+                // Külmotorok (Torqeedo, Navy, Spirit...) -> 200.000
+                if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
+                
+                // Trolling motorok (Osapian, Protruar...) -> 58.000
+                else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
+                
+                // Orrmotorok (Cayman, Terrova...) -> 190.000
+                else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
+                
+                // Gumicsónakok (Kolibri, Honda...) -> 150.000
+                else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
+
+                // Ha a kényszerített minimum nagyobb, mint a valós, akkor korrigáljuk
+                if (forcedMin > max) forcedMin = min; 
+                
+                // Beállítjuk a szűrőt
+                priceRange.currentMin = forcedMin;
                 priceRange.currentMax = max;
 
-                // Frissítjük a csúszkát (határok + fogantyúk pozíciója)
+                // Frissítjük a csúszkát
                 updateSliderBounds(productsPool); 
-                
-                // --- JAVÍTÁS: HELYES SZINTAXIS A CSÚSZKÁHOZ ---
                 if (sliderInstance) {
-                    sliderInstance.$set({ values: [min, max] }); 
+                    sliderInstance.$set({ values: [forcedMin, max] }); 
                 }
-                // ----------------------------------------------
+                // ------------------------------------------
 
                 updateCategoryDropdown(productsPool);
                 filterAndRender(); 
