@@ -3521,6 +3521,16 @@ body {
     let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null, isCategorySearch: false };
     let isFirstLoad = true;
 
+    /* ---------- SEGÉDFÜGGVÉNY: Ékezetek eltávolítása és kisbetűsítés ---------- */
+    function normalize(s = '') {
+      try {
+        let t = s.toString().toLowerCase();
+        // Ékezetek eltávolítása (diakritika)
+        t = t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
+        return t;
+      } catch (e) { return (s || '').toString().toLowerCase(); }
+    }
+
     /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS ---------- */
     function getUrlParams() {
       let params = new URLSearchParams(window.location.search);
@@ -4019,76 +4029,77 @@ body {
     }
 
     function filterAndRender() {
-    // A productsPool-on futtatunk szűrést
-    const filtered = productsPool.filter(p => {
-        
-        // --- 1. NEGATÍV SZŰRÉS: RIB KIZÁRÁSA ---
-        const nameLower = (p.name || '').toLowerCase();
-        const catLower = (p.category || '').toLowerCase();
+        // A productsPool-on futtatunk szűrést
+        const filtered = productsPool.filter(p => {
+            
+            // --- 1. NEGATÍV SZŰRÉS: RIB KIZÁRÁSA ---
+            // A termék nevének és kategóriájának kisbetűs változata
+            const nameLower = (p.name || '').toLowerCase();
+            const catLower = (p.category || '').toLowerCase();
 
-        // Ha a név VAGY a kategória tartalmazza a "rib" szót, kizárjuk.
-        if (nameLower.includes('rib') || catLower.includes('rib')) {
-            return false;
-        }
-
-        // --- 2. STÁTUSZ SZŰRÉS (Csak 1 és 2 engedélyezett) ---
-        // Státusz szűrés (feltételezve, hogy az 1 és 2 státusz kell, 0 és 3 nem)
-        if (p.status != 1 && p.status != 2) {
-            return false;
-        }
-
-        // --- 3. ÁR SZŰRÉS ---
-        const price = parseFloat(p.price); 
-        if (isNaN(price)) return false;
-
-        // Ellenőrizzük, hogy az ár a beállított minimum és maximum között van-e
-        if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) {
-            return false;
-        }
-
-        // --- 4. KATEGÓRIA / SZÖVEGES SZŰRÉS ---
-        
-        // Keresési tokenek előkészítése
-        const qnorm = normalize(currentState.searchQuery || '');
-        // A MIN_TOKEN_LEN-nél rövidebb tokeneket kiszűrjük (általában 3)
-        const tokens = qnorm.split(/\s+/).filter(t => t.length >= window.MIN_TOKEN_LEN);
-
-        // Nincs aktív keresés (visszaadjuk az összes szűrt terméket)
-        if (tokens.length === 0) return true;
-
-        // Kategoriaszűrő ellenőrzése (ha a felhasználó kategóriát választott)
-        const categoriesStr = normalize(currentState.categoryFilter || '');
-        if (categoriesStr.length > 0) {
-             const categoryHaystack = normalize(p.category || '');
-             // A termék kategóriájának tartalmaznia kell a szűrő kategóriát
-             if (!categoryHaystack.includes(categoriesStr)) {
-                 return false;
-             }
-        }
-
-        // Fő keresési terület összeállítása (név, cikkszám, stb.)
-        let searchStr = (p.name || '') + ' ' + (p.sku || '');
-        if (currentState.searchInDesc) searchStr += ' ' + (p.short_description || '');
-        if (currentState.searchInCat) searchStr += ' ' + (p.category || '');
-
-        const hay = normalize(searchStr);
-
-        // "ÉS" kapcsolat ellenőrzése (Minden keresett szónak szerepelnie kell)
-        let ok = true;
-        for (let t of tokens) {
-            if (!hay.includes(t)) {
-                ok = false;
-                break;
+            // Ha a név VAGY a kategória tartalmazza a "rib" szót, kizárjuk.
+            if (nameLower.includes('rib') || catLower.includes('rib')) {
+                return false;
             }
-        }
 
-        return ok;
-    });
-      
-      const countEl = document.getElementById('results-count');
-      if (countEl) { countEl.style.display = 'block'; countEl.textContent = `Találatok: ${filtered.length} db`; }
-      renderProductsList(filtered);
-    }
+            // --- 2. STÁTUSZ SZŰRÉS (Csak 1 és 2 engedélyezett) ---
+            // Ha a status nem 1 és nem is 2, kizárjuk.
+            if (p.status != 1 && p.status != 2) {
+                return false;
+            }
+
+            // --- 3. ÁR SZŰRÉS ---
+            const price = parseFloat(p.price); 
+            // Ha nem szám az ár (hibás adat), kizárjuk
+            if (isNaN(price)) return false;
+
+            // Ellenőrizzük, hogy az ár a beállított minimum és maximum között van-e
+            if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) {
+                return false;
+            }
+
+            // --- 4. KATEGÓRIA / SZÖVEGES SZŰRÉS ---
+            
+            // Keresési tokenek előkészítése
+            const qnorm = normalize(currentState.searchQuery || '');
+            const tokens = qnorm.split(/\s+/).filter(t => t.length >= window.MIN_TOKEN_LEN);
+
+            // Ha nincs aktív keresés, csak a fenti szűrőkkel szűrt listát adjuk vissza
+            if (tokens.length === 0) return true;
+
+            // Kategoriaszűrő ellenőrzése
+            const categoriesStr = normalize(currentState.categoryFilter || '');
+            if (categoriesStr.length > 0) {
+                const categoryHaystack = normalize(p.category || '');
+                // A termék kategóriájának tartalmaznia kell a szűrő kategóriát
+                if (!categoryHaystack.includes(categoriesStr)) {
+                    return false;
+                }
+            }
+
+            // Fő keresési terület összeállítása
+            let searchStr = (p.name || '') + ' ' + (p.sku || '');
+            if (currentState.searchInDesc) searchStr += ' ' + (p.short_description || '');
+            if (currentState.searchInCat) searchStr += ' ' + (p.category || '');
+
+            const hay = normalize(searchStr);
+
+            // "ÉS" kapcsolat ellenőrzése (Minden keresett szónak szerepelnie kell)
+            let ok = true;
+            for (let t of tokens) {
+                if (!hay.includes(t)) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            return ok;
+        }); // <-- A filter() metódus lezárása
+
+        // EZ A KÉT SOR FONTOS: Frissítik a csúszkát és az eredményeket.
+        updatePriceRangeFromFiltered(filtered);
+        renderResults(filtered); 
+    } // <-- A filterAndRender() funkció lezárása
 
     function renderProductsList(list) {
       const resultsEl = document.getElementById('results'); resultsEl.innerHTML = '';
