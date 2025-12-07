@@ -3521,16 +3521,6 @@ body {
     let currentState = { query: '', page: 1, isLoading: false, hasMore: true, categoryFilter: null, isCategorySearch: false };
     let isFirstLoad = true;
 
-    /* ---------- SEGÉDFÜGGVÉNY: Ékezetek eltávolítása és kisbetűsítés ---------- */
-    function normalize(s = '') {
-      try {
-        let t = s.toString().toLowerCase();
-        // Ékezetek eltávolítása (diakritika)
-        t = t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
-        return t;
-      } catch (e) { return (s || '').toString().toLowerCase(); }
-    }
-
     /* ---------- SEGÉDFÜGGVÉNY: URL OLVASÁS ---------- */
     function getUrlParams() {
       let params = new URLSearchParams(window.location.search);
@@ -4029,77 +4019,51 @@ body {
     }
 
     function filterAndRender() {
-        // A productsPool-on futtatunk szűrést
-        const filtered = productsPool.filter(p => {
-            
-            // --- 1. NEGATÍV SZŰRÉS: RIB KIZÁRÁSA ---
-            // A termék nevének és kategóriájának kisbetűs változata
-            const nameLower = (p.name || '').toLowerCase();
-            const catLower = (p.category || '').toLowerCase();
+      const filtered = productsPool.filter(p => {
+        const price = parseFloat(p.price); if (isNaN(price)) return false;
+        if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) return false;
 
-            // Ha a név VAGY a kategória tartalmazza a "rib" szót, kizárjuk.
-            if (nameLower.includes('rib') || catLower.includes('rib')) {
-                return false;
-            }
+        // --- OKOSÍTOTT KATEGÓRIA, NÉV ÉS CIKKSZÁM (SKU) SZŰRÉS ---
+        if (currentState.categoryFilter) {
+          const pCat = (p.category || "").toLowerCase();
+          const pName = (p.name || "").toLowerCase();
+          const pSku = (p.sku || "").toString().trim();
+          
+          if (Array.isArray(currentState.categoryFilter)) {
+              
+              // 1. CIKKSZÁM LISTA DETEKTÁLÁSA (Ha az első elem 'SKU:'-val kezdődik)
+              // Példa paraméter: 'SKU:1234, 5678, 9012'
+              if (currentState.categoryFilter.length > 0 && currentState.categoryFilter[0].startsWith('SKU:')) {
+                  // Levágjuk a "SKU:" előtagot az első elemről
+                  const firstSku = currentState.categoryFilter[0].replace('SKU:', '').trim();
+                  
+                  // Ellenőrizzük, hogy a termék cikkszáma egyezik-e az elsővel, VAGY a lista többi elemével
+                  // A többi elem már tisztán cikkszámként kerül a tömbbe a split miatt
+                  const isMatch = (pSku === firstSku) || currentState.categoryFilter.slice(1).some(s => s.trim() === pSku);
+                  
+                  if (!isMatch) return false;
+              } 
+              
+              // 2. HAGYOMÁNYOS SZÖVEGES SZŰRÉS (Kategória vagy Név alapján)
+              else {
+                  const match = currentState.categoryFilter.some(filterWord => {
+                      const fw = filterWord.toLowerCase();
+                      // Megnézzük a kategóriában ÉS a névben is!
+                      return pCat.includes(fw) || pName.includes(fw);
+                  });
+                  if (!match) return false;
+              }
+          } 
+        }
+        // ------------------------------------------
 
-            // --- 2. STÁTUSZ SZŰRÉS (Csak 1 és 2 engedélyezett) ---
-            // Ha a status nem 1 és nem is 2, kizárjuk.
-            if (p.status != 1 && p.status != 2) {
-                return false;
-            }
-
-            // --- 3. ÁR SZŰRÉS ---
-            const price = parseFloat(p.price); 
-            // Ha nem szám az ár (hibás adat), kizárjuk
-            if (isNaN(price)) return false;
-
-            // Ellenőrizzük, hogy az ár a beállított minimum és maximum között van-e
-            if (price < priceRange.currentMin || (priceRange.currentMax > 0 && price > priceRange.currentMax)) {
-                return false;
-            }
-
-            // --- 4. KATEGÓRIA / SZÖVEGES SZŰRÉS ---
-            
-            // Keresési tokenek előkészítése
-            const qnorm = normalize(currentState.searchQuery || '');
-            const tokens = qnorm.split(/\s+/).filter(t => t.length >= window.MIN_TOKEN_LEN);
-
-            // Ha nincs aktív keresés, csak a fenti szűrőkkel szűrt listát adjuk vissza
-            if (tokens.length === 0) return true;
-
-            // Kategoriaszűrő ellenőrzése
-            const categoriesStr = normalize(currentState.categoryFilter || '');
-            if (categoriesStr.length > 0) {
-                const categoryHaystack = normalize(p.category || '');
-                // A termék kategóriájának tartalmaznia kell a szűrő kategóriát
-                if (!categoryHaystack.includes(categoriesStr)) {
-                    return false;
-                }
-            }
-
-            // Fő keresési terület összeállítása
-            let searchStr = (p.name || '') + ' ' + (p.sku || '');
-            if (currentState.searchInDesc) searchStr += ' ' + (p.short_description || '');
-            if (currentState.searchInCat) searchStr += ' ' + (p.category || '');
-
-            const hay = normalize(searchStr);
-
-            // "ÉS" kapcsolat ellenőrzése (Minden keresett szónak szerepelnie kell)
-            let ok = true;
-            for (let t of tokens) {
-                if (!hay.includes(t)) {
-                    ok = false;
-                    break;
-                }
-            }
-
-            return ok;
-        }); // <-- A filter() metódus lezárása
-
-        // EZ A KÉT SOR FONTOS: Frissítik a csúszkát és az eredményeket.
-        updatePriceRangeFromFiltered(filtered);
-        renderResults(filtered); 
-    } // <-- A filterAndRender() funkció lezárása
+        return true;
+      });
+      
+      const countEl = document.getElementById('results-count');
+      if (countEl) { countEl.style.display = 'block'; countEl.textContent = `Találatok: ${filtered.length} db`; }
+      renderProductsList(filtered);
+    }
 
     function renderProductsList(list) {
       const resultsEl = document.getElementById('results'); resultsEl.innerHTML = '';
@@ -4813,31 +4777,31 @@ body {
                 const max = prices.length ? Math.max(...prices) : 0;
 
                 // --- SPECIÁLIS MINIMUM ÁRAK ---
-                let forcedMin = min;
-                if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
-                else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
-                else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
-                else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
+              let forcedMin = min;
+              if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
+              else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
+              else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
+              else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
 
-                if (forcedMin > max) forcedMin = min;
+              if (forcedMin > max) forcedMin = min;
 
-                // --- ÚJ: SPECIÁLIS MAXIMUM ÁRAK (TROLLING MOTOROK) ---
-                let forcedMax = max;
+              // --- ÚJ: SPECIÁLIS MAXIMUM ÁRAK (TROLLING MOTOROK) ---
+              let forcedMax = max;
 
-                // Ha a kategória listában szerepelnek a trolling motorok kulcsszavai (pl. Osapian, Endura, Traxxis)
-                // A 'Protruar' is ide tartozik a gombod alapján.
-                if (categoriesStr.includes('Osapian') || categoriesStr.includes('Endura') || categoriesStr.includes('Traxxis')) {
-                  // Beállítjuk a felső határt 1 millióra
-                  const LIMIT = 1000000;
+              // Ha a kategória listában szerepelnek a trolling motorok kulcsszavai (pl. Osapian, Endura, Traxxis)
+              // A 'Protruar' is ide tartozik a gombod alapján.
+              if (categoriesStr.includes('Osapian') || categoriesStr.includes('Endura') || categoriesStr.includes('Traxxis')) {
+                // Beállítjuk a felső határt 1 millióra
+                const LIMIT = 1000000;
 
-                  // Csak akkor vágjuk le, ha a valós max ár magasabb ennél
-                  if (forcedMax > LIMIT) {
-                    forcedMax = LIMIT;
-                  }
+                // Csak akkor vágjuk le, ha a valós max ár magasabb ennél
+                if (forcedMax > LIMIT) {
+                  forcedMax = LIMIT;
                 }
+              }
 
-                priceRange.currentMin = forcedMin;
-                priceRange.currentMax = forcedMax;
+              priceRange.currentMin = forcedMin;
+              priceRange.currentMax = forcedMax;
 
                 updateSliderBounds(productsPool); 
                 if (sliderInstance) {
