@@ -77,8 +77,9 @@ exports.handler = async (event) => {
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
 
-      /* --- STÁTUSZ SZŰRÉS (Megmaradt) --- */
-      if (p.status == 0) {
+      /* --- STÁTUSZ SZŰRÉS (1 és 2 mehet) --- */
+      // Ha a status nem 1 és nem is 2 (tehát pl. 0 vagy 3), akkor kihagyjuk
+      if (p.status != 1 && p.status != 2) {
         continue;
       }
 
