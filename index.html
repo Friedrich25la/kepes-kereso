@@ -4777,16 +4777,31 @@ body {
                 const max = prices.length ? Math.max(...prices) : 0;
 
                 // --- SPECIÁLIS MINIMUM ÁRAK ---
-                let forcedMin = min; 
+                let forcedMin = min;
                 if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
                 else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
                 else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
                 else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
 
-                if (forcedMin > max) forcedMin = min; 
-                
+                if (forcedMin > max) forcedMin = min;
+
+                // --- ÚJ: SPECIÁLIS MAXIMUM ÁRAK (TROLLING MOTOROK) ---
+                let forcedMax = max;
+
+                // Ha a kategória listában szerepelnek a trolling motorok kulcsszavai (pl. Osapian, Endura, Traxxis)
+                // A 'Protruar' is ide tartozik a gombod alapján.
+                if (categoriesStr.includes('Osapian') || categoriesStr.includes('Endura') || categoriesStr.includes('Traxxis')) {
+                  // Beállítjuk a felső határt 1 millióra
+                  const LIMIT = 1000000;
+
+                  // Csak akkor vágjuk le, ha a valós max ár magasabb ennél
+                  if (forcedMax > LIMIT) {
+                    forcedMax = LIMIT;
+                  }
+                }
+
                 priceRange.currentMin = forcedMin;
-                priceRange.currentMax = max;
+                priceRange.currentMax = forcedMax;
 
                 updateSliderBounds(productsPool); 
                 if (sliderInstance) {
