@@ -4904,23 +4904,29 @@ document.addEventListener('keydown', function(event) {
 
 // === TELEFON GOMB LOGIKA ===
 
-// === TELEFON GOMB LOGIKA ===
-// === TELEFON GOMB LOGIKA JAVÍTVA ===
-// === TELEFON GOMB LOGIKA JAVÍTVA ===
-// === TELEFON GOMB LOGIKA (HTML LINK VERZIÓ) ===
+
+// === TELEFON GOMB LOGIKA JAVÍTVA (3-as szintű biztonsági ellenőrzés) ===
 const phoneBtn = document.getElementById('phoneBtn');
 
 phoneBtn.addEventListener('click', function(event) {
-    // Mobil detektálás
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // 1. Név alapú ellenőrzés (User Agent)
+    const isUserAgentMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // 2. Képernyő méret ellenőrzés (Ha 900px-nél keskenyebb, akkor biztosan nem desktop nézet)
+    const isSmallScreen = window.innerWidth <= 900;
+
+    // 3. Érintés ellenőrzés (Van-e érintőképernyője)
+    const isTouchDevice = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+
+    // ÖSSZESÍTETT DÖNTÉS: Ha a három közül BÁRMELYIK igaz, akkor ez egy mobil eszköz!
+    const isMobile = isUserAgentMobile || isSmallScreen || isTouchDevice;
 
     if (isMobile) {
-        // MOBILON: Nem csinálunk semmit!
-        // Hagyjuk, hogy a HTML <a href="tel:..."> működjön magától.
-        // Ez a legbiztosabb módszer iPhone-on.
-        console.log("Mobil hívás indítása natív linkkel...");
+        // MOBIL: Nem csinálunk SEMMIT. Nem hívunk preventDefault-ot.
+        // Hagyjuk, hogy a HTML <a href="tel:..."> tegye a dolgát és tárcsázzon.
+        console.log("Mobil hívás engedélyezve (Feltétel: UA=" + isUserAgentMobile + ", Size=" + isSmallScreen + ", Touch=" + isTouchDevice + ")");
     } else {
-        // ASZTALI GÉPEN: Megakadályozzuk a hívást, és megnyitjuk a popupot
+        // ASZTALI GÉP: Csak itt tiltjuk le a linket
         event.preventDefault(); 
         openModal('phoneModal');
     }
