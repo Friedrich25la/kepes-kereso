@@ -3381,9 +3381,9 @@ body {
         <div class="sub-button shadow" onclick="openModal('formModal')" title="Üzenet küldése">
             <span class="material-icons">mail_outline</span>
         </div>
-        <div class="sub-button shadow" id="phoneBtn" title="Telefonhívás">
-            <span class="material-icons">phone</span>
-        </div>
+        <a href="tel:+36702505740" class="sub-button shadow" id="phoneBtn" title="Telefonhívás" style="text-decoration: none;">
+          <span class="material-icons">phone</span>
+        </a>
     </div>
 
 
@@ -4905,18 +4905,23 @@ document.addEventListener('keydown', function(event) {
 // === TELEFON GOMB LOGIKA ===
 
 // === TELEFON GOMB LOGIKA ===
+// === TELEFON GOMB LOGIKA JAVÍTVA ===
+// === TELEFON GOMB LOGIKA JAVÍTVA ===
+// === TELEFON GOMB LOGIKA (HTML LINK VERZIÓ) ===
 const phoneBtn = document.getElementById('phoneBtn');
 
-phoneBtn.addEventListener('click', function() {
+phoneBtn.addEventListener('click', function(event) {
     // Mobil detektálás
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isMobile) {
-        // iOS FIX: A window.open használata '_self' targettel
-        // Ez a legmegbízhatóbb módszer iPhone-on a hívás indítására
-        window.open(`tel:${CONTACT_PHONE_NUMBER}`, '_self');
+        // MOBILON: Nem csinálunk semmit!
+        // Hagyjuk, hogy a HTML <a href="tel:..."> működjön magától.
+        // Ez a legbiztosabb módszer iPhone-on.
+        console.log("Mobil hívás indítása natív linkkel...");
     } else {
-        // Asztali gépen marad a popup
+        // ASZTALI GÉPEN: Megakadályozzuk a hívást, és megnyitjuk a popupot
+        event.preventDefault(); 
         openModal('phoneModal');
     }
 });
