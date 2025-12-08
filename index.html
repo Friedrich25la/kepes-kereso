@@ -4856,8 +4856,8 @@ body {
        WIDGET LOGIKA START
        ========================================= */
     // === KONFIGURÁCIÓ ===
-const CONTACT_PHONE_NUMBER = "+36702505740"; 
-const CONTACT_PHONE_DISPLAY = "+36 70 250 5740"; 
+const CONTACT_PHONE_NUMBER = "+36702505740"; // Cseréld le a valós számra
+const CONTACT_PHONE_DISPLAY = "+36 70 250 5740"; // Szépen formázott kiírás
 
 
 // === MODÁLIS ABLAK KEZELÉS ===
@@ -4905,16 +4905,24 @@ document.addEventListener('keydown', function(event) {
 // === TELEFON GOMB LOGIKA ===
 
 // === TELEFON GOMB LOGIKA ===
+// === TELEFON GOMB LOGIKA JAVÍTVA ===
 const phoneBtn = document.getElementById('phoneBtn');
 
 phoneBtn.addEventListener('click', function() {
+    // Mobil detektálás
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isMobile) {
-        // Mobilon továbbra is azonnal tárcsáz
-        window.location.href = `tel:${CONTACT_PHONE_NUMBER}`;
+        // iOS FIX: Láthatatlan link létrehozása és kattintása
+        // Ez sokkal megbízhatóbb, mint a window.location.href
+        const link = document.createElement('a');
+        link.href = `tel:${CONTACT_PHONE_NUMBER}`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     } else {
-        // Asztali gépen most már a szép popupot nyitjuk meg
+        // Asztali gépen marad a popup
         openModal('phoneModal');
     }
 });
