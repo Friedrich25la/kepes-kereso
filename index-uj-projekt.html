@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elektromos Motor Bemutató</title>
+    <style>
+        /* --- ALAPOK --- */
+        body {
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Függőleges középre igazítás */
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            /* MÓDOSÍTÁS: Keskenyebb szélesség a koncentrált tartalomért */
+            max-width: 750px; 
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        /* --- LOGIKA --- */
+        input[type="radio"] {
+            display: none;
+        }
+
+        /* --- MENÜ GOMBOK --- */
+        .nav-menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px; /* MÓDOSÍTÁS: Kisebb térköz */
+            margin-bottom: 15px;
+        }
+
+        .nav-label {
+            padding: 8px 16px;
+            background-color: #eee;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            user-select: none;
+            color: #555;
+            border: 1px solid transparent;
+        }
+
+        .nav-label:hover {
+            background-color: #e0e0e0;
+            border-color: #ccc;
+        }
+
+        /* --- AKTÍV GOMB STÍLUS (TÜRKIZ) --- */
+        #default:checked ~ .nav-menu label[for="default"],
+        #outboard:checked ~ .nav-menu label[for="outboard"],
+        #inboard:checked ~ .nav-menu label[for="inboard"],
+        #pod:checked ~ .nav-menu label[for="pod"],
+        #trolling:checked ~ .nav-menu label[for="trolling"],
+        #bow:checked ~ .nav-menu label[for="bow"] {
+            background-color: #408a87; 
+            color: white;
+            box-shadow: 0 4px 12px rgba(64, 138, 135, 0.3);
+            border-color: #408a87;
+        }
+
+        /* --- KÉP ABLAK --- */
+        .image-viewer {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            /* MÓDOSÍTÁS: Max magasság, hogy a szöveg biztosan látszódjon alatta */
+            max-height: 45vh; 
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #ddd;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            
+            /* !! ITT CSERÉLD LE A KÉP NEVÉT !! */
+            background-image: url('Gemini_Generated_Image_1ggpou1ggpou1ggp.jpg'); 
+            
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 100%;
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* --- ZOOM KOORDINÁTÁK --- */
+        
+        /* 1. Külmotor (Középső hajó fara) */
+        #outboard:checked ~ .image-viewer {
+            background-position: 65% 70%; 
+            background-size: 300%;        
+        }
+
+        /* 2. Belmotor (Bal oldali nyitott gépház) */
+        #inboard:checked ~ .image-viewer {
+            background-position: 22% 68%;
+            background-size: 280%;
+        }
+
+        /* 3. Pod motor (Jobb oldali vitorlás alja) */
+        #pod:checked ~ .image-viewer {
+            background-position: 60% 30%;
+            background-size: 350%;
+        }
+
+        /* 4. Trolling motor (Jobb alsó kis csónak) */
+        #trolling:checked ~ .image-viewer {
+            background-position: 100% 82%;
+            background-size: 350%;
+        }
+
+        /* 5. Orrmotor (Középső hajó orra) */
+        #bow:checked ~ .image-viewer {
+            background-position: 30% 35%;
+            background-size: 350%;
+        }
+
+
+        /* --- SZÖVEGES RÉSZ --- */
+        .content-area {
+            background: #fff;
+            /* MÓDOSÍTÁS: Kicsit több tér a szövegnek, de kompakt marad */
+            padding: 0 10px; 
+        }
+
+        .description-box {
+            display: none;
+            animation: fadeIn 0.5s ease;
+            line-height: 1.5;
+            color: #444;
+            font-size: 0.95rem; /* Kicsit finomabb betűméret */
+        }
+
+        .description-box h2 {
+            color: #408a87;
+            margin-top: 0;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            font-size: 1.3rem;
+        }
+
+        .description-box h3 {
+            color: #2c615f;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .description-box p {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .description-box ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+
+        .description-box li {
+            margin-bottom: 4px;
+        }
+
+        /* Megjelenítés logika */
+        #default:checked ~ .content-area #desc-default,
+        #outboard:checked ~ .content-area #desc-outboard,
+        #inboard:checked ~ .content-area #desc-inboard,
+        #pod:checked ~ .content-area #desc-pod,
+        #trolling:checked ~ .content-area #desc-trolling,
+        #bow:checked ~ .content-area #desc-bow {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Reszponzivitás */
+        @media (max-width: 768px) {
+            .nav-menu { flex-direction: column; }
+            .nav-label { text-align: center; width: 100%; box-sizing: border-box; }
+            .image-viewer { height: 250px; max-height: none; }
+        }
+        /* --- ESTI NÉZET (DARK MODE) --- */
+        body.dark-mode {
+            background-color: #3a3a3a; /* Harmonizál a főoldallal */
+            color: #e1e1e1;
+        }
+
+        body.dark-mode .container {
+            background: #2a2a2c; /* Főoldal kártya háttérszíne */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        body.dark-mode h1 {
+            color: #e1e1e1;
+        }
+
+        body.dark-mode .nav-label {
+            background-color: #444;
+            color: #ccc;
+            border-color: #555;
+        }
+
+        body.dark-mode .nav-label:hover {
+            background-color: #555;
+            color: #fff;
+        }
+
+        /* Az aktív gomb maradjon türkiz, de a shadow legyen sötétebb */
+        body.dark-mode #default:checked ~ .nav-menu label[for="default"],
+        body.dark-mode #outboard:checked ~ .nav-menu label[for="outboard"],
+        body.dark-mode #inboard:checked ~ .nav-menu label[for="inboard"],
+        body.dark-mode #pod:checked ~ .nav-menu label[for="pod"],
+        body.dark-mode #trolling:checked ~ .nav-menu label[for="trolling"],
+        body.dark-mode #bow:checked ~ .nav-menu label[for="bow"] {
+            background-color: #408a87; 
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
+            border-color: #408a87;
+        }
+
+        body.dark-mode .image-viewer {
+            background-color: #222;
+            border-color: #444;
+        }
+
+        body.dark-mode .content-area {
+            background: transparent; /* A konténer színe érvényesül */
+            color: #ddd;
+        }
+
+        body.dark-mode .description-box {
+            color: #ccc;
+        }
+
+        body.dark-mode .description-box h2 {
+            color: #33CCBE; /* Világosabb türkiz sötét háttérre (főoldal accent színe) */
+            border-bottom-color: #444;
+        }
+
+        body.dark-mode .description-box h3 {
+            color: #55b6b3;
+        }
+        
+        body.dark-mode .emotor-external-link {
+            color: #33CCBE !important; /* Link színe esti módban */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Elektromos csónakmotor típusok</h1>
+
+        <input type="radio" id="default" name="motor-selector" checked>
+        <input type="radio" id="outboard" name="motor-selector">
+        <input type="radio" id="inboard" name="motor-selector">
+        <input type="radio" id="pod" name="motor-selector">
+        <input type="radio" id="trolling" name="motor-selector">
+        <input type="radio" id="bow" name="motor-selector">
+
+        <div class="nav-menu">
+            <label for="default" class="nav-label">Áttekintés</label>
+            <label for="outboard" class="nav-label">Külmotorok</label>
+            <label for="inboard" class="nav-label">Belmotorok</label>
+            <label for="pod" class="nav-label">Pod motorok</label>
+            <label for="trolling" class="nav-label">Trolling motorok</label>
+            <label for="bow" class="nav-label">Orrmotorok</label>
+        </div>
+
+        <div class="image-viewer" role="img" aria-label="Elektromos hajók bemutatója"></div>
+
+        <div class="content-area">
+            
+            <div id="desc-default" class="description-box">
+                <h2>Válasszon egy kategóriát!</h2>
+                <p>Kattintson a fenti gombokra a képen látható különböző elektromos hajtásláncok felfedezéséhez.</p>
+            </div>
+
+            <div id="desc-outboard" class="description-box">
+                <h2>1. Külmotorok – Az erő és a rugalmasság találkozása</h2>
+                <p>Az elektromos külmotorok az egyik legnépszerűbb választás, hiszen közvetlenül helyettesítik a hagyományos benzines hajtásokat, a hajó fartükrén elhelyezve. Két fő kategóriába sorolhatók, ami a beépítés és a felhasználás szempontjából kulcsfontosságú.</p>
+                
+                <h3>Fejaksis (integrált akkumulátoros) verzió: Fő a hordozhatóság</h3>
+                <p>Az olyan modellek, mint a <strong>Torqeedo Travel</strong> vagy az <strong>Epropulsion Spirit</strong> széria, a motorfejben vagy a motoroszlopon elhelyezett lítium akkumulátorral működnek. Ezek a motorok kiemelkedően könnyűek, egyszerűen telepíthetők és azonnal használatra készek. Ideálisak kisebb motoros kishajókhoz, gumicsónakokhoz vagy vitorlások segédmotorjaként, ahol a mozgathatóság és a gyors beüzemelés a fő szempont. Teljesítményük jellemzően 1 LE-től 10 LE ekvivalensig terjed.</p>
+                
+                <h3>Külső akkumulátoros verzió: Ha nagyobb teljesítmény kell</h3>
+                <p>Az erősebb rendszerek, mint az <strong>Epropulsion Navy</strong> széria, a <strong>Golden EZ</strong> meghajtások vagy a nagyobb <strong>Torqeedo</strong> modellek, külső akkumulátor bankot igényelnek. Ez a megoldás lehetővé teszi a nagyobb teljesítmény leadását és a lényegesen hosszabb hatótáv elérését, mivel a felhasználó szabadon választhatja meg az akkumulátor kapacitását. Ezek a motorok már alkalmasak arra, hogy nagyobb, nehezebb elmozdulásos hajókat is hatékonyan mozgassanak, de a beépítésük és a rendszer kiépítése (kábelezés, akkumulátor elhelyezés) komplexebb.</p>
+                <p><em>A külmotorokat válassza, ha viszonylag egyszerű telepítést és nagy teljesítményt szeretne elérni, különösen motoros kishajókon.</em></p>
+            </div>
+
+            <div id="desc-inboard" class="description-box">
+                <h2>2. Belmotorok – A rejtett, elegáns meghajtás</h2>
+                <p>A belmotorok a legmagasabb szintű integrációt kínálják a hajótestbe. Ezek a rendszerek a belső térben, a hagyományos gépházban kapnak helyet, és egy tengelyen keresztül hajtják a hajócsavart. Kifejezetten a nagy nyomatékra és a hosszú élettartamra tervezték őket.</p>
+                <p>A <strong>Torqeedo</strong>, az <strong>Epropulsion</strong> és a <strong>Golden</strong> is kínál professzionális belmotor rendszereket, melyek nagy vitorlások és nagyobb hajók igényeit szolgálják ki. A belmotor beépítése bonyolult, hiszen az akkumulátorrendszert (gyakran nagyfeszültségű, dedikált akkuk) és a vezérlőegységeket szakszerűen kell a hajótestbe telepíteni és az irányítórendszerhez illeszteni.</p>
+                <p>A belmotoros rendszerek kiváló súlyelosztást biztosítanak (a nehéz akkumulátorok alacsonyan és középen helyezkednek el), csendesek és gyakorlatilag karbantartásmentesek. Bár a beszerzési költségük magas, hosszú távon a megbízhatóság, a teljesítmény és a működési költség alacsony volta miatt megtérülnek.</p>
+            </div>
+
+            <div id="desc-pod" class="description-box">
+                <h2>3. Podmotorok – A helytakarékos csoda</h2>
+                <p>A podmotorok a belmotorok egy speciális válfaja, ahol maga a motor és a hajtóegység egy áramvonalas tokban, a hajótest alá van szerelve. Ez az elhelyezés rendkívül helytakarékos a hajón belül, és minimalizálja a vízi ellenállást.</p>
+                <p>A <strong>Epropulsion Pod Drive</strong> vagy a <strong>Torqeedo</strong> rendszerei különösen népszerűek a vitorlások körében. Amikor a vitorlás halad, a podmotor kis ellenállással a vízben maradhat, vagy egyes modellek fel is hajthatók, ezzel teljesen megszűntetve a felesleges fékezést. Ideális választás nagyobb hajók kiegészítő meghajtásához is, ahol a motor hangtalanul és hatékonyan dolgozik a hajócsavar közvetlen meghajtásával. A <strong>Golden EZ</strong> megoldásai szintén flexibilis pod beépítést tesznek lehetővé.</p>
+                <p><em>Válasszon podmotort, ha fontos a hajó belső terének megőrzése, és nagy hangsúlyt fektet a hidrodinamikai hatékonyságra.</em></p>
+            </div>
+
+            <div id="desc-trolling" class="description-box">
+                <h2>4. Trolling motorok – A könnyű belépő</h2>
+                <p>A trolling motorok az elektromos hajózás belépő szintjét képviselik, és elsősorban a csendes, lassú sebességű helyváltoztatásra lettek tervezve. Ezek a motorok tolóerejét általában fontban (Lbs) adják meg, ami jelzi, hogy a fókusz nem a sebességen, hanem a csendes és hatékony tolóerőn van.</p>
+                <p>A <strong>Haswing</strong>, <strong>Minn Kota</strong>, <strong>Zebco</strong> és <strong>Dawn Marine</strong> kínálatában is megtalálhatók a klasszikus trolling motorok, melyek 12 vagy 24 voltos (V) rendszerekről üzemelnek. Maximális teljesítményük általában 5 lóerő ekvivalens alatt marad.</p>
+                <ul>
+                    <li><strong>Ideálisak:</strong> Kisebb csónakokhoz, gumicsónakokhoz, kajakokhoz és kenukhoz.</li>
+                    <li><strong>Jellemzők:</strong> Egyszerű a felszerelésük (gyakran kézzel rögzíthetők a fartükörre), könnyűek, és a legmegfizethetőbb elektromos opciót képviselik. A Haswing, a Zebco és a Dawn Marine kisebb modelljei tökéletesek a hobbi szintű felhasználáshoz, ahol a cél a csendes suhanás.</li>
+                </ul>
+            </div>
+
+            <div id="desc-bow" class="description-box">
+                <h2>5. Orrmotorok – A horgászok GPS-navigációja</h2>
+                <p>Az orrmotorok a trolling motorok prémium kategóriájába tartoznak, de teljesen más célt szolgálnak. A hajó elejére szerelve ezek a motorok precíz irányítást és pozíciótartást biztosítanak.</p>
+                <p>A legfontosabb különbség a beépített technológia. Az olyan márkák, mint a <strong>Minn Kota</strong> és a <strong>Haswing</strong>, kifejlesztették a GPS Spot-Lock (virtuális horgony) funkciót. Ez a technológia lehetővé teszi, hogy a motor automatikusan kompenzálja a szél és az áramlat hatását, egy helyben tartva a hajót – még nagy hullámok esetén is. A hajó húzása az orr felől sokkal pontosabb irányítást ad, mint a hátulról való tolás.</p>
+                <ul>
+                    <li><strong>Felhasználási terület:</strong> Elengedhetetlen a modern sporthorgászatban, különösen a pergető horgászok számára.</li>
+                    <li><strong>Vezérlés:</strong> Távirányítóval vagy lábpedállal történik. A Minn Kota (különösen a Terrova és Ultrex szériák) a piacvezető, míg a Haswing kiváló ár-érték arányú, GPS-es alternatívákat kínál. A Zebco is elérhető a belépő szintű orrmotorok piacán.</li>
+                </ul>
+                <p><em>Válasszon orrmotort, ha a pontosság és a távvezérlés kiemelten fontos, és ha a fő cél a horgászat, nem pedig a gyors utazás.</em></p>
+            </div>
+
+        </div>
+    </div>
+
+
+<script>
+    /* 1. ÜZENETEK FIGYELÉSE (Legyen ez az első!) */
+    window.addEventListener('message', function (event) {
+        const data = event.data;
+
+        // A főoldal 'THEME_SYNC' típussal küldi az adatot
+        if (data && data.type === 'THEME_SYNC') {
+            if (data.isDarkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+    });
+
+    /* 2. LOGIKA ÉS TARTALOM */
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // Kérés küldése (Biztos, ami biztos)
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'REQUEST_THEME' }, '*');
+        }
+
+        // Linkek generálása
+        const map = [
+            { id: 'desc-outboard', label: 'Külmotorok', term: 'Elektromos csónakmotor', categories: 'Armada, Ultima, Ventura, Torqeedo Travel, Torqeedo Cruise, Torqeedo Deep Blue, Navy Evo, Spirit 1.0, X-széria, X-Series, Leisure, Mercury Avator', linkText: 'Tovább a külmotorokhoz >' },
+            { id: 'desc-inboard', label: 'Belmotorok', term: 'Belmotor', categories: 'Belmotor, Torqeedo, Epropulsion, Golden', linkText: 'Tovább a belmotorokhoz >' },
+            { id: 'desc-pod', label: 'Pod-motorok', term: 'Pod', categories: 'Pod, Epropulsion Pod Drive, Torqeedo', linkText: 'Tovább a pod-motorokhoz >' },
+            { id: 'desc-trolling', label: 'Trolling motorok', term: 'Motor', categories: 'Motor, Haswing, Minn Kota, Zebco, Dawn Marine', linkText: 'Tovább a trolling motorokhoz >' },
+            { id: 'desc-bow', label: 'Orrmotorok', term: 'Elektromos csónakmotor', categories: 'Orrmotor, Minn Kota, Haswing', linkText: 'Tovább az orrmotorokhoz >' }
+        ];
+
+        map.forEach(item => {
+            const el = document.getElementById(item.id);
+            if (!el) return;
+            const p = document.createElement('p');
+            p.style.marginTop = '10px';
+            p.innerHTML = '<a href="#" class="emotor-external-link" data-label="' + escapeHtml(item.label) + '" data-term="' + escapeHtml(item.term) + '" data-cats="' + escapeHtml(item.categories) + '">' + escapeHtml(item.linkText) + '</a>';
+            el.appendChild(p);
+        });
+
+        // Kattintás kezelése
+        document.body.addEventListener('click', function (e) {
+            var el = e.target;
+            while (el && !el.classList) { el = el.parentNode; }
+            if (!el || !el.classList) return;
+            if (!el.classList.contains('emotor-external-link')) return;
+
+            e.preventDefault();
+            const msg = {
+                type: 'E_MOTOR_FILTER',
+                uiLabel: el.getAttribute('data-label') || '',
+                searchTerm: el.getAttribute('data-term') || '',
+                categoriesStr: el.getAttribute('data-cats') || ''
+            };
+
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage(msg, '*');
+            }
+        });
+    });
+
+    function escapeHtml(s) {
+        if (!s) return '';
+        return s.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+</script>
+</body>
+</html>
