@@ -2751,7 +2751,7 @@ body {
         .fab-container:hover::after {
             height: 220px;
         }
-    }
+    }    
   </style>
   
 </head>
@@ -2854,6 +2854,10 @@ body {
         <div class="cat-menu-trigger current-menu-trigger" id="topCatBtn" onclick="toggleTopCategories()">
           Top kategóriák
         </div>
+<div class="cat-menu-trigger current-menu-trigger" id="eMotorBtn" onclick="toggleEMotorPanel()">
+  E-motorok
+</div>
+
         <div class="cat-menu-trigger current-menu-trigger" id="currentBtn" onclick="toggleGallery()">
           Aktuális
         </div>
@@ -2888,6 +2892,54 @@ body {
         </div>
       </div>
     </section>
+<!-- ==== E-MOTOROK LENYÍLÓ (IFRAME) ==== -->
+<style>
+  /* Scoped styles for the embedded panel (place near gallery CSS). */
+  #e-motor-section {
+    width: 100%;
+    max-width: var(--max-width,1200px);
+    margin: -10px auto 20px auto;
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: height 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease;
+    background: var(--card-bg, #fff);
+    border-radius: 12px;
+    border: 0 solid transparent;
+  }
+  #e-motor-section.open {
+    height: 800px; /* desktop default; módosítható */
+    opacity: 1;
+    padding: 12px;
+    border: 1px solid var(--card-border, #eee);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  }
+  #e-motor-section iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 8px;
+    display: block;
+  }
+
+  /* mobilon kisebb magasság */
+  @media (max-width: 768px) {
+    #e-motor-section.open { height: 420px; }
+  }
+
+  /* Kis vizuális finomítás a gomb aktív állapotához */
+  #eMotorBtn.active {
+    color: var(--accent, #0aa);
+    background-color: var(--bg, #fff);
+    box-shadow: 0 4px 12px rgba(64,138,135,0.12);
+  }
+</style>
+
+<section id="e-motor-section" aria-hidden="true">
+  <iframe id="eMotorIframe" src="index-uj-projekt.html" title="Elektromos motor bemutató"></iframe>
+</section>
+<!-- ==== E-MOTOROK LENYÍLÓ VÉGE ==== -->
+
 
     <div id="top-cat-section">
     
@@ -3473,6 +3525,37 @@ body {
         </div>
     </div>
 
+    <div id="iosPhoneModal" class="modal-overlay" onclick="closeModalIfOutside(event, 'iosPhoneModal')">
+      <div class="modal-content phone-style" style="text-align: center; max-width: 320px;">
+        <span class="close-btn" onclick="closeModal('iosPhoneModal')">×</span>
+    
+        <h3 style="color: var(--primary-color); margin-top: 10px;">Hívás indítása</h3>
+    
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+          A hívás indításához másold ki a számot, vagy próbáld meg a lenti gombot!
+        </p>
+    
+        <div
+          style="background: #f5f5f5; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+          <span id="textToCopy" style="font-weight: bold; font-size: 18px; color: #333;">+36 70 250 5740</span>
+          <button onclick="copyToClipboard()"
+            style="background: none; border: none; cursor: pointer; color: var(--primary-color); font-weight: 600;">
+            MÁSOLÁS
+          </button>
+        </div>
+    
+        <div id="copyFeedback"
+          style="color: green; font-size: 12px; height: 15px; margin-bottom: 10px; opacity: 0; transition: opacity 0.3s;">
+          Sikeresen másolva!
+        </div>
+    
+        <a href="tel:+36702505740" class="submit-btn"
+          style="text-decoration: none; display: flex; justify-content: center;">
+          <span class="material-icons" style="margin-right: 8px;">call</span>
+          Hívás megkísérlése
+        </a>
+      </div>
+    </div>
 
     <div id="privacyModal" class="modal-overlay" onclick="closeModalIfOutside(event, 'privacyModal')">
         <div class="modal-content privacy-style">
@@ -3644,12 +3727,41 @@ body {
         return rawCategory[rawCategory.length - 1];
       }
       if (typeof rawCategory === 'string') {
-        const parts = rawCategory.split('|');
-        const cleanParts = parts.filter(p => p && p.trim().length > 0);
-        if (cleanParts.length === 0) return "Egyéb";
-        return cleanParts[cleanParts.length - 1].trim();
+        // JAVÍTÁS: Felismerjük a |, >, és , karaktereket is elválasztóként!
+        const parts = rawCategory.split(/[|>,]/).map(s => s.trim()).filter(s => s.length > 0);
+        if (parts.length === 0) return "Egyéb";
+        return parts[parts.length - 1];
       }
       return "Egyéb";
+    }
+
+    // ÚJ: Központi ellenőrzés - látható-e a termék a jelenlegi szűrők (Ár + Kategória) alapján?
+    function isProductVisible(p) {
+        // 1. Ár ellenőrzés (Globális priceRange alapján)
+        const price = parseFloat(p.price);
+        if (isNaN(price)) return false;
+        if (price < priceRange.currentMin) return false;
+        if (priceRange.currentMax > 0 && price > priceRange.currentMax) return false;
+
+        // 2. Kategória/Név/SKU ellenőrzés (Globális currentState alapján)
+        if (currentState.categoryFilter && currentState.categoryFilter.length > 0) {
+            const pCat = (p.category || "").toLowerCase();
+            const pName = (p.name || "").toLowerCase();
+            const pSku = (p.sku || "").toString().trim();
+
+            if (currentState.categoryFilter[0].startsWith('SKU:')) {
+                 const firstSku = currentState.categoryFilter[0].replace('SKU:', '').trim();
+                 const isMatch = (pSku === firstSku) || currentState.categoryFilter.slice(1).some(s => s.trim() === pSku);
+                 if (!isMatch) return false;
+            } else {
+                 const match = currentState.categoryFilter.some(filterWord => {
+                      const fw = filterWord.toLowerCase();
+                      return pCat.includes(fw) || pName.includes(fw);
+                 });
+                 if (!match) return false;
+            }
+        }
+        return true;
     }
 
     /* ---------- SWITCHER ---------- */
@@ -3817,39 +3929,82 @@ body {
 
       if (products && products.length > 0) {
         products.forEach(p => {
-          const leaf = getLeafCategory(p.category);
-          if (leaf && leaf !== "Egyéb") {
-            categories[leaf] = (categories[leaf] || 0) + 1;
+          // KÖZPONTI ELLENŐRZÉS:
+          // Csak akkor számoljuk bele a kategóriát, ha a termék TÉNYLEG látható
+          // (megfelel az árnak és a globális szűrőknek).
+          if (isProductVisible(p)) {
+              const leaf = getLeafCategory(p.category);
+              if (leaf && leaf !== "Egyéb") {
+                categories[leaf] = (categories[leaf] || 0) + 1;
+              }
           }
         });
       }
 
+      // --- 1. "Összes termék" (Visszaállító gomb) ---
       const allLi = document.createElement('li');
-      allLi.innerHTML = `<h3>Összes termék</h3>`;
+      
+      // Megnézzük, hogy jelenleg az "eredeti" alapállapoton vagyunk-e
+      // (Tehát nem választottunk még szűkebb alkategóriát)
+      let isOriginal = false;
+      
+      // Ha nincs semmi szűrő, az biztosan alapállapot
       if (currentState.categoryFilter === null) {
+          isOriginal = true;
+      } 
+      // Ha van szűrő, összehasonlítjuk az elmentett eredetivel
+      else if (currentState.originalCategoryFilter) {
+          isOriginal = JSON.stringify(currentState.categoryFilter) === JSON.stringify(currentState.originalCategoryFilter);
+      }
+
+      // Ha alapállapoton vagyunk, akkor ez a gomb aktív
+      if (isOriginal) {
         allLi.className = 'selected';
       }
+
+      allLi.innerHTML = `<h3>Összes termék</h3>`;
+      
       allLi.addEventListener('click', (e) => {
         e.stopPropagation();
-        currentState.categoryFilter = null;
-        btn.textContent = "Kategória: Összes";
+        
+        // JAVÍTÁS: Nem nullázunk, hanem VISSZATÖLTJÜK az eredeti kontextust!
+        // Ha volt elmentett kártya-szűrő, azt használjuk, ha nem volt, akkor null (globális).
+        currentState.categoryFilter = currentState.originalCategoryFilter || null;
+        
+        // A gomb szövegét is visszaállítjuk az eredeti stílusra
+        if (currentState.originalCategoryFilter && currentState.originalCategoryFilter.length > 0) {
+             const first = currentState.originalCategoryFilter[0];
+             // Ha SKU-ra szűrtünk eredetileg, azt ne írjuk ki csúnyán
+             if(first.startsWith('SKU:')) {
+                 btn.textContent = "Kategória: Kiemelt termékek";
+             } else {
+                 const more = currentState.originalCategoryFilter.length > 1 ? "..." : "";
+                 btn.textContent = `Kategória: ${first}${more}`;
+             }
+        } else {
+             btn.textContent = "Kategória: Összes";
+        }
+
         closeAllMenus();
         filterAndRender();
       });
       menuList.appendChild(allLi);
 
+      // --- 2. Alkategóriák listázása ---
       const keys = Object.keys(categories);
       keys.sort().forEach(catName => {
         const li = document.createElement('li');
         li.innerHTML = `<h3>${catName} <small style="opacity:0.6">(${categories[catName]})</small></h3>`;
 
-        if (currentState.categoryFilter === catName) {
+        // Itt egyszerűen megnézzük, hogy a jelenlegi szűrőben benne van-e ez a név
+        if (currentState.categoryFilter && currentState.categoryFilter.includes(catName)) {
           li.classList.add('selected');
         }
 
         li.addEventListener('click', (e) => {
           e.stopPropagation();
-          currentState.categoryFilter = catName;
+          // Ha rákattintunk egy alkategóriára, akkor SZŰKÍTJÜK a kört csak erre
+          currentState.categoryFilter = [catName]; 
           btn.textContent = `Kategória: ${catName}`;
           closeAllMenus();
           filterAndRender();
@@ -4228,27 +4383,26 @@ body {
       currentState.isLoading = true;
       try {
         currentState.page++;
-        
-        // JAVÍTÁS: Átadjuk a 'cat' opciót, ha kategória alapú volt a keresés
-        const options = { cat: currentState.isCategorySearch };
-        
+        const options = currentState.isCategorySearch ? { cat: true } : {};
         const data = await fetchProducts(currentState.query, currentState.page, 500, options);
+        
         productsPool = [...productsPool, ...data.results];
 
-        updateCategoryDropdown(productsPool);
         updateSliderBounds(productsPool);
         if (data.total_count <= productsPool.length) currentState.hasMore = false;
         
-        filterAndRender(); // Ez a függvény már az új szűrési logikát fogja használni (lásd lejjebb)
+        // Először rendereljük a kártyákat
+        filterAndRender(); 
+
+        // Aztán frissítjük a menüt (ami most már automatikusan kiszűri a felesleget!)
+        updateCategoryDropdown(productsPool);
         
       } catch (err) { 
           console.error(err); 
           if (btnContent) btnContent.textContent = 'Hiba (próbáld újra)'; 
-          // Hiba esetén visszalépünk egy oldalt, hogy újra próbálhassa
           currentState.page--;
       } finally { 
           currentState.isLoading = false; 
-          // Ha sikeres volt, visszaírjuk a gomb szövegét (a filterAndRender úgyis kezeli a gomb létét)
           if(currentState.hasMore && btnContent) btnContent.textContent = 'További találatok';
       }
     }
@@ -4745,95 +4899,113 @@ body {
     async function filterByCategories(card, searchTerm, categoriesStr) {
         // 1. Vizuális reset
         document.querySelectorAll('.cat-sub-level .cat-card').forEach(c => c.classList.remove('active-sub'));
-        card.classList.add('active-sub');
+        if(card) card.classList.add('active-sub');
 
-        // 2. Filter beállítása
+        // 2. Alapbeállítások
         const categoryList = categoriesStr.split(',').map(s => s.trim());
         currentState.categoryFilter = categoryList;
+        currentState.originalCategoryFilter = categoryList;
         currentState.query = searchTerm;      
         currentState.isCategorySearch = true; 
+        
         currentState.page = 1;
         currentState.hasMore = true; 
 
-        // Gomb szöveg frissítése
+        // Gomb szöveg
         const catBtn = document.getElementById('category-toggle');
         if(catBtn) catBtn.textContent = "Kategória: " + categoryList[0] + (categoryList.length > 1 ? "..." : "");
 
         const resultsEl = document.getElementById('results');
-        resultsEl.innerHTML = '<div class=\"loading\">Termékek betöltése kategória alapján...</div>';
+        resultsEl.innerHTML = '<div class=\"loading\">Termékek betöltése...</div>';
         
         productsPool = []; 
 
         try {
+            // EREDETI: Mindent lekérünk
             const data = await fetchProducts(searchTerm, 1, 500, { cat: true });
-            productsPool = data.results;
+            productsPool = data.results; 
             
             if (data.total_count > productsPool.length) { currentState.hasMore = true; } else { currentState.hasMore = false; }
             
             if(productsPool.length > 0) {
-                // Árak számítása
+                // Árak számítása (Eredeti logikád)
                 const prices = productsPool.map(p => parseFloat(p.price)).filter(x => !isNaN(x));
                 const min = prices.length ? Math.min(...prices) : 0;
                 const max = prices.length ? Math.max(...prices) : 0;
 
-                // --- SPECIÁLIS MINIMUM ÁRAK ---
-              let forcedMin = min;
-              if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
-              else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
-              else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
-              else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
+                // --- SPECIFIKUS ÁRAK ---
+                let forcedMin = min;
+                if (categoriesStr.includes('Torqeedo') || categoriesStr.includes('Spirit')) forcedMin = 200000;
+                else if (categoriesStr.includes('Osapian') || categoriesStr.includes('Protruar')) forcedMin = 58000;
+                else if (categoriesStr.includes('Cayman') || categoriesStr.includes('Terrova')) forcedMin = 190000;
+                else if (categoriesStr.includes('Gumicsónak') || categoriesStr.includes('Kolibri')) forcedMin = 150000;
 
-              if (forcedMin > max) forcedMin = min;
+                if (forcedMin > max) forcedMin = min;
 
-              // --- ÚJ: SPECIÁLIS MAXIMUM ÁRAK (TROLLING MOTOROK) ---
-              let forcedMax = max;
-
-              // Ha a kategória listában szerepelnek a trolling motorok kulcsszavai (pl. Osapian, Endura, Traxxis)
-              // A 'Protruar' is ide tartozik a gombod alapján.
-              if (categoriesStr.includes('Osapian') || categoriesStr.includes('Endura') || categoriesStr.includes('Traxxis')) {
-                // Beállítjuk a felső határt 1 millióra
-                const LIMIT = 1000000;
-
-                // Csak akkor vágjuk le, ha a valós max ár magasabb ennél
-                if (forcedMax > LIMIT) {
-                  forcedMax = LIMIT;
+                let forcedMax = max;
+                if (categoriesStr.includes('Osapian') || categoriesStr.includes('Endura') || categoriesStr.includes('Traxxis')) {
+                  const LIMIT = 1000000;
+                  if (forcedMax > LIMIT) forcedMax = LIMIT;
                 }
-              }
 
-              priceRange.currentMin = forcedMin;
-              priceRange.currentMax = forcedMax;
+                priceRange.currentMin = forcedMin;
+                priceRange.currentMax = forcedMax;
 
                 updateSliderBounds(productsPool); 
                 if (sliderInstance) {
                     sliderInstance.$set({ values: [forcedMin, max] }); 
                 }
 
-                // --- JAVÍTOTT RÉSZ: ELŐSZŰRÉS A DROPDOWN SZÁMÁRA ---
-                // Itt szűrjük le a termékeket ugyanazzal a logikával, amit a megjelenítéshez használunk,
-                // így a legördülő menübe nem kerülnek bele az irreleváns kategóriák.
-                const filteredForDropdown = productsPool.filter(p => {
+                // ============================================================
+                // 🛑 A MEGOLDÁS: CSAK A VÉGLEGES TERMÉKEK UTOLSÓ KATEGÓRIÁJA
+                // ============================================================
+                
+                // 1. lépés: Kiválasztjuk azokat a termékeket, amik TÉNYLEG meg fognak jelenni
+                // (Tehát átmennek az ár és név szűrőn is)
+                const visibleProducts = productsPool.filter(p => {
+                     // Ár ellenőrzés (hogy a kis alkatrészek eltűnjenek)
+                     const pPrice = parseFloat(p.price);
+                     if (!isNaN(pPrice)) {
+                         if (pPrice < forcedMin || pPrice > forcedMax) return false;
+                     }
+
+                     // Név/SKU/Kategória ellenőrzés (hogy a keresési feltételnek megfeleljenek)
                      const pCat = (p.category || "").toLowerCase();
                      const pName = (p.name || "").toLowerCase();
                      const pSku = (p.sku || "").toString().trim();
 
-                     // SKU alapú szűrés ellenőrzése
                      if (categoryList.length > 0 && categoryList[0].startsWith('SKU:')) {
-                          const firstSku = categoryList[0].replace('SKU:', '').trim();
-                          return (pSku === firstSku) || categoryList.slice(1).some(s => s.trim() === pSku);
-                     } 
-                     // Szöveges szűrés ellenőrzése
-                     else {
-                          return categoryList.some(filterWord => {
-                              const fw = filterWord.toLowerCase();
-                              return pCat.includes(fw) || pName.includes(fw);
-                          });
+                           const firstSku = categoryList[0].replace('SKU:', '').trim();
+                           return (pSku === firstSku) || categoryList.slice(1).some(s => s.trim() === pSku);
+                     } else {
+                           return categoryList.some(filterWord => {
+                               const fw = filterWord.toLowerCase();
+                               return pCat.includes(fw) || pName.includes(fw);
+                           });
                      }
                 });
 
-                // Most már a tisztított listát adjuk át
-                updateCategoryDropdown(filteredForDropdown);
-                // ----------------------------------------------------
+                // 2. lépés: A menü számára "lebutítjuk" a kategórianeveket
+                // Csak az utolsó tagot hagyjuk meg!
+                const listForDropdown = visibleProducts.map(p => {
+                    // Klónozzuk, hogy az eredeti termékadat ne sérüljön
+                    const cleanP = { ...p };
+                    
+                    if (cleanP.category) {
+                        // Szétvágjuk a kategóriát | vagy > vagy , mentén
+                        const parts = cleanP.category.split(/[|>,]/);
+                        if (parts.length > 0) {
+                            // Kivesszük az utolsót és levágjuk a felesleges szóközöket
+                            cleanP.category = parts[parts.length - 1].trim();
+                        }
+                    }
+                    return cleanP;
+                });
 
+                // A menüt ezzel a tisztított listával frissítjük:
+                updateCategoryDropdown(listForDropdown);
+                
+                // A terméklistát viszont az eredeti, teljes adatbázisból rendereljük:
                 filterAndRender(); 
                 
                 setTimeout(() => {
@@ -4841,9 +5013,8 @@ body {
                     if(controlsRow) controlsRow.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             } else {
-                resultsEl.innerHTML = '<div class=\"no-results\">Nincs találat ebben a kategóriában.</div>';
+                resultsEl.innerHTML = '<div class=\"no-results\">Nincs találat.</div>';
                 removeLoadMoreButton();
-                // Üres lista esetén a dropdown is legyen üres vagy alaphelyzet
                 updateCategoryDropdown([]);
             }
             
@@ -4906,31 +5077,94 @@ document.addEventListener('keydown', function(event) {
 
 
 // === TELEFON GOMB LOGIKA JAVÍTVA (3-as szintű biztonsági ellenőrzés) ===
-const phoneBtn = document.getElementById('phoneBtn');
+  /* =========================================
+     IPHONE JAVÍTOTT HÍVÁS LOGIKA
+     ========================================= */
 
-phoneBtn.addEventListener('click', function(event) {
-    // 1. Név alapú ellenőrzés (User Agent)
-    const isUserAgentMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // 2. Képernyő méret ellenőrzés (Ha 900px-nél keskenyebb, akkor biztosan nem desktop nézet)
-    const isSmallScreen = window.innerWidth <= 900;
+  const phoneBtn = document.getElementById('phoneBtn');
 
-    // 3. Érintés ellenőrzés (Van-e érintőképernyője)
-    const isTouchDevice = (navigator.maxTouchPoints > 0) || ('ontouchstart' in window);
+  // Helper: iOS detektálás (iPad, iPhone, iPod)
+  function isIOSDevice() {
+    return [
+      'iPad Simulator',
+      'iPhone Simulator',
+      'iPod Simulator',
+      'iPad',
+      'iPhone',
+      'iPod'
+    ].includes(navigator.platform)
+      // iPad iOS 13+ esetén MacIntel-ként jelentkezik, de van érintőképernyője:
+      || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+  }
 
-    // ÖSSZESÍTETT DÖNTÉS: Ha a három közül BÁRMELYIK igaz, akkor ez egy mobil eszköz!
-    const isMobile = isUserAgentMobile || isSmallScreen || isTouchDevice;
+  phoneBtn.addEventListener('click', function (event) {
+    const isIOS = isIOSDevice();
 
-    if (isMobile) {
-        // MOBIL: Nem csinálunk SEMMIT. Nem hívunk preventDefault-ot.
-        // Hagyjuk, hogy a HTML <a href="tel:..."> tegye a dolgát és tárcsázzon.
-        console.log("Mobil hívás engedélyezve (Feltétel: UA=" + isUserAgentMobile + ", Size=" + isSmallScreen + ", Touch=" + isTouchDevice + ")");
+    // Általános mobil detektálás a desktop nézethez
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+
+    if (isIOS) {
+      // IPHONE: Megállítjuk a közvetlen hívást és feldobjuk a másoló ablakot
+      event.preventDefault();
+      openModal('iosPhoneModal');
+
+    } else if (isMobile) {
+      // ANDROID: Hagyjuk, hogy az <a href="tel:"> tegye a dolgát
+      // Nem hívunk preventDefault()-ot!
+      console.log("Android hívás engedélyezve");
+
     } else {
-        // ASZTALI GÉP: Csak itt tiltjuk le a linket
-        event.preventDefault(); 
-        openModal('phoneModal');
+      // ASZTALI GÉP: Megnyitjuk az információs ablakot
+      event.preventDefault();
+      openModal('phoneModal');
     }
-});
+  });
+
+  // Vágólapra másoló funkció
+  function copyToClipboard() {
+    const text = document.getElementById('textToCopy').innerText.replace(/\s/g, ''); // Szóközök kivétele a másoláshoz: +3670...
+
+    // Modern API
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        showCopyFeedback();
+      }).catch(err => {
+        console.error('Hiba a másoláskor:', err);
+        fallbackCopyText(text); // Ha a modern nem megy, jöhet a régi
+      });
+    } else {
+      fallbackCopyText(text);
+    }
+  }
+
+  // Régi módszer fallback (biztonság kedvéért)
+  function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";  // Hogy ne görgesse el az oldalt
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      showCopyFeedback();
+    } catch (err) {
+      console.error('Fallback másolás sikertelen', err);
+      alert('Nem sikerült a másolás, kérlek jelöld ki manuálisan!');
+    }
+
+    document.body.removeChild(textArea);
+  }
+
+  // Kis visszajelzés (zöld felirat)
+  function showCopyFeedback() {
+    const feedback = document.getElementById('copyFeedback');
+    feedback.style.opacity = '1';
+    setTimeout(() => {
+      feedback.style.opacity = '0';
+    }, 2000);
+  }
 
 // === ŰRLAP BEKÜLDÉS (Formspree AJAX) ===
 const contactForm = document.getElementById('contactForm');
@@ -4996,27 +5230,225 @@ contactForm.addEventListener('submit', function(event) {
     });
 });
   // === TÉMA SZINKRONIZÁLÓ ===
-  document.addEventListener('DOMContentLoaded', () => {
-    const themeRadios = document.querySelectorAll('input[name="theme"]');
+  // === TÉMA SZINKRONIZÁLÓ (JAVÍTOTT VERZIÓ) ===
+    document.addEventListener('DOMContentLoaded', () => {
+      const themeRadios = document.querySelectorAll('input[name="theme"]');
+      const iframe = document.getElementById('eMotorIframe');
 
-    // Ha kattintasz a váltóra
-    themeRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        if (e.target.value === 'dark') {
-          document.body.classList.add('dark-mode');
-        } else {
-          document.body.classList.remove('dark-mode');
+      // Üzenet küldése az iframe-nek
+      function syncThemeToIframe(themeMode) {
+        if (iframe && iframe.contentWindow) {
+          const msg = {
+            type: 'THEME_CHANGE',
+            mode: themeMode
+          };
+          iframe.contentWindow.postMessage(msg, '*');
+        }
+      }
+
+      // Eseményfigyelők a gombokra
+      themeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const themeMode = e.target.value;
+
+          // 1. LÉPÉS: A főoldal (saját maga) átszínezése - EZT PÓTOLTUK
+          if (themeMode === 'dark') {
+            document.body.classList.add('dark-mode');
+          } else {
+            document.body.classList.remove('dark-mode');
+          }
+
+          // 2. LÉPÉS: Az iframe (új projekt) értesítése
+          syncThemeToIframe(themeMode);
+        });
+      });
+
+      // Kezdőállapot beállítása betöltéskor
+      const currentTheme = document.querySelector('input[name="theme"]:checked')?.value || 'light';
+
+      // Ha alapból sötét a beállítás
+      if (currentTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+      }
+
+      // Iframe betöltődésének megvárása az első szinkronizáláshoz
+      if (iframe) {
+        iframe.addEventListener('load', () => {
+          syncThemeToIframe(currentTheme);
+        });
+      }
+    });   
+  </script>
+
+<script>
+  // Toggle az E-motorok panelre (iframe)
+  function toggleEMotorPanel() {
+    const sec = document.getElementById('e-motor-section');
+    const btn = document.getElementById('eMotorBtn');
+    const gallery = document.getElementById('gallery-section');
+    const topCat = document.getElementById('top-cat-section');
+
+    // Ha a galéria nyitva van, zárjuk be
+    if (gallery && gallery.classList.contains('open')) {
+      if (typeof closeGallery === 'function') closeGallery();
+      else gallery.classList.remove('open');
+    }
+
+    // Ha a top-cats nyitva van, zárjuk be
+    if (topCat && topCat.classList.contains('open')) {
+      if (typeof toggleTopCategories === 'function') toggleTopCategories();
+      else topCat.classList.remove('open');
+    }
+
+    if (!sec) return;
+    const isOpen = sec.classList.contains('open');
+    if (isOpen) {
+      sec.classList.remove('open');
+      sec.setAttribute('aria-hidden','true');
+      if(btn) btn.classList.remove('active');
+    } else {
+      sec.classList.add('open');
+      sec.setAttribute('aria-hidden','false');
+      if(btn) btn.classList.add('active');
+      // fókuszáljuk az iframe-re (accessibility)
+      const iframe = document.getElementById('eMotorIframe');
+      if (iframe) iframe.focus();
+    }
+  }
+
+  /* =================================================================
+       GOLYÓÁLLÓ ÜZENETKEZELŐ ÉS SZINKRONIZÁCIÓ (index.html)
+       ================================================================= */
+
+    /* =================================================================
+       VÉGLEGES SZINKRONIZÁCIÓS SCRIPT (index.html)
+       - MutationObserver: Azonnal szól, ha kapcsolod a lámpát
+       - SetInterval: Folyamatosan fenntartja a rendet (ha kinyitod a fület)
+       ================================================================= */
+
+      // 1. SEGÉDFÜGGVÉNY: A téma elküldése az iframe-nek
+      function sendThemeToIframe() {
+        const iframe = document.getElementById('eMotorIframe');
+        // Csak akkor küldünk, ha az iframe létezik és be van töltve a tartalma
+        if (iframe && iframe.contentWindow) {
+          const isDark = document.body.classList.contains('dark-mode');
+          iframe.contentWindow.postMessage({
+            type: 'THEME_SYNC',
+            isDarkMode: isDark
+          }, '*');
+        }
+      }
+
+      // 2. MUTATION OBSERVER (EZ A KULCS!)
+      // Figyeli a <body>-t. Ha rákerül vagy lekerül a 'dark-mode' class, azonnal üzen.
+      const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.attributeName === "class") {
+            sendThemeToIframe(); // Változás történt -> Szinkronizálás!
+          }
+        });
+      });
+      // Indítjuk a figyelést a body-n
+      observer.observe(document.body, { attributes: true });
+
+
+      // 3. FOLYAMATOS SZINKRON (A "csukott állapot" javítására)
+      // Ha kinyitod a harmonikát, ez a ciklus fél másodpercen belül észreveszi és korrigál
+      setInterval(function () {
+        sendThemeToIframe();
+      }, 500);
+
+
+      // 4. ÜZENETEK FIGYELÉSE (Kattintás és Kérés)
+      window.addEventListener('message', function (event) {
+        const msg = event.data;
+        if (!msg) return;
+
+        // Ha az iframe kifejezetten kéri (pl. frissítéskor)
+        if (msg.type === 'REQUEST_THEME') {
+          sendThemeToIframe();
+          return;
+        }
+
+        // Link kattintás kezelése (Változatlan)
+        if (msg.type === 'E_MOTOR_FILTER') {
+          const label = (msg.uiLabel || '').toLowerCase().trim();
+          let targetCard = null;
+          const allCards = Array.from(document.querySelectorAll('.cat-card'));
+
+          // Keresési logika
+          if (label.includes('külmotor')) targetCard = allCards.find(c => c.textContent.toLowerCase().includes('elektromos csónakmotor'));
+          else if (label.includes('orrmotor')) targetCard = allCards.find(c => c.textContent.toLowerCase().includes('orrmotor'));
+          else if (label.includes('minn kota')) targetCard = allCards.find(c => c.textContent.toLowerCase().includes('minn kota'));
+          else if (label.includes('torqeedo')) targetCard = allCards.find(c => c.textContent.toLowerCase().includes('torqeedo'));
+          else if (label.includes('epropulsion')) targetCard = allCards.find(c => c.textContent.toLowerCase().includes('epropulsion'));
+
+          if (!targetCard) targetCard = allCards.find(c => c.textContent.toLowerCase().includes(label));
+
+          if (targetCard) {
+            targetCard.click();
+            // Görgetés a találatokhoz
+            setTimeout(() => {
+              const resultsEl = document.getElementById('results');
+              if (resultsEl) resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
+          } else if (typeof filterByCategories === 'function') {
+            filterByCategories(null, msg.searchTerm, msg.categoriesStr);
+          }
         }
       });
-    });
 
-    // Ha frissítés után alapból sötét volt a beállítás
-    const darkRadio = document.querySelector('input[name="theme"][value="dark"]');
-    if (darkRadio && darkRadio.checked) {
-      document.body.classList.add('dark-mode');
+      // 5. INDULÁSKORI BIZTOSÍTÉK
+      document.addEventListener("DOMContentLoaded", function () {
+        // Azonnal küldjük egyszer
+        sendThemeToIframe();
+        // És ha az iframe később töltene be, az onload esemény is küldi
+        const iframe = document.getElementById('eMotorIframe');
+        if (iframe) {
+          iframe.onload = function () { sendThemeToIframe(); };
+        }
+      });
+
+      // 4. KÉZI KAPCSOLÁS KIEGÉSZÍTÉSE (Ezt ellenőrizd a meglévő kódodban!)
+      /*
+      function toggleTheme() {
+          document.body.classList.toggle('dark-mode');
+          // ...
+          sendThemeToIframe(); // <--- EZT NE FELEJTSD KI!
+      }
+      */
+
+    // 4. KÉZI KAPCSOLÁS KIEGÉSZÍTÉSE
+    // (Ellenőrizd, hogy a toggleTheme függvényedben benne van-e ez a sor!)
+    // Ha nincs, másold be a függvény végére:
+    /*
+    function toggleTheme() {
+        // ... eredeti kód ...
+        document.body.classList.toggle('dark-mode');
+        // ...
+        
+        // EZT A SORT NE FELEJTSD KI:
+        sendThemeToIframe(); 
     }
-  });   
-  </script>
+    */
+
+    // Kiegészítés a toggleTheme függvényhez (ha még nincs benne):
+    // Ezt keresd meg a meglévő kódodban, és ellenőrizd, hogy benne van-e ez a rész:
+    /*
+    function toggleTheme() {
+        // ... (eredeti kód) ...
+        
+        // EZT ADD HOZZÁ:
+        const iframe = document.getElementById('eMotorIframe');
+        if (iframe && iframe.contentWindow) {
+             iframe.contentWindow.postMessage({
+                type: 'THEME_SYNC',
+                isDarkMode: document.body.classList.contains('dark-mode')
+            }, '*');
+        }
+    }
+    */
+</script>
 </body>
 
 </html>
