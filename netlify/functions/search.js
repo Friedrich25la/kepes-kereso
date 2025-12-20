@@ -24,6 +24,7 @@ exports.handler = async (event) => {
     'https://aquamarine-cactus-d0f609.netlify.app',
     'https://www.trinexus.hu',
     'http://localhost:8000',
+    'http://localhost:8001',
     'http://127.0.0.1:8000',
     'http://localhost:5500',
     'http://127.0.0.1:5500'
