@@ -113,21 +113,33 @@ exports.handler = async (event) => {
     const start = (page - 1) * limit;
     const end = start + limit;
 
-    const pageResults = matches.slice(start, end).map(p => ({
-      id: p.id,
-      name: p.name,
-      sku: p.sku,
-      price: p.price,
-      thumb: p.thumb,
-      url: p.url,
-      img: p.img,
-      category: p.category,
-      sale_price: p.sale_price,
-      sale_start: p.sale_start,
-      sale_end: p.sale_end,
-      short_description: p.short_description,
-      status: p.status
-    }));
+    const pageResults = matches.slice(start, end).map(p => {
+      // stock normalizálás: negatív / hibás -> 0, egész szám
+      let s = Number(p.stock);
+      if (!Number.isFinite(s)) s = 0;
+      s = Math.floor(s);
+      if (s < 0) s = 0;
+
+      return {
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+        price: p.price,
+        thumb: p.thumb,
+        url: p.url,
+        img: p.img,
+        category: p.category,
+        sale_price: p.sale_price,
+        sale_start: p.sale_start,
+        sale_end: p.sale_end,
+        short_description: p.short_description,
+        status: p.status,
+
+        // ÚJ mezők:
+        stock: s,
+        uom: p.uom || 'db'
+      };
+    });
 
     return {
       statusCode: 200,
