@@ -41,7 +41,7 @@ const CSV_DATA = `ID,Szülő kategória,Kategória neve,URL
 2,Kötelező felszerelés,6 - 12 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-6-12-m-kozotti-hajotestek
 3,Kötelező felszerelés,12 - 15 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-12-15-m-kozotti-hajotestek
 4,Kötelező felszerelés,15 - 20 méter közötti hajótest,https://www.trinexus.hu/kotelezo-felszereles-15-20-m-kozotti-hajotestek
-5,Kötelező felszerelés,Csónak, kajak-kenu és egyéb,https://www.trinexus.hu/kotelezo-felszereles-kajak-kenu-egyeb
+5,Kötelező felszerelés,"Csónak, kajak-kenu és egyéb",https://www.trinexus.hu/kotelezo-felszereles-kajak-kenu-egyeb
 6,Hajó,RIB hajó,https://www.trinexus.hu/hajo-rib-hajo
 7,Hajó,Ponton,https://www.trinexus.hu/hajo-ponton
 8,Hajó,Elektromos hajó,https://www.calistra.hu?source_cat=723996
@@ -295,4 +295,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
+
 
